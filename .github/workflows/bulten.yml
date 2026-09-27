@@ -1,0 +1,82 @@
+# Manual newsletter (README "E-posta ve bülten"): a news entry saved with "Bültenle gönder" waits here for a reviewer
+# of the "bulten" environment; after approval the site mails it to the subscribers.
+name: Newsletter
+
+on:
+  push:
+    branches: [main]
+    paths: ['content/news/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bulten
+  cancel-in-progress: false
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 25
+    outputs:
+      slug: ${{ steps.pending.outputs.slug }}
+      hash: ${{ steps.pending.outputs.hash }}
+    steps:
+      # main's tip, not the pushed commit: a run queued behind another must see that run's ledger entry.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: pending
+        run: pnpm tsx scripts/pending-newsletters.ts
+      # Approval is requested only once the site serves exactly this content (the live preview carries the same x-news-hash;
+      # news that existed before its box was ticked is waited for too), so the reviewer's preview shows what will be sent.
+      # The send route checks the hash again.
+      - name: Wait until this content is live
+        if: steps.pending.outputs.slug != ''
+        env:
+          SLUG: ${{ steps.pending.outputs.slug }}
+          HASH: ${{ steps.pending.outputs.hash }}
+        run: |
+          for i in $(seq 1 30); do
+            # || true: a failed request (a network blip) must not end the loop, whatever -e and pipefail say.
+            live=$(curl -sS --max-time 20 -o /dev/null -D - "https://speedcubingturkiye.org/bulten/onizleme/$SLUG" | tr -d '\r' | awk 'tolower($1) == "x-news-hash:" { print $2 }') || true
+            if [ -n "$HASH" ] && [ "$live" = "$HASH" ]; then exit 0; fi
+            sleep 30
+          done
+          echo "::error title=Bülten::Haberin bu hali 15 dakikada yayına girmedi; onay istenmedi."
+          exit 1
+
+  send:
+    needs: find
+    if: needs.find.outputs.slug != ''
+    runs-on: ubuntu-latest
+    environment: bulten
+    timeout-minutes: 25
+    steps:
+      - name: Send
+        env:
+          SLUG: ${{ needs.find.outputs.slug }}
+          HASH: ${{ needs.find.outputs.hash }}
+          BULTEN_SECRET: ${{ secrets.BULTEN_SECRET }}
+        run: |
+          status=0
+          body=$(curl -sS --fail-with-body --max-time 310 -X POST "https://speedcubingturkiye.org/api/bulten/gonder" \
+            -H "Authorization: Bearer $BULTEN_SECRET" -H "content-type: application/json" \
+            --data "$(jq -nc --arg slug "$SLUG" --arg hash "$HASH" '{slug: $slug, hash: $hash}')") || status=$?
+          echo "$body"
+          printf '## Gönderim: %s\n\n```json\n%s\n```\n' "$SLUG" "$body" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          # A 2xx that is not the route's JSON (a redirect, an HTML page) never reached the route: nothing was sent.
+          jq -e 'has("sent")' <<<"$body" >/dev/null || { echo "::error title=Bülten::Beklenmeyen yanıt; gönderim yapılmadı."; exit 1; }
+          # 200 but not clean: some recipients failed or the ledger lacks the counts. Never rerun: the mails went out.
+          if [ "$(jq -r '.failed' <<<"$body")" != "0" ] || [ "$(jq -r '.logged' <<<"$body")" != "true" ]; then
+            echo "::warning title=Bülten::Gönderildi ama temiz değil: başarısız alıcı var ya da kayıt güncellenemedi. Yeniden çalıştırma, mailler gitti."
+          fi

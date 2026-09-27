@@ -1,0 +1,47 @@
+# Daily data: refreshes data/rankings from the official WCA results export and commits it to main (which deploys).
+# README → "Sıralama verisi"; full rankings spec §5.
+name: Daily data
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 06:00 in Türkiye; the WCA publishes the export around 00:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-data
+  cancel-in-progress: false
+
+jobs:
+  rankings:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm data:rankings
+      - name: Commit and push
+        run: |
+          git add data/rankings
+          if git diff --cached --quiet; then
+            echo "No data change."
+            exit 0
+          fi
+          day=$(node -p "require('./data/rankings/meta.json').exportDate.slice(0, 10)")
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898299+github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(data): update daily data - $day"
+          # Keystatic commits content straight to main; rebase on top of it (different files, no conflict).
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 15
+          done
+          exit 1

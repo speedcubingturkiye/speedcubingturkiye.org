@@ -1,0 +1,59 @@
+{
+  "slides": [
+    {
+      "discriminant": "static",
+      "value": {
+        "id": "brand",
+        "titleTr": "Speedcubing Türkiye",
+        "titleEn": "Speedcubing Türkiye",
+        "leadTr": "Türkiye'de düzenlenen WCA yarışmalarının takvimi, ulusal sıralamalar ve yarışmacılar için rehberler.",
+        "leadEn": "The calendar of WCA competitions held in Türkiye, national rankings and guides for competitors.",
+        "actions": [
+          {
+            "labelTr": "Yarışmalar",
+            "labelEn": "Competitions",
+            "href": "/yarismalar",
+            "variant": "solid"
+          },
+          {
+            "labelTr": "İlk yarışmam",
+            "labelEn": "My first competition",
+            "href": "/yarismalar/ilk-yarismam",
+            "variant": "outline"
+          }
+        ],
+        "layout": "mark",
+        "focus": "center"
+      }
+    },
+    {
+      "discriminant": "next-competition"
+    },
+    {
+      "discriminant": "static",
+      "value": {
+        "id": "first",
+        "titleTr": "İlk yarışmana hazırlan",
+        "titleEn": "Get ready for your first competition",
+        "leadTr": "WCA hesabını açmaktan yarışma gününe kadar her adımı sade bir dille anlattık.",
+        "leadEn": "From creating your WCA account to competition day, every step explained in plain words.",
+        "actions": [
+          {
+            "labelTr": "Rehberi oku",
+            "labelEn": "Read the guide",
+            "href": "/yarismalar/ilk-yarismam",
+            "variant": "solid"
+          },
+          {
+            "labelTr": "Ebeveynler için",
+            "labelEn": "For parents",
+            "href": "/yarismalar/ebeveynler-icin",
+            "variant": "outline"
+          }
+        ],
+        "layout": "mark",
+        "focus": "center"
+      }
+    }
+  ]
+}

@@ -1,0 +1,330 @@
+@import "tailwindcss";
+
+/* Manual dark mode (spec §3.4): <html data-theme="dark"> is set before paint by the inline script in app/[locale]/layout.tsx. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+  /* spec §3.1, light values; the dark values are set on :root[data-theme="dark"] below.
+     Tailwind needs the --color- prefix: --bg becomes --color-bg (utilities bg-bg, text-bg). */
+  --color-bg: #ffffff;
+  --color-bg-2: #f4f4f2;
+  --color-fg: #1a1a1a;
+  --color-fg-2: #555555;
+  --color-line: #e2e2e0;
+  --color-brand: #e30a17;
+  --color-brand-ink: #c4000f;
+  --color-ink-band: #1a1a1a;
+  --color-ok: #147a3a;
+  --color-warn: #9a5b00;
+  --color-muted: #666666;
+  /* spec §3.3: radius 0 and no shadows. Removing the two namespaces turns every rounded and shadow utility into
+     a no-op (rounded-full is a fixed value, not a theme key; nothing uses it: even the carousel dots are squares). */
+  --radius-*: initial;
+  --shadow-*: initial;
+}
+
+/* next/font sets --font-archivo on <html>; `inline` is required because the value is a var() */
+@theme inline {
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Dark theme (spec §3.1). :root[...] outranks Tailwind's :root defaults; --color-brand stays red in both themes. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f1012;
+  --color-bg-2: #17181b;
+  --color-fg: #f2f2f2;
+  --color-fg-2: #a9adb3;
+  --color-line: #2a2c31;
+  --color-brand-ink: #ff4d57;
+  --color-ink-band: #000000;
+  --color-ok: #5bd08a;
+  --color-warn: #e0a439;
+  --color-muted: #a9adb3;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    scroll-behavior: smooth;
+    /* Browser surfaces from the tokens, so both themes follow (inherited by every scroller and form control) */
+    scrollbar-color: var(--color-fg-2) var(--color-bg-2);
+    accent-color: var(--color-brand);
+  }
+  ::selection {
+    background: var(--color-brand);
+    color: #fff;
+  }
+  /* A red selection would vanish on the red bands: inverted there */
+  .bg-brand ::selection {
+    background: #fff;
+    color: var(--color-brand);
+  }
+  body {
+    line-height: 1.6;
+    /* spec §3.2: every date, time, rank and capacity number is tabular */
+    font-variant-numeric: tabular-nums;
+  }
+  /* In-page anchors land below the sticky 64px header (spec §4.1) */
+  [id] {
+    scroll-margin-top: 5rem;
+  }
+  /* Archivo wide caps (spec §3.2). text-transform follows the nearest lang, so i becomes İ in Turkish: an English
+     word on a TR page and a Turkish word on an EN page carry their own lang, and data titles are not uppercased (R8). */
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: 1.1;
+    /* Last resort for data: a word wider than the column (a domain in a news title, a long name) breaks instead of
+       overflowing. Our own words fit whole, down to 320px (the phone sizes below). */
+    overflow-wrap: break-word;
+  }
+  h1 {
+    font-size: clamp(32px, 4.5vw, 56px);
+    font-weight: 800;
+    font-stretch: 125%;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  h2 {
+    font-size: clamp(28px, 2.6vw, 36px);
+    font-weight: 800;
+    font-stretch: 120%;
+    text-transform: uppercase;
+    line-height: 1.05;
+  }
+  /* Phones (R7): smaller and slightly narrower, so the longest words we write (TR "BİLDİREBİLİRSİNİZ?", EN
+     "PHOTOGRAPHY") fit a 320px column whole. From 640px the sizes above apply unchanged. */
+  @media (width < 40rem) {
+    h1 {
+      font-size: clamp(24px, 8.5vw, 32px);
+      font-stretch: 120%;
+    }
+    h2 {
+      font-size: clamp(20px, 7.2vw, 28px);
+      font-stretch: 115%;
+    }
+  }
+  h3 {
+    font-size: clamp(20px, 1.6vw, 22px);
+    font-weight: 700;
+  }
+  h4 {
+    font-weight: 700;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+  /* Theme switch (ThemeToggle): the whole page crossfades through the View Transitions API. The toggle skips the
+     transition under prefers-reduced-motion. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 300ms;
+    animation-timing-function: ease-out;
+  }
+  /* Clicks during a transition reach the live page instead of the transition overlay */
+  ::view-transition {
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    ::before,
+    ::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    /* The language switch's crossfade (React's view transition in the root layout) swaps instantly */
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0s !important;
+      animation-delay: 0s !important;
+    }
+  }
+}
+
+@layer components {
+  /* Display type for the hero (spec §3.2) */
+  .t-display {
+    font-size: clamp(40px, 7vw, 96px);
+    font-weight: 800;
+    font-stretch: 125%;
+    text-transform: uppercase;
+    line-height: 0.95;
+  }
+  /* Small uppercase label: table heads, nav items, badges (spec §3.2); never a kicker above a heading */
+  .t-label {
+    font-size: 12px;
+    font-weight: 700;
+    font-stretch: 110%;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  /* Buttons (spec §3.3): square, 44px, 2px border, uppercase label. Pair .btn with one variant. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    /* Optical centre: the uppercase label has no descenders and sits about 1px high; 2px on top moves the centred
+       label down 1px. A whole pixel, because text snaps to whole pixels (DESIGN.md, "Optical centring"). */
+    padding: 2px 1.25rem 0;
+    border: 2px solid currentColor;
+    font-size: 13px;
+    font-weight: 700;
+    font-stretch: 110%;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-solid {
+    background: var(--color-fg);
+    border-color: var(--color-fg);
+    color: var(--color-bg);
+  }
+  .btn-brand {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: #fff;
+  }
+  .btn-outline {
+    color: var(--color-fg);
+    border-color: var(--color-fg);
+    background: transparent;
+  }
+  .btn-outline:hover {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+  /* On the red bands */
+  .btn-white {
+    background: #fff;
+    border-color: #fff;
+    color: var(--color-brand);
+  }
+  .btn-white-outline {
+    color: #fff;
+    border-color: #fff;
+    background: transparent;
+  }
+  .btn-white-outline:hover {
+    background: #fff;
+    color: var(--color-brand);
+  }
+  .btn-solid:hover,
+  .btn-brand:hover,
+  .btn-white:hover {
+    filter: brightness(0.92);
+  }
+  /* Pending submit: aria-disabled, not disabled, so the focused button keeps focus */
+  .btn[aria-disabled="true"] {
+    opacity: 0.6;
+  }
+  /* The logo's 45° square as list marker and divider (spec §3.3) */
+  .sq {
+    display: inline-block;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    transform: rotate(45deg);
+  }
+  /* Section-tab scroller (SectionNav): a thin token bar without arrow buttons. Chrome on Windows keeps its ◀ ▶
+     buttons even for scrollbar-width: thin, and paints the ::-webkit-scrollbar parts (buttonless unless styled)
+     only where the standard properties are auto; Firefox has no such parts and takes the standard thin bar. */
+  .tab-scroller {
+    scrollbar-width: thin;
+  }
+  @supports selector(::-webkit-scrollbar) {
+    .tab-scroller {
+      scrollbar-width: auto;
+      scrollbar-color: auto;
+    }
+    .tab-scroller::-webkit-scrollbar {
+      height: 6px;
+    }
+    .tab-scroller::-webkit-scrollbar-thumb {
+      background: var(--color-fg-2);
+    }
+    .tab-scroller::-webkit-scrollbar-track {
+      background: var(--color-bg-2);
+    }
+  }
+  /* Carousel slide entrance; the reduced-motion rule above disables it */
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .slide-in {
+    animation: slide-in 400ms ease-out;
+  }
+  /* Mobile menu (MobileMenu): the panel slides down from under the header when the <details> opens and back up when
+     it closes. Only transform changes, so the compositor runs the slide at full frame rate without repainting.
+     @starting-style gives the first opening its start point; ::details-content keeps the closing panel shown until it
+     has slid away. Under reduced motion the rule above drops the slide and the media query leaves out the hold. */
+  .mobile-menu-panel {
+    transition: transform 250ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .mobile-menu:not([open]) .mobile-menu-panel {
+    transform: translateY(-100%);
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.3, 0, 1, 1);
+  }
+  @starting-style {
+    .mobile-menu[open] .mobile-menu-panel {
+      transform: translateY(-100%);
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .mobile-menu::details-content {
+      transition: content-visibility 200ms allow-discrete;
+    }
+  }
+  /* Accordions (Details: FAQ answers, competition tabs): the body grows from nothing to its height on opening and
+     shrinks back on closing (a one-row grid from 0fr to 1fr), fading in and out, with the menu's timing. The row's
+     only child clips the body, reaching 4px past it so focus outlines on links stay whole. @starting-style and
+     ::details-content work as in the mobile menu above. */
+  .accordion-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition:
+      grid-template-rows 250ms cubic-bezier(0.2, 0, 0, 1),
+      opacity 250ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .accordion-body > * {
+    min-height: 0;
+    overflow: hidden;
+    margin: 0 -4px -4px;
+    padding: 0 4px 4px;
+  }
+  .accordion:not([open]) .accordion-body {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.3, 0, 1, 1);
+  }
+  @starting-style {
+    .accordion[open] .accordion-body {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .accordion::details-content {
+      transition: content-visibility 200ms allow-discrete;
+    }
+  }
+}
