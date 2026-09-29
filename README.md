@@ -14,8 +14,6 @@ pnpm dev                     # http://localhost:3000
 
 `pnpm dev` sonrası `http://localhost:3000/keystatic` görsel editörü yerel modda açar (girişsiz; dosyaları diskte düzenler).
 
-Yarışma sayfasının kayıt durumlarını görmek için geliştirme sunucusunda üç örnek sayfa var: `/yarismalar/OrnekKayitYakinda` (kayıt henüz açılmadı), `/yarismalar/OrnekKayitAcik` (kayıt açık, yer var) ve `/yarismalar/OrnekKayitKapandi` (kayıt kapandı, yarışma henüz yapılmadı). Gerçek bir yarışmanın verisini, tarihleri bugüne göre kaydırarak kullanırlar (`lib/wca/demo.ts`); üretim derlemesinde yoktur.
-
 Komutlar:
 
 | Komut | Ne yapar |
