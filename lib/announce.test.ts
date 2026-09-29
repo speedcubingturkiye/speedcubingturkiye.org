@@ -3,14 +3,14 @@ import { serialize } from 'next-mdx-remote/serialize'
 import remarkGfm from 'remark-gfm'
 import { announceNew, renderAnnouncement, renderAnnouncementMail } from '@/lib/announce'
 import { wcaFetch } from '@/lib/wca/client'
-import { fileExists, putFiles, writeRepoFile } from '@/lib/github'
+import { commitFiles, fileExists } from '@/lib/github'
 import { mailSubscribers } from '@/lib/newsletter'
 import { site } from '@/site.config'
 import type { CompetitionListItem } from '@/lib/wca/types'
 
 // I/O modules are mocked; renderAnnouncement / renderAnnouncementMail do not touch them.
 vi.mock('@/lib/wca/client', () => ({ wcaFetch: vi.fn() }))
-vi.mock('@/lib/github', () => ({ fileExists: vi.fn(), putFiles: vi.fn(), writeRepoFile: vi.fn() }))
+vi.mock('@/lib/github', () => ({ fileExists: vi.fn(), commitFiles: vi.fn() }))
 vi.mock('@/lib/newsletter', () => ({ mailSubscribers: vi.fn() }))
 
 const comp: CompetitionListItem = {
@@ -115,17 +115,16 @@ describe('announceNew', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.mocked(mailSubscribers).mockResolvedValue({ sent: { tr: 1, en: 0 }, failed: 0 })
-    vi.mocked(writeRepoFile).mockResolvedValue('ok') // the marker is created by writeRepoFile, after the bodies
+    vi.mocked(commitFiles).mockResolvedValue('ok') // one commit holds the bodies and the index.yaml marker
   })
 
   it('refuses a competition id outside [A-Za-z0-9]+ before touching Git or SES, but still processes the rest of the batch', async () => {
     // The bad id comes first: a `return`/`break` instead of `continue` would leave `other`, right after it, unprocessed.
     vi.mocked(wcaFetch).mockResolvedValue([{ ...other, id: '../Evil2026' }, other])
     vi.mocked(fileExists).mockResolvedValue(false)
-    vi.mocked(putFiles).mockResolvedValue(true)
     expect(await announceNew({ dry: false })).toEqual({ announced: [other.id], skipped: 0, failed: ['../Evil2026'], wcaUnavailable: false })
     expect(vi.mocked(fileExists).mock.calls.map(([p]) => p)).toEqual([`${dir(other.id)}/index.yaml`])
-    expect(putFiles).toHaveBeenCalledTimes(1)
+    expect(commitFiles).toHaveBeenCalledTimes(1)
     expect(mailSubscribers).toHaveBeenCalledTimes(1)
   })
 
@@ -140,57 +139,37 @@ describe('announceNew', () => {
     const third = { ...comp, id: 'ThirdTurkey2026' }
     vi.mocked(wcaFetch).mockResolvedValue([comp, other, third])
     vi.mocked(fileExists).mockImplementation(async (p) => p.startsWith(dir(comp.id)))
-    vi.mocked(putFiles).mockImplementation(async (files) => !files[0].path.startsWith(dir(third.id)))
+    vi.mocked(commitFiles).mockImplementation(async (files) => (files[0].path.startsWith(dir(third.id)) ? 'error' : 'ok'))
     expect(await announceNew({ dry: false })).toEqual({ announced: [other.id], skipped: 1, failed: [third.id], wcaUnavailable: false })
-    // The bodies go through putFiles; the marker is created on its own, without a sha (create-only).
-    expect(vi.mocked(putFiles).mock.calls[0][0].map((f) => f.path)).toEqual([`${dir(other.id)}/tr.mdx`, `${dir(other.id)}/en.mdx`])
-    expect(writeRepoFile).toHaveBeenCalledTimes(1) // a failed body commit never reaches the marker
-    expect(writeRepoFile).toHaveBeenCalledWith(
-      `${dir(other.id)}/index.yaml`,
-      expect.stringContaining('auto: true'),
+    expect(commitFiles).toHaveBeenCalledTimes(2) // the announced id never gets one
+    // One commit holds the three files; index.yaml, the marker, is also the path that must not exist yet at the head.
+    expect(commitFiles).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({ path: `${dir(other.id)}/tr.mdx` }),
+        expect.objectContaining({ path: `${dir(other.id)}/en.mdx` }),
+        expect.objectContaining({ path: `${dir(other.id)}/index.yaml`, content: expect.stringContaining('auto: true') }),
+      ],
       `chore(news): auto-announce ${other.id}`,
-      null,
+      `${dir(other.id)}/index.yaml`,
     )
     expect(mailSubscribers).toHaveBeenCalledTimes(1)
   })
 
-  it('rewrites a half-written set (bodies without index.yaml) whole and then sends the mailing', async () => {
-    vi.mocked(wcaFetch).mockResolvedValue([other])
-    vi.mocked(fileExists).mockResolvedValue(false) // index.yaml is written last, so a failed run never leaves it behind
-    vi.mocked(putFiles).mockResolvedValue(true)
-    expect(await announceNew({ dry: false })).toMatchObject({ announced: [other.id], skipped: 0, failed: [] })
-    expect(vi.mocked(putFiles).mock.calls[0][0]).toHaveLength(2)
-    expect(vi.mocked(putFiles).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(writeRepoFile).mock.invocationCallOrder[0])
-    expect(vi.mocked(writeRepoFile).mock.calls[0][3]).toBeNull()
-    expect(mailSubscribers).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not mail when another run created the marker first (conflict): neither announced nor failed', async () => {
-    // Vercel may deliver one cron run twice: both pass the exists check, only one creates index.yaml (GitHub answers 422).
+  it('does not mail when another run committed the announcement first ("exists"): neither announced nor failed', async () => {
+    // Vercel may deliver one cron run twice: both pass the exists check, only one commit gets the marker onto main.
     vi.mocked(wcaFetch).mockResolvedValue([other])
     vi.mocked(fileExists).mockResolvedValue(false)
-    vi.mocked(putFiles).mockResolvedValue(true)
-    vi.mocked(writeRepoFile).mockResolvedValue('conflict')
+    vi.mocked(commitFiles).mockResolvedValue('exists')
     expect(await announceNew({ dry: false })).toEqual({ announced: [], skipped: 1, failed: [], wcaUnavailable: false })
     expect(mailSubscribers).not.toHaveBeenCalled()
     expect(console.log).toHaveBeenCalledWith('announce_skipped', other.id, 'marker exists')
   })
 
-  it('lists the competition as failed and mails nobody when the marker write is refused', async () => {
+  it.each(['conflict', 'error'] as const)('lists the competition as failed and mails nobody when the commit ends in "%s"', async (result) => {
     vi.mocked(wcaFetch).mockResolvedValue([other])
     vi.mocked(fileExists).mockResolvedValue(false)
-    vi.mocked(putFiles).mockResolvedValue(true)
-    vi.mocked(writeRepoFile).mockResolvedValue('error') // writeRepoFile logged the GitHub status; tomorrow's run retries
+    vi.mocked(commitFiles).mockResolvedValue(result) // commitFiles logged the GitHub status; the next run retries
     expect(await announceNew({ dry: false })).toEqual({ announced: [], skipped: 0, failed: [other.id], wcaUnavailable: false })
-    expect(mailSubscribers).not.toHaveBeenCalled()
-  })
-
-  it('never reaches the marker when the bodies fail to commit', async () => {
-    vi.mocked(wcaFetch).mockResolvedValue([other])
-    vi.mocked(fileExists).mockResolvedValue(false)
-    vi.mocked(putFiles).mockResolvedValue(false)
-    expect(await announceNew({ dry: false })).toMatchObject({ announced: [], failed: [other.id] })
-    expect(writeRepoFile).not.toHaveBeenCalled()
     expect(mailSubscribers).not.toHaveBeenCalled()
   })
 
@@ -204,14 +183,13 @@ describe('announceNew', () => {
     vi.mocked(wcaFetch).mockResolvedValue([other])
     vi.mocked(fileExists).mockResolvedValue(false)
     expect(await announceNew({ dry: true })).toEqual({ announced: [other.id], skipped: 0, failed: [], wcaUnavailable: false })
-    expect(putFiles).not.toHaveBeenCalled()
+    expect(commitFiles).not.toHaveBeenCalled()
     expect(mailSubscribers).not.toHaveBeenCalled()
   })
 
   it('logs how many recipients failed (a count, never an address) and still counts the competition as announced', async () => {
     vi.mocked(wcaFetch).mockResolvedValue([other])
     vi.mocked(fileExists).mockResolvedValue(false)
-    vi.mocked(putFiles).mockResolvedValue(true)
     vi.mocked(mailSubscribers).mockResolvedValue({ sent: { tr: 1, en: 0 }, failed: 2 })
     expect(await announceNew({ dry: false })).toMatchObject({ announced: [other.id], failed: [] })
     expect(console.error).toHaveBeenCalledWith('newsletter_failed', other.id, '2 recipients')
@@ -220,7 +198,6 @@ describe('announceNew', () => {
   it('logs a failed mailing but still counts the competition as announced (the news is published)', async () => {
     vi.mocked(wcaFetch).mockResolvedValue([other])
     vi.mocked(fileExists).mockResolvedValue(false)
-    vi.mocked(putFiles).mockResolvedValue(true)
     vi.mocked(mailSubscribers).mockRejectedValue(Object.assign(new Error('slow down'), { name: 'TooManyRequestsException' }))
     expect(await announceNew({ dry: false })).toMatchObject({ announced: [other.id], failed: [] })
     expect(console.error).toHaveBeenCalledWith('newsletter_failed', other.id, 'TooManyRequestsException')

@@ -150,7 +150,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" "https://speedcubingturkiye.org/
 - [ ] Secret olmadan istek → `401`.
 - [ ] Secret ile `?dry=1` → `{"dry":true,"announced":[...],"skipped":N,"failed":[],"wcaUnavailable":false,"pendingRemoved":0}`; `announced` listesindeki her id için `main` üzerinde `content/news/yarisma-<id>/index.yaml` **olmamalı** (henüz duyurulmamış olmalılar).
 - [ ] Liste boş değilse ve takım bu yarışmaların şimdi duyurulmasını istiyorsa, `?dry=1` **olmadan** bir kere çalıştır ve şunları doğrula:
-  - `main` üzerinde her id için üç yeni commit (`chore(news): auto-announce <id>`): `content/news/yarisma-<id>/tr.mdx`, `en.mdx`, en son `index.yaml`.
+  - `main` üzerinde her id için tek bir yeni commit (`chore(news): auto-announce <id>`); üç dosya da bu commit'in içinde: `content/news/yarisma-<id>/tr.mdx`, `en.mdx`, `index.yaml`.
   - Vercel'de yeni bir production deploy tetiklenmiş.
   - Haber `/haberler/yarisma-<id>` adresinde görünüyor.
   - `info@` grubuna duyurunun Türkçe kopyası düştü; yanıtta `pendingRemoved` -1 değil.

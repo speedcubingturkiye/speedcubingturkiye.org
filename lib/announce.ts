@@ -4,7 +4,7 @@ import { wcaFetch } from '@/lib/wca/client'
 import { displayCity } from '@/lib/wca/city'
 import { WCA_ID_RE, todayIstanbul } from '@/lib/wca/status'
 import { formatDateRange, formatDateTime } from '@/lib/wca/format'
-import { fileExists, putFiles, writeRepoFile } from '@/lib/github'
+import { commitFiles, fileExists } from '@/lib/github'
 import { renderNewsMail, type RenderedMail } from '@/lib/mail-render'
 import { mailSubscribers } from '@/lib/newsletter'
 import { site } from '@/site.config'
@@ -66,8 +66,8 @@ function summary(comp: CompetitionListItem, locale: Locale): string {
 }
 
 /**
- * The three files of one announcement: tr.mdx, en.mdx and, last, index.yaml. index.yaml is the "already announced"
- * marker (announceNew), so a run that dies halfway never leaves a marker without bodies.
+ * The three files of one announcement, committed together by announceNew: tr.mdx, en.mdx and, last, index.yaml, the
+ * "already announced" marker.
  */
 export function renderAnnouncement(comp: CompetitionListItem): { path: string; content: string }[] {
   const dir = newsDir(comp)
@@ -108,7 +108,7 @@ export type AnnounceResult = { announced: string[]; skipped: number; failed: str
 
 /**
  * Announce competitions announced in the last 30 days whose content/news/yarisma-<id>/index.yaml does not exist yet.
- * Idempotent: the Git files are the state, so failed ids (including a half-committed pair) are retried on the next run.
+ * Idempotent: the Git files are the state, so failed ids are retried on the next run.
  * dry = list only, no commits, no emails.
  */
 export async function announceNew({ dry }: { dry: boolean }): Promise<AnnounceResult> {
@@ -133,29 +133,23 @@ export async function announceNew({ dry }: { dry: boolean }): Promise<AnnounceRe
     }
     try {
       const files = renderAnnouncement(comp)
-      // index.yaml is written last, so its presence means the whole set is there (spec §3.1).
-      if (await fileExists(files[files.length - 1].path)) {
+      const marker = files[files.length - 1].path // index.yaml comes in the same commit as the bodies: present = all there
+      if (await fileExists(marker)) {
         skipped++
         continue
       }
       if (!dry) {
-        // A set left half-written by a failed run (bodies, no marker) is rewritten whole; its mailing was never sent.
-        const message = `chore(news): auto-announce ${comp.id}`
-        const marker = files[files.length - 1]
-        if (!(await putFiles(files.slice(0, -1), message))) {
-          failed.push(comp.id) // putFiles logged the GitHub status
-          continue
-        }
-        // The marker is created without a sha, so it is create-only: Vercel may deliver one cron run twice, both runs pass
-        // the exists check above, and GitHub lets only one of them create index.yaml. The other must not mail again.
-        const claim = await writeRepoFile(marker.path, marker.content, message, null)
-        if (claim === 'conflict') {
+        // One commit for the three files. Vercel may deliver one cron run twice and both pass the exists check above, but
+        // GitHub accepts the commit only while main still points at the head where the marker was checked: one run commits,
+        // the other retries, finds the marker and gets 'exists', so it does not mail again.
+        const committed = await commitFiles(files, `chore(news): auto-announce ${comp.id}`, marker)
+        if (committed === 'exists') {
           console.log('announce_skipped', comp.id, 'marker exists') // another run owns this competition
           skipped++
           continue
         }
-        if (claim === 'error') {
-          failed.push(comp.id) // writeRepoFile logged the GitHub status; the next run retries
+        if (committed !== 'ok') {
+          failed.push(comp.id) // commitFiles logged the GitHub status (or main kept moving); the next run retries
           continue
         }
         // The news is published either way; a failed mailing is logged, never retried (no double mails).
