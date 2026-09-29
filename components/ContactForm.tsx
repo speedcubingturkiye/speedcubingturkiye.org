@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { sendContact } from '@/app/actions/contact'
@@ -16,6 +16,7 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
   const [state, action, pending] = useActionState(sendContact, initial)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
   const { onSubmit, statusRef } = useFormSubmit(action, pending, state.ok)
+  const [subject, setSubject] = useState<ContactSubject>(presetSubject)
 
   return (
     <div className="grid max-w-xl gap-4">
@@ -43,7 +44,7 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
 
           <label className="block text-sm font-semibold">
             {t('subject')}
-            <select className={field} name="subject" defaultValue={presetSubject}>
+            <select className={field} name="subject" defaultValue={presetSubject} onChange={(e) => setSubject(e.target.value as ContactSubject)}>
               {CONTACT_SUBJECTS.map((s) => (
                 <option key={s} value={s}>
                   {t(`subjects.${s}`)}
@@ -51,6 +52,16 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
               ))}
             </select>
           </label>
+
+          {/* A title for a subject the list does not have: only "Diğer" shows it, and the action accepts it only then. The select
+              stays uncontrolled (a choice made before hydration is not reset); the state mirrors it. Without JS the field never
+              shows and the form still submits. */}
+          {subject === 'diger' ? (
+            <label className="block text-sm font-semibold">
+              {t('subjectTitle')}
+              <input className={field} name="title" maxLength={100} autoComplete="off" />
+            </label>
+          ) : null}
 
           <label className="block text-sm font-semibold">
             {t('message')}

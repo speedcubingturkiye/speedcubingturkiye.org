@@ -18,7 +18,8 @@ import { site } from '@/site.config'
 export const REGION = 'us-east-1'
 export const LIST = 'bulten'
 
-export type Mail = { to: string; subject: string; text: string; html?: string; replyTo?: string; headers?: Record<string, string> }
+/** `fromName` is the sender's display name (default: the site's); the address is always MAIL_FROM. */
+export type Mail = { to: string; subject: string; text: string; html?: string; replyTo?: string; fromName?: string; headers?: Record<string, string> }
 export type Subscriber = { status: 'pending' | 'confirmed'; locale: Locale | null; updatedAt: number }
 
 let client: SESv2Client | undefined
@@ -38,9 +39,27 @@ function ses(): SESv2Client | null {
 const errorName = (e: unknown) => (e instanceof Error ? e.name : String(e))
 const optedIn = (prefs: TopicPreference[] | undefined) => prefs?.find((p) => p.SubscriptionStatus === 'OPT_IN')
 
-/** "Speedcubing Türkiye <news@…>" with the display name as an RFC 2047 encoded word (SES wants ASCII headers). */
+/** A non-ASCII display name as RFC 2047 encoded words (SES wants ASCII headers). A word may not exceed 75 characters,
+ *  which 45 bytes of text just stay under, so a longer name is cut between characters into several words; a mail
+ *  client joins them again. */
+function encodedWords(name: string): string {
+  const words: string[] = []
+  let word = ''
+  for (const ch of name) {
+    if (Buffer.byteLength(word + ch) > 45) {
+      words.push(word)
+      word = ''
+    }
+    word += ch
+  }
+  words.push(word)
+  return words.map((w) => `=?UTF-8?B?${Buffer.from(w, 'utf8').toString('base64')}?=`).join(' ')
+}
+
+/** "Speedcubing Türkiye <news@…>", or any display name (a writer's, in the contact form's mail). A plain ASCII name is one
+ *  quoted string with its quotes and backslashes dropped, so it cannot close the string and add an address. */
 export function fromHeader(name = site.name, address = site.mailFrom): string {
-  const shown = /^[\x20-\x7e]*$/.test(name) ? `"${name.replace(/["\\]/g, '')}"` : `=?UTF-8?B?${Buffer.from(name, 'utf8').toString('base64')}?=`
+  const shown = /^[\x20-\x7e]*$/.test(name) ? `"${name.replace(/["\\]/g, '')}"` : encodedWords(name)
   return `${shown} <${address}>`
 }
 
@@ -54,7 +73,7 @@ export async function sendMail(mail: Mail): Promise<boolean> {
     }
     await c.send(
       new SendEmailCommand({
-        FromEmailAddress: fromHeader(),
+        FromEmailAddress: fromHeader(mail.fromName),
         Destination: { ToAddresses: [mail.to] },
         ...(mail.replyTo ? { ReplyToAddresses: [mail.replyTo] } : {}),
         Content: {

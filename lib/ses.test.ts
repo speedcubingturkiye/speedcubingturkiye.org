@@ -35,11 +35,40 @@ const collect = async (gen: AsyncGenerator<string>) => {
   return out
 }
 
+// The display name of a header made of RFC 2047 encoded words, read the way a mail client does: the words are joined.
+const decoded = (header: string) =>
+  [...header.matchAll(/=\?UTF-8\?B\?([A-Za-z0-9+/=]+)\?=/g)].map((m) => Buffer.from(m[1], 'base64').toString('utf8')).join('')
+
 describe('fromHeader', () => {
   it('encodes a non-ASCII display name as an RFC 2047 word and quotes an ASCII one', () => {
     const word = Buffer.from('Speedcubing Türkiye', 'utf8').toString('base64')
     expect(fromHeader('Speedcubing Türkiye', 'news@x.org')).toBe(`=?UTF-8?B?${word}?= <news@x.org>`)
     expect(fromHeader('Plain Name', 'news@x.org')).toBe('"Plain Name" <news@x.org>')
+  })
+
+  it('a writer as "<name> (form)": Turkish letters, quotes, commas and brackets decode back exactly, the address stays news@', () => {
+    for (const name of ['Şule Yılmaz (form)', 'Ali "Veli" Öz, Jr. (form)', 'Ünal <evil@x.org>, "Bcc" (form)', '😀 Ayşe (form)']) {
+      const header = fromHeader(name, 'news@x.org')
+      expect(header).toMatch(/^[\x20-\x7e]+ <news@x\.org>$/)
+      expect(header.match(/[<>]/g)).toHaveLength(2) // only the sender's own address brackets
+      expect(decoded(header)).toBe(name)
+    }
+  })
+
+  it('an ASCII name stays one quoted string whatever it holds, so it cannot add an address', () => {
+    expect(fromHeader('Kutay Temel (form)', 'news@x.org')).toBe('"Kutay Temel (form)" <news@x.org>')
+    const header = fromHeader('a" <evil@x.org>, "b (form)', 'news@x.org')
+    expect(header.match(/"/g)).toHaveLength(2)
+    expect(header).toMatch(/^".*" <news@x\.org>$/)
+  })
+
+  it('a long name becomes several encoded words of at most 75 characters, never cut inside a character', () => {
+    for (const name of [`${'Şükrüoğlu '.repeat(9)}(form)`, `${'😀'.repeat(30)} (form)`]) {
+      const words = fromHeader(name, 'news@x.org').match(/=\?UTF-8\?B\?[A-Za-z0-9+/=]+\?=/g) ?? []
+      expect(words.length).toBeGreaterThan(1)
+      for (const word of words) expect(word.length).toBeLessThanOrEqual(75)
+      expect(decoded(fromHeader(name, 'news@x.org'))).toBe(name)
+    }
   })
 })
 
@@ -65,6 +94,14 @@ describe('with keys', () => {
     expect(c.input.Content.Simple.Subject).toEqual({ Data: 'Yeni yarışma', Charset: 'UTF-8' })
     expect(c.input.Content.Simple.Body).toEqual({ Text: { Data: 't', Charset: 'UTF-8' }, Html: { Data: '<p>h</p>', Charset: 'UTF-8' } })
     expect(c.input.Content.Simple.Headers).toEqual([{ Name: 'List-Unsubscribe', Value: '<https://x/u>' }])
+  })
+
+  it('sendMail sends from "<fromName>" when the mail has one, with the address unchanged', async () => {
+    send.mockResolvedValue({})
+    await sendMail({ to: 'a@b.com', subject: 's', text: 't', fromName: 'Şule Yılmaz (form)' })
+    const from = String(call(0).input.FromEmailAddress)
+    expect(from.endsWith(' <news@speedcubingturkiye.org>')).toBe(true)
+    expect(decoded(from)).toBe('Şule Yılmaz (form)')
   })
 
   it('sendMail resolves false (and logs the error name) when SES refuses', async () => {

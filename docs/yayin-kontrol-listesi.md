@@ -129,7 +129,9 @@ node -e "for (const f of ['lh-home.json','lh-yarismalar.json']) { const c = requ
 
 - [ ] `https://speedcubingturkiye.org/iletisim` sayfasından konu "Genel" ile gerçek bir mesaj gönder.
 - [ ] Ekranda yeşil başarı metni görünmeli.
-- [ ] Bir dakika içinde `info@` kutusuna (Google Workspace), gönderen `Speedcubing Türkiye <news@speedcubingturkiye.org>`, konu `[genel] <isim>` olan bir mail düşmeli; mail'e "yanıtla" formda yazılan adrese gitmeli.
+- [ ] Bir dakika içinde `info@` kutusuna (Google Workspace), gönderen `<isim> (form) <news@speedcubingturkiye.org>` (isim, formda yazdığın ad), konu `Speedcubing Türkiye: Genel` olan bir mail düşmeli; mail'e "yanıtla" formda yazılan adrese gitmeli ve yanıtın konusu `Re: Speedcubing Türkiye: Genel` olmalı.
+- [ ] Konu olarak "Diğer" seç: "Başlık (isteğe bağlı)" alanı açılmalı. Başlığa `Deneme başlığı` yazıp gönder: mailin konusu `Speedcubing Türkiye: Deneme başlığı` olmalı, gövdesinde `Konu: Diğer` ve `Başlık: Deneme başlığı` satırları görünmeli. Başlık boşsa konu `Speedcubing Türkiye: Diğer` olmalı.
+- [ ] `https://speedcubingturkiye.org/en/iletisim` sayfasından "Other" ile gönder: konu `Speedcubing Türkiye: Other` olmalı (etiket formun dilinde gelir).
 
 ## 8. Canlı bülten testi (production access sonrası)
 

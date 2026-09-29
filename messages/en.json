@@ -181,6 +181,7 @@
     "name": "Full name",
     "email": "Email",
     "subject": "Subject",
+    "subjectTitle": "Title (optional)",
     "message": "Message",
     "required": "required",
     "send": "Send",
@@ -192,7 +193,8 @@
       "gonullu": "I want to volunteer",
       "medya": "Media / press",
       "guvenlik": "Safety",
-      "kvkk": "Data protection request"
+      "kvkk": "Data protection request",
+      "diger": "Other"
     },
     "error": {
       "invalid": "Please fill in all fields correctly.",

@@ -181,6 +181,7 @@
     "name": "Ad soyad",
     "email": "E-posta",
     "subject": "Konu",
+    "subjectTitle": "Başlık (isteğe bağlı)",
     "message": "Mesaj",
     "required": "zorunlu",
     "send": "Gönder",
@@ -192,7 +193,8 @@
       "gonullu": "Gönüllü olmak istiyorum",
       "medya": "Medya / basın",
       "guvenlik": "Güvenlik",
-      "kvkk": "KVKK talebi"
+      "kvkk": "KVKK talebi",
+      "diger": "Diğer"
     },
     "error": {
       "invalid": "Lütfen tüm alanları doğru doldur.",
