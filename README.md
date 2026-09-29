@@ -1,69 +1,121 @@
-# Speedcubing Türkiye: web sitesi
+<p align="center">
+  <a href="https://speedcubingturkiye.org">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="public/brand/logo-long-inverted.svg">
+      <img src="public/brand/logo-long.svg" alt="Speedcubing Türkiye" width="440">
+    </picture>
+  </a>
+</p>
 
-Türkiye'deki WCA yarışmalarını, ulusal sıralamaları, ilk yarışma rehberini ve organizasyon bilgilerini sunan site: https://speedcubingturkiye.org
+<p align="center">
+  Türkiye'deki WCA yarışmaları, ulusal sıralamalar ve speedcubing topluluğu için site.<br>
+  <a href="https://speedcubingturkiye.org"><b>speedcubingturkiye.org</b></a>
+</p>
 
-Stack: Next.js 16 (App Router, ISR) · TypeScript · Tailwind v4 · next-intl (TR kökte, EN `/en/`) · MDX içerik (`next-mdx-remote`) · Vercel. Veritabanı yok; yarışma verisi WCA API'den sunucu tarafında, önbellekli okunur; sıralama verisi WCA sonuç dışa aktarımından her gün üretilir ve repodaki `data/rankings/` klasöründe durur (bkz. Sıralama verisi).
+## Neler var
 
-## Kurulum
+- Yarışma takvimi ve yarışma sayfaları: kayıt durumu, kontenjan, yer ve WCA Live bağlantısı.
+- 17 etkinlikte eksiksiz Türkiye sıralamaları. Her sabah güncellenir.
+- İlk kez yarışacaklar ve veliler için rehberler, sık sorulan sorular.
+- Haberler ve RSS. Türkiye'de yeni bir yarışma açılınca duyurusu otomatik yazılır.
+- Çift onaylı e-posta bülteni.
+- Organizasyon sayfaları: tüzük, belgeler, ilanlar, gönüllülük, güvenli ortam.
+- Türkçe ve İngilizce, açık ve koyu tema. Metinler tarayıcıdan, görsel editörle düzenlenir.
+
+## Nasıl çalışır
+
+```mermaid
+flowchart TB
+    wca["WCA<br/>API ve sonuç dışa aktarımı"]
+    editor(["Editörler"])
+    daily["GitHub Actions<br/>her gün 06:00"]
+    cron["Vercel Cron<br/>her gün 12:00"]
+    repo[("GitHub<br/>main dalı")]
+    site["Vercel<br/>speedcubingturkiye.org"]
+    ses["Amazon SES"]
+    inbox(["info@ ve aboneler"])
+
+    wca -->|sonuçlar| daily
+    wca -->|"yeni yarışmalar"| cron
+    editor -->|"Keystatic paneli"| repo
+    daily -->|"sıralama verisi"| repo
+    cron -->|"yarışma haberi"| repo
+    repo -->|"her push bir deploy"| site
+    wca -->|"yarışma bilgileri"| site
+    site -->|"form, onay, duyuru, bülten"| ses
+    ses --> inbox
+
+    classDef brand fill:#E30A17,stroke:#E30A17,color:#ffffff
+    class site brand
+```
+
+Sitenin veritabanı yok. Sayfalar, haberler ve ayarlar bu repodaki dosyalardır. Panelden yapılan her kayıt `main`'e bir commit olur ve her push Vercel'de yeni bir deploy başlatır. Yarışmalar WCA API'den okunup önbelleğe alınır. Sıralamalar her sabah WCA'nın sonuç dışa aktarımından yeniden üretilir. Bülten aboneleri Amazon SES'in kişi listesinde durur.
+
+Türkçe sayfalar kökte, İngilizceler `/en` altında. Site Next.js 16 (App Router), TypeScript, Tailwind CSS 4, next-intl, MDX ve Keystatic ile yazıldı. Şemadaki saatler Türkiye saatidir.
+
+## Başlarken
+
+Node 24 ve pnpm 11 ile çalışır.
 
 ```bash
 pnpm install
-cp .env.example .env.local   # anahtarları doldur (aşağıya bak); anahtarsız da çalışır
-pnpm dev                     # http://localhost:3000
+cp .env.example .env.local
+pnpm dev
 ```
 
-`pnpm dev` sonrası `http://localhost:3000/keystatic` görsel editörü yerel modda açar (girişsiz; dosyaları diskte düzenler). Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` (silmede `chore(content): delete <yol>`) mesajıyla commit'ler; bu Conventional Commits biçimi `patches/@keystatic__core@0.6.9.patch` yamasından gelir. Keystatic yükseltilirken yamayı yeni sürüm için yenile (`pnpm patch @keystatic/core@<sürüm>`).
-
-Komutlar:
+Site `http://localhost:3000` adresinde açılır. Anahtar girmeden de çalışır. O zaman mailler gönderilmez, konsola yazılır. Görsel editör `http://localhost:3000/keystatic` adresinde: yerelde giriş istemez, dosyaları doğrudan diskte düzenler.
 
 | Komut | Ne yapar |
 |---|---|
 | `pnpm dev` | Geliştirme sunucusu |
-| `pnpm build` | Önce `prebuild` (içerik kontrolü), sonra `next build` |
-| `pnpm start` | Build çıktısını sunar |
+| `pnpm build` | İçerik kontrolü, ardından production build |
+| `pnpm start` | Build'i sunar |
 | `pnpm lint` | ESLint |
-| `pnpm test` | Vitest (`lib/wca/status.test.ts`, `lib/announce.test.ts`) |
-| `pnpm tsx scripts/check-content.ts` | TR/EN içerik eşleşme kontrolü (tek başına) |
-| `pnpm typecheck`: `next typegen && tsc --noEmit` | TypeScript kontrolü |
-| `MSYS_NO_PATHCONV=1 powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 -Paths /,/en` | start `next start` on :3010, print HTTP codes, stop it |
+| `pnpm typecheck` | TypeScript kontrolü |
+| `pnpm test` | Vitest testleri |
+| `pnpm tsx scripts/check-content.ts` | Sadece içerik kontrolü |
+| `pnpm data:rankings` | Sıralama verisini WCA'dan yeniden üretir |
+| `pnpm og` | Paylaşım görselini (`public/og.png`) logodan üretir |
+| `MSYS_NO_PATHCONV=1 powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 -Paths /,/en` | Build'i 3010 portunda açar, sayfaların HTTP kodlarını yazar, kapatır (Windows, Git Bash) |
 
-## İçerik modeli
+## Ayrıntılar
 
-Bütün metinler repo'da Markdown (MDX) dosyalarıdır; yayın = commit → Vercel deploy. Bir dosya **iki dilde de** olmak zorundadır; eksikse build durur.
+<details>
+<summary><b>İçerik</b></summary>
 
-```
-content/tr/pages/<slug>.mdx     sayfa metinleri (Türkçe)
-content/en/pages/<slug>.mdx     aynı slug, İngilizce
-content/news/<slug>/index.yaml  haber verisi: iki dilde başlık ve özet, tarih, kategori
+Sayfalar ve haberler repodaki MDX dosyalarıdır. Her sayfanın iki dili de olmak zorunda, biri eksikse build durur.
+
+```text
+content/tr/pages/<slug>.mdx     sayfa (Türkçe)
+content/en/pages/<slug>.mdx     aynı sayfa (İngilizce)
+content/news/<slug>/index.yaml  haber bilgileri: iki dilde başlık ve özet, tarih, kategori
 content/news/<slug>/tr.mdx      haber metni (Türkçe)
 content/news/<slug>/en.mdx      haber metni (İngilizce)
-content/home/slides.json         ana sayfa carousel slaytları (iki dil bir arada)
+content/home/slides.json        ana sayfa slaytları, iki dil bir arada
 ```
 
-Dosya adı = URL. `content/tr/pages/yarismalar/sss.mdx` → `/yarismalar/sss` ve `/en/yarismalar/sss`. Elle yazılan slug'lar yalnızca küçük harf, rakam ve tire içerir; Türkçe karakter kullanılmaz. Haber klasörlerinin adı da aynı kurala uyar; cron WCA kimliğini küçük harfe çevirir (`yarisma-newageturkey2026`).
+Dosya yolu adresi belirler: `content/tr/pages/yarismalar/sss.mdx`, `/yarismalar/sss` ve `/en/yarismalar/sss` olur. Adlarda yalnız küçük harf, rakam ve tire kullanılır, Türkçe karakter kullanılmaz. Cron da WCA kimliğini küçük harfe çevirir: `yarisma-newageturkey2026`.
 
-### Sayfa eklemek
+#### Sayfa eklemek
 
-1. `content/tr/pages/<slug>.mdx` ve `content/en/pages/<slug>.mdx` dosyalarını oluştur:
+1. İki dosyayı da oluştur: `content/tr/pages/<slug>.mdx` ve `content/en/pages/<slug>.mdx`.
 
-```mdx
----
-title: "Sayfa başlığı"
-description: "Bir cümlelik açıklama (arama motorları ve sayfa üstü)"
-updated: "2026-09-25"
----
+   ```mdx
+   ---
+   title: "Sayfa başlığı"
+   description: "Arama motorları ve sayfa üstü için tek cümle"
+   updated: "2026-09-25"
+   ---
 
-Metin buraya. Başlıklar için `##`, liste için `-`, tablo için GFM tablo sözdizimi.
-```
+   Metin buraya. Başlık için `##`, liste için `-`, tablo için GFM tablosu.
+   ```
 
-2. Sayfayı bir rotaya bağla: `app/[locale]/<slug>/page.tsx` dosyasını `app/[locale]/kvkk/page.tsx` örneğinden kopyala ve `SLUG` sabitini değiştir. (Sayfa ailesi `/yarismalar/*` veya `/organizasyon/*` ise `SectionNav` ile birlikte kullanan örnekleri kopyala.)
-3. Gerekirse `components/Footer.tsx` ve `app/sitemap.ts` içine bağlantı ekle.
+2. Rotayı ekle: `app/[locale]/kvkk/page.tsx` dosyasını `app/[locale]/<slug>/page.tsx` olarak kopyala ve `SLUG` sabitini değiştir. Sayfa `/yarismalar/*` ya da `/organizasyon/*` altındaysa yan menülü (`SectionNav`) bir örneği kopyala.
+3. Gerekirse `components/Footer.tsx` ve `app/sitemap.ts` dosyalarına bağlantı ekle.
 
-### Haber veya ilan eklemek
+#### Haber eklemek
 
-En kolay yol görsel editör: `/keystatic` → Haberler (bkz. `docs/editor-kullanim.md`). Elle eklemek için `content/news/<slug>/` klasörü aç:
-
-`index.yaml`:
+En kolayı panel: `/keystatic`, sonra Haberler ([editör rehberi](docs/editor-kullanim.md)). Elle eklemek için `content/news/<slug>/` klasörünü aç ve `index.yaml` yaz:
 
 ```yaml
 title: "Başlık (TR)"
@@ -76,97 +128,170 @@ auto: false
 bulten: false
 ```
 
-`tr.mdx` ve `en.mdx`: metinler (ön-bilgi yok).
+`tr.mdx` ve `en.mdx` yalnız metni içerir, başlarında ön bilgi (frontmatter) olmaz.
 
-- `<slug>` yalnız küçük harf, rakam ve tire (`lib/slug.ts` → `trSlug`); adres `/haberler/<slug>` olur.
-- `category` şunlardan biri: `yarisma` (yarışma duyurusu), `topluluk`, `rekor`, `ilan` (resmi ilan; `/organizasyon/ilanlar` sayfasında da listelenir).
-- `auto: true` yalnız cron'un ürettiği haberlerde bulunur ("otomatik" rozeti); cron `content/news/yarisma-<wca-id-küçük-harf>/` yazar.
-- Rota gerekmez: haber otomatik olarak `/haberler/<slug>` adresinde ve RSS'te (`/haberler/rss.xml`, `/en/haberler/rss.xml`) yayımlanır.
-- Elle yazarken metindeki `<` ve `{` karakterlerinin önüne ters eğik çizgi koy: `\<`, `\{` (editör de böyle kaydeder; MDX çıplak olanları etiket ya da kod sanır).
+- `category`: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/organizasyon/ilanlar` sayfasında da listelenir.
+- `auto: true` yalnız cron'un yazdığı duyurularda olur ve "otomatik" rozeti gösterir.
+- Rota gerekmez. Haber `/haberler/<slug>` adresinde ve RSS'te (`/haberler/rss.xml`, `/en/haberler/rss.xml`) otomatik yayımlanır.
 
-### Ana sayfa slaytları
+#### Ana sayfa slaytları
 
-`content/home/slides.json` tek dosyadır (iki dil bir arada) ve panelin yazdığı biçimdedir: `{ "slides": [ ... ] }`. Her öğe `{ "discriminant": "static", "value": { ... } }` ya da `{ "discriminant": "next-competition" }`:
+`content/home/slides.json` panelin yazdığı biçimde tek bir dosya: `{ "slides": [ ... ] }`. İki tür öğe var.
 
-- `static`: `id` (küçük harf, rakam, tire; benzersiz), `titleTr`/`titleEn` (en fazla 40 karakter), `leadTr`/`leadEn` (en fazla 160), `actions` (1–2 düğme: `labelTr`, `labelEn`, `href`, `variant: "solid" | "outline"`), isteğe bağlı `image` (`/images/slides/...`), `layout` (`mark | A | D | E | G | J`, varsayılan `mark`; `mark` dışında fotoğraf zorunlu), `focus` (`center | top | bottom | left | right`), `altTr`/`altEn`.
-- `next-competition`: sıradaki yarışma WCA verisinden doldurulur; yaklaşan yarışma yoksa slayt gösterilmez. En fazla bir tane.
+`{ "discriminant": "static", "value": { ... } }` elle yazılan slayttır. Alanları:
 
-`href` öneksiz site yolu (`/en` otomatik eklenir) ya da `https://` ile tam adres (yeni sekmede açılır). Eksik ya da hatalı alan build'i dosya adı ve slayt numarasıyla durdurur (`lib/slides.ts`). Yerleşimler için bkz. `docs/editor-kullanim.md`.
+- `id`: küçük harf, rakam ve tire, benzersiz
+- `titleTr`, `titleEn`: en fazla 40 karakter
+- `leadTr`, `leadEn`: en fazla 160 karakter
+- `actions`: 1 ya da 2 düğme (`labelTr`, `labelEn`, `href`, `variant: "solid" | "outline"`)
+- isteğe bağlı: `image` (`/images/slides/...`), `layout` (`mark | A | D | E | G | J`, varsayılan `mark`), `focus` (`center | top | bottom | left | right`), `altTr`, `altEn`. `mark` dışındaki yerleşimler fotoğraf ister.
 
-### MDX içinde kullanılabilen bileşenler
+`{ "discriminant": "next-competition" }` sıradaki yarışmayı WCA verisinden doldurur. Yaklaşan yarışma yoksa görünmez. En fazla bir tane olabilir.
 
-Sayfalar ve haberler görsel editörde de düzenlenir (`/keystatic`); editör ham HTML tanımaz, bu yüzden MDX'te yalnız şu bileşenler kullanılır (derleme kontrolü başka bir etiketi ya da kaçışsız `{` karakterini reddeder):
+`href` ya öneksiz bir site yolu olur (`/en` otomatik eklenir) ya da `https://` ile başlayan tam adres. Tam adresler yeni sekmede açılır. Hatalı bir alan build'i dosya adı ve slayt numarasıyla durdurur (`lib/slides.ts`). Yerleşimlerin nasıl göründüğü [editör rehberinde](docs/editor-kullanim.md).
 
-- `<Details summary="Soru?"> ... </Details>`: açılır-kapanır SSS maddesi. İçerik ile etiketler arasında boş satır bırak.
-- `<Callout title="Başlık" lang="en"> ... </Callout>`: vurgulu not kutusu; `title` ve `lang` isteğe bağlıdır (`lang`, kutu sayfanın dilinden farklıysa).
-- `<DataController field="name" />` ya da `field="email"`: site ayarlarındaki KVKK veri sorumlusu.
-- `<MdxLink href="/kvkk" locale="tr">metin</MdxLink>`: diğer dildeki sayfaya bağlantı.
-- `<Anchor id="bulten" />`: başlığın hemen üstüne konan sayfa içi bağlantı hedefi (`/kvkk#bulten`).
-- `<Lang code="en">Speedcubing</Lang>`: büyük harfe çevrilen bir başlıkta diğer dilden bir kelime (İ/I kuralı).
-- İç bağlantıları her iki dilde de öneksiz yaz: `[SSS](/yarismalar/sss)`. `/en` öneki otomatik eklenir. Dış bağlantılar yeni sekmede açılır.
-- Metinde `<` ya da `{` gerekiyorsa önüne ters eğik çizgi koy: `\<`, `\{` (editör de böyle kaydeder; çıplak olanları MDX etiket ya da kod sanır).
+#### MDX bileşenleri
 
-### İçerik kontrolü
+Panel ham HTML tanımaz. Bu yüzden MDX'te yalnız şu bileşenler kullanılır:
 
-`pnpm build` her seferinde `scripts/check-content.ts` çalıştırır (yerelde tek başına: `pnpm tsx scripts/check-content.ts`). Herhangi bir hata build'i durdurur; canlı site son iyi haliyle kalır. Kontroller: sayfaların TR/EN eşleşmesi; her sayfa, haber, slayt, arayüz metni, site ayarı ve galeri dosyasının editör şemasından (`keystatic.config.ts`, Keystatic okuyucusu) geçmesi; haberlerde iki dilde metin ve gerçek bir tarih; MDX gövdelerinde yalnız tanımlı bileşenler (ham HTML ve kaçışsız `{` yok); slayt kuralları (`lib/slides.ts`); arayüz metinlerinde aynı anahtar ağacı ve aynı yer tutucular; başvurulan her görsel ve belgenin var olması, görsellerin 5 MB'ı aşmaması. Hata mesajları Türkçedir ve dosya ile alanı söyler.
-
-## Yapılandırma
-
-`site.config.ts`: site adı ve URL'si, iletişim e-postası (kod). `content/site.json`: KVKK veri sorumlusu, topluluk kanalları (boş bırakılan kanal sitede görünmez), yönetim listesi (`board`, `boardUpdatedAt`) ve belgeler (`documents` → `/organizasyon/belgeler`); `content/gallery.json`: `/medya` galerisi. Bunlar ve arayüz metinleri (`messages/tr.json`, `messages/en.json`) görsel editörden düzenlenir (`/keystatic`, bkz. `docs/editor-kullanim.md`).
-
-### Ortam değişkenleri (`.env.example`)
-
-| Değişken | Kullanım |
+| Bileşen | Ne işe yarar |
 |---|---|
-| `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | Amazon SES erişim anahtarı (IAM kullanıcısı `speedcubingturkiye-web-ses`: yalnız `news@` adına gönderim ve `bulten` listesi); yalnız Production |
-| `NEWSLETTER_SECRET` | Onay ve çıkış bağlantılarının şifreleme anahtarı (en az 32 karakter); değişirse eski maillerdeki çıkış bağlantıları çalışmaz; yalnız Production |
-| `BULTEN_SECRET` | `/api/bulten/gonder` rotasının `Authorization: Bearer` anahtarı; GitHub'da yalnız `bulten` ortamında; yalnız Production |
-| `BULTEN_KAPALI` | `1` ise elle bülten gönderimi kapalı (isteğe bağlı; değişiklik yeniden deploy'la geçerli olur) |
-| `CONTACT_EMAIL` | Form mesajlarının gideceği adres (`info@speedcubingturkiye.org`) |
-| `MAIL_FROM` | Gönderen adres (`news@speedcubingturkiye.org`; domain SES'te doğrulandı) |
-| `CRON_SECRET` | `/api/cron/wca-check` rotasının `Authorization: Bearer` anahtarı |
-| `GITHUB_TOKEN` | Cron'un haber dosyası commit'lemesi için fine-grained token (yalnız bu repo, `contents: read/write`) |
-| `GITHUB_REPO` | `owner/repo` |
-| `NEXT_PUBLIC_KEYSTATIC_REPO` | Görsel editörün commit atacağı repo (`owner/repo`); yalnız Production |
-| `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET`, `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | Keystatic GitHub App değerleri (kurulum sihirbazı verir); yalnız Production |
+| `<Details summary="Soru?">…</Details>` | Açılır SSS maddesi. İçerikle etiketler arasında boş satır bırak. |
+| `<Callout title="Başlık" lang="en">…</Callout>` | Vurgulu not kutusu. `title` ve `lang` isteğe bağlı, `lang` yalnız kutu sayfanın dilinden farklıysa gerekir. |
+| `<DataController field="name" />`, `field="email"` | Site ayarlarındaki KVKK veri sorumlusu |
+| `<MdxLink href="/kvkk" locale="tr">metin</MdxLink>` | Öbür dildeki bir sayfaya bağlantı |
+| `<Anchor id="bulten" />` | Başlığın hemen üstüne konan sayfa içi hedef (`/kvkk#bulten`) |
+| `<Lang code="en">Speedcubing</Lang>` | Büyük harfli bir başlıkta öbür dilden bir kelime (İ/I kuralı) |
 
-Geliştirmede SES anahtarları yoksa mailler gönderilmez, konsola yazılır (onay bağlantısı dahil); `NEWSLETTER_SECRET` yoksa geliştirmeye özel sabit bir anahtar kullanılır. `next dev` abonelere hiçbir zaman toplu mail göndermez: yerel cron çağrısı hep kuru çalışır (commit, mail ve silme yok) ve elle bülten rotası 503 döner; `.env.local`'da SES anahtarları varsa form, onay ve çıkış gerçek listeye yazar.
+İç bağlantıları iki dilde de öneksiz yaz: `[SSS](/yarismalar/sss)`. `/en` otomatik eklenir, dış bağlantılar yeni sekmede açılır. Metinde `<` ya da `{` gerekiyorsa başına ters eğik çizgi koy: `\<`, `\{`. Çıplak hallerini MDX etiket ya da kod sanır.
 
-## E-posta ve bülten
+#### İçerik kontrolü
 
-Sitenin bütün mailleri Amazon SES'ten (ABD, Kuzey Virginia: `us-east-1`) `Speedcubing Türkiye <news@speedcubingturkiye.org>` adına gider; mailler hiçbir takip pikseli ve başka sunucudan görsel içermez.
+`pnpm build` önce `scripts/check-content.ts` betiğini çalıştırır. Bir hata bulursa build durur, canlı site son sağlam haliyle kalır. Hata mesajları Türkçedir ve dosyayla alanı gösterir.
 
-- İletişim ve gönüllü formu: mesaj `info@` grubuna gider; "yanıtla" formu dolduran kişiye yazar.
-- Bülten: form, SES'teki `bulten` listesine onay bekleyen bir kişi yazar ve formun dilinde onay maili yollar (aynı adrese 24 saatte bir). Onay bağlantısı (`/bulten/onay`, 7 gün geçerli) kişiyi dilinin konusuna (`tr` ya da `en`) abone eder; onaylanmayan adresler 7 gün sonra günlük cron'da silinir. Her mailin altındaki bağlantı `/bulten/cikis` sayfasını açar; Gmail ve Apple Mail'in kendi "Abonelikten çık" düğmesi `/api/bulten/cikis` ile tek tıkta çıkarır. Bağlantılardaki token AES-256-GCM ile şifrelidir; adres linkte görünmez.
-- Otomatik duyuru: cron yeni yarışmanın haberini commit'ledikten sonra onaylı abonelere kendi dillerinde gönderir ve Türkçe kopyayı `info@`'ya yollar.
-- Elle bülten: panelde bir haber "Bültenle gönder" işaretlenip kaydedilince `.github/workflows/bulten.yml` çalışır; `find` işi haberin dosyalarının özetini (SHA-256) alır, sitenin bu hali yayına girene kadar bekler ve ancak o zaman `bulten` ortamında onay ister (önizleme: `/bulten/onizleme/<adres>`). Onaylanınca `/api/bulten/gonder` özetle çağrılır; arada haber değiştiyse gönderim reddedilir (409 `changed`) ve düzenlenmiş hali yeniden onaya düşer. Gönderilen bültenler `content/newsletter-log.json`'a yazılır (aynı haber ikinci kez gitmez, günde en fazla bir bülten); `BULTEN_KAPALI=1` gönderimi durdurur. Onay, panelden gelen bültenler için ikinci göz kontrolüdür: repoya push edebilen biri (çalınmış bir panel token'ı dahil) Production anahtarlarıyla her şeyi yapabilir, bu yüzden yazma yetkisi dar tutulur (yayın kontrol listesi §3).
-- Hız: saniyede en fazla 10 mail; her mailden sonra 100 ms beklenir. Bir gönderim Vercel'in 300 saniye sınırına sığmalı: SES'in yanıt süresine göre bu 850 ile 2.500 arası mail eder. Abone sayısı 800'ü geçmeden gönderimi bölmeyi planla. Aynı gün birden çok yarışma duyurusu aynı 300 saniyeyi paylaşır; yarıda kesilen bir gönderim yeniden denenmez.
+Kontrol edilenler:
 
-## Sıralama verisi
+- Her sayfanın iki dili de var.
+- Sayfalar, haberler, slaytlar, arayüz metinleri, site ayarları ve galeri panelin şemasına (`keystatic.config.ts`) uyuyor.
+- Her haberde iki dilde metin ve geçerli bir tarih var.
+- MDX'te yalnız yukarıdaki bileşenler var, ham HTML ya da kaçışsız `{` yok.
+- Slaytlar `lib/slides.ts` kurallarına uyuyor.
+- `messages/tr.json` ve `messages/en.json` aynı anahtarlara ve aynı yer tutuculara sahip.
+- Adı geçen her görsel ve belge gerçekten var, görseller 5 MB'ı geçmiyor.
 
-Sıralama sayfaları (`/siralamalar`) veriyi repodaki `data/rankings/` klasöründen okur: `meta.json` (WCA dışa aktarımının tarihi ve format sürümü) ve her etkinlik ile tür için bir dosya (`single/333.json` gibi; her satır `[ulusal sıra, WCA ID, isim, sonuç]`). Türkiye'yi temsil eden herkes listededir; sayfada sayfa başına 25, 50, 100 ya da 500 kişi gösterilir ve "Sıramı bul" isim ya da WCA ID ile arar.
+#### Panel commit'leri
 
-- Kaynak: WCA'nın resmi sonuç dışa aktarımı (Results Export v2, TSV). `pnpm data:rankings` son dışa aktarımın tarihine bakar; yeniyse zip'i (~378 MB) indirir, yalnızca `results` ve `persons` tablolarını açar ve dosyaları yazar. Tarih aynıysa hiçbir şey yapmaz.
-- Kural: WCA'nın ulusal sıralamasıyla aynı. Türkiye'yi temsil ederken alınan sonuçlar sayılır (vatandaşlığını sonradan değiştiren biri Türkiye dönemindeki sonuçlarıyla listededir), her kişinin etkinlik başına en iyi tekli ve ortalaması alınır, eşit sonuçlar aynı sırayı paylaşır.
-- Seçenekler: `--force` (tarih aynı olsa da işle), `--from-dir <klasör>` (açılmış bir dışa aktarımı kullan, indirme yok), `--out <klasör>` (başka bir klasöre yaz).
-- Koruma: format ana sürümü 2 değilse, bir tablo ya da sütun eksikse veya 100 ve üzeri satırlı bir sıralama %10'dan fazla küçülürse betik hiçbir dosyaya dokunmadan hata verir.
-- Günlük iş: `.github/workflows/daily-data.yml` her gün 06:00'da (TR) aynı komutu çalıştırır; veri değiştiyse `chore(data): update daily data - YYYY-MM-DD` commit'ini `main`'e atar ve bu normal bir Vercel deploy'u başlatır. Actions sekmesinden elle de çalıştırılabilir ("Run workflow").
+Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` mesajıyla commit'ler, silmede `chore(content): delete <yol>` yazar. Bu biçim `patches/@keystatic__core@0.6.9.patch` yamasından gelir. Keystatic'i yükseltirken yamayı yeni sürüm için yenile: `pnpm patch @keystatic/core@<sürüm>`.
 
-## Marka dosyaları
+</details>
 
-`public/brand/`: `logo-long.svg` / `.png` (yatay), `logo-mark.svg` / `.png` (logomark), `logo-long-inverted.svg` ve `logo-mark-inverted.svg` (koyu zemin). Kaynak: marka kiti (`speedcubingturkiye_logo`, brand-identity.pdf v1.0). Renkler `app/globals.css` içinde tanımlıdır: kırmızı `#E30A17`, siyah `#1A1A1A`. Kullanım kuralları `/medya` sayfasındadır. `public/og.png` tek OG görselidir.
+<details>
+<summary><b>Yapılandırma ve ortam değişkenleri</b></summary>
 
-Diğer statik dosyalar: `public/docs/` (tüzük PDF'leri: `tuzuk-tr.pdf`, `tuzuk-en.pdf`; yüklenince `/organizasyon/tuzuk` bağlantıları otomatik aktifleşir) ve `public/galeri/` (galeri fotoğrafları: panelin Galeri bölümünden yüklenir ve `content/gallery.json`'a yazılır; alt yazı ve açıklama isteğe bağlıdır; liste boşken yer tutucu kareler görünür), `public/images/news/` ve `public/images/slides/` (haber ve slayt fotoğrafları, panelden yüklenir).
+`site.config.ts` site adını, adresini ve iletişim adresini tutar. Panelden düzenlenen ayarlar ise şu dosyalarda:
 
-## Yayın
+- `content/site.json`: KVKK veri sorumlusu, sosyal kanallar (boş kanal sitede görünmez), yönetim listesi (`board`, `boardUpdatedAt`) ve `/organizasyon/belgeler` sayfasındaki belgeler
+- `content/gallery.json`: `/medya` galerisi
+- `messages/tr.json`, `messages/en.json`: arayüz metinleri
 
-- GitHub `main` → Vercel production; her PR → preview. Build, `prebuild` içerik kontrolü ve TypeScript ile kapı görevi görür; ayrı CI yok (GitHub Actions günlük sıralama verisini günceller ve onaylanan bültenleri gönderir, bkz. Sıralama verisi ve E-posta ve bülten).
-- Alan adları Vercel'de: `speedcubingturkiye.org` (canonical), `www` → apex, `speedcubingturkiye.com` → `.org` 301.
-- Cron: `vercel.json` içindeki `/api/cron/wca-check` günde bir çalışır (Hobby plan sınırı), yeni WCA yarışmalarını haber olarak commit'ler, abonelere duyuru maili gönderir ve 7 günü geçmiş onaysız adresleri siler. Yerelde: `curl -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/wca-check?dry=1"`.
-- Yayın öncesi: KVKK / çerez / görüntü bildirimi / güvenli ortam metinleri ekip onaylı; `content/site.json` doğru (veri sorumlusunun gerçek adı dahil); formlar canlıda denendi; `/haberler/rss.xml` ve `/en/…` sayfaları açılıyor.
+Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de hepsi Production'a tanımlı, `CONTACT_EMAIL` ve `MAIL_FROM` Preview'a da.
 
-### Geliştirme sunucusunda ilk istek
+| Değişken | Ne için |
+|---|---|
+| `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | Amazon SES anahtarı. IAM kullanıcısı (`speedcubingturkiye-web-ses`) yalnız `news@` adına gönderebilir ve yalnız `bulten` listesine erişir. |
+| `NEWSLETTER_SECRET` | Onay ve çıkış bağlantılarını şifreleyen anahtar, en az 32 karakter. Değişirse eski maillerdeki çıkış bağlantıları çalışmaz. |
+| `BULTEN_SECRET` | `/api/bulten/gonder` rotasının anahtarı. GitHub'da yalnız `bulten` ortamında durur. |
+| `BULTEN_KAPALI` | `1` ise elle bülten gönderimi kapanır. Değişiklik yeni deploy'la geçerli olur. |
+| `CONTACT_EMAIL` | Form mesajlarının gittiği adres (`info@speedcubingturkiye.org`) |
+| `MAIL_FROM` | Gönderen adres (`news@speedcubingturkiye.org`) |
+| `CRON_SECRET` | `/api/cron/wca-check` rotasının anahtarı |
+| `GITHUB_TOKEN`, `GITHUB_REPO` | Cron'un haber commit'lemesi için yalnız bu repoya yazabilen fine-grained token ve `owner/repo` |
+| `NEXT_PUBLIC_KEYSTATIC_REPO` | Panelin commit attığı repo (`owner/repo`) |
+| `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET`, `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | Panelin GitHub App bağlantısı. Değerleri Keystatic'in kurulum sihirbazı verir. |
 
-`pnpm dev` ile ilk açılışta seyrek olarak 500 görülebilir; bu, Turbopack'in sayfayı isteğe bağlı derlemesi sırasında ortaya çıkan geliştirme modu davranışıdır. 2026-09-26'da `pnpm build && pnpm start` ile soğuk başlangıçta eşzamanlı ilk isteklerle üç kez denendi ve üretim derlemesinde tekrarlamadı. Geliştirmede görürsen sayfayı yenilemen yeterlidir.
+Yerelde:
 
-Env vars: `.env.example`.
+- SES anahtarı yoksa mailler gönderilmez, onay bağlantısıyla birlikte konsola yazılır.
+- `NEWSLETTER_SECRET` yoksa geliştirmeye özel sabit bir anahtar kullanılır.
+- `next dev` abonelere hiçbir zaman toplu mail atmaz. Cron hep kuru çalışır (commit, mail ve silme yok), elle bülten rotası 503 döner.
+- `.env.local` dosyasında SES anahtarları varsa form, onay ve çıkış gerçek listeye yazar.
+
+</details>
+
+<details>
+<summary><b>E-posta ve bülten</b></summary>
+
+Bütün mailler Amazon SES'ten (`us-east-1`) `news@speedcubingturkiye.org` adresinden gider. Maillerde takip pikseli yok, başka sunucudan görsel yüklenmez.
+
+- **İletişim ve gönüllü formu:** Mesaj `info@` adresine gider. Konu `Speedcubing Türkiye: <konu>`, gönderen adı `<ad soyad> (form)` olur. "Yanıtla" formu dolduran kişiye yazar.
+- **Bülten kaydı:** Form kişiyi SES'teki `bulten` listesine onay bekleyen olarak yazar ve formun dilinde onay maili yollar. Aynı adrese 24 saatte en fazla bir onay maili gider. Onay bağlantısı (`/bulten/onay`) 7 gün geçerlidir ve kişiyi kendi dilinin konusuna (`tr` ya da `en`) abone eder. Onaylanmayan adresleri cron 7 gün sonra siler.
+- **Çıkış:** Her mailin altındaki bağlantı `/bulten/cikis` sayfasını açar. Gmail ve Apple Mail'in "Abonelikten çık" düğmesi `/api/bulten/cikis` üzerinden tek tıkla çıkarır. Bağlantılardaki token AES-256-GCM ile şifrelidir, adres linkte görünmez.
+- **Otomatik duyuru:** Cron yeni yarışmanın haberini commit'ledikten sonra onaylı abonelere kendi dillerinde gönderir, Türkçe kopyasını da `info@` adresine yollar.
+- **Elle bülten:** Panelde bir haberin "Bültenle gönder" kutusunu işaretleyip kaydet. `.github/workflows/bulten.yml` haberin dosyalarından bir özet (SHA-256) çıkarır, sitenin o hali yayına girene kadar bekler ve sonra `bulten` ortamında onay ister. Önizleme `/bulten/onizleme/<slug>` adresinde. Onaylanınca `/api/bulten/gonder` çağrılır. Haber bu arada değiştiyse gönderim reddedilir (409 `changed`) ve yeni hali tekrar onaya düşer. Gönderilen bültenler `content/newsletter-log.json` dosyasına yazılır: aynı haber iki kez gitmez, günde en fazla bir bülten gider. `BULTEN_KAPALI=1` gönderimi durdurur.
+
+Onay adımı, panelden gelen bültenler için ikinci bir göz. Repoya push edebilen biri (çalınmış bir panel token'ı da) Production anahtarlarıyla her şeyi yapabilir. Bu yüzden yazma yetkisini dar tut ([yayın kontrol listesi](docs/yayin-kontrol-listesi.md), §3).
+
+Gönderim hızı saniyede en fazla 10 mail. Bir gönderim Vercel'in 300 saniyelik sınırına sığmak zorunda. En kötü durumda bu, yaklaşık 850 mail demek. Abone sayısı 800'e yaklaşınca gönderimi bölmek gerekecek. Aynı gün açılan birkaç yarışmanın duyuruları aynı 300 saniyeyi paylaşır ve yarıda kalan gönderim yeniden denenmez.
+
+</details>
+
+<details>
+<summary><b>Sıralama verisi</b></summary>
+
+`/siralamalar` sayfaları veriyi repodaki `data/rankings/` klasöründen okur:
+
+- `meta.json`: dışa aktarımın tarihi ve format sürümü
+- etkinlik ve tür başına bir dosya, örneğin `single/333.json`. Her satır `[ulusal sıra, WCA ID, isim, sonuç]`.
+
+Türkiye'yi temsil etmiş herkes listededir. Sayfada 25, 50, 100 ya da 500 satır gösterilir, "Sıramı bul" isimle ya da WCA ID ile arar.
+
+`pnpm data:rankings` WCA'nın resmi sonuç dışa aktarımına (Results Export v2, TSV) bakar. Yeni bir dışa aktarım varsa zip'i (yaklaşık 378 MB) indirir, yalnız `results` ve `persons` tablolarını açar ve dosyaları yazar. Tarih aynıysa bir şey yapmaz.
+
+- Sıralama kuralı WCA'nın ulusal sıralamasıyla aynı. Türkiye'yi temsil ederken alınan sonuçlar sayılır. Vatandaşlığını sonradan değiştiren biri, Türkiye dönemindeki sonuçlarıyla listede kalır. Herkesin etkinlik başına en iyi tekli ve ortalaması alınır, eşit sonuçlar aynı sırayı paylaşır.
+- Seçenekler: `--force` (tarih aynı olsa da işle), `--from-dir <klasör>` (indirmeden, açılmış bir dışa aktarımı kullan), `--out <klasör>` (başka bir klasöre yaz).
+- Betik şu durumlarda hiçbir dosyaya dokunmadan hata verir: format sürümü 2 değilse, bir tablo ya da sütun eksikse ya da 100 ve üzeri satırlı bir sıralama %10'dan fazla küçülürse.
+- `.github/workflows/daily-data.yml` aynı komutu her gün 06:00'da (Türkiye saati) çalıştırır. Veri değiştiyse `main`'e `chore(data): update daily data - YYYY-MM-DD` commit'i atar, bu da normal bir deploy başlatır. Actions sekmesindeki "Run workflow" ile elle de çalışır.
+
+</details>
+
+<details>
+<summary><b>Marka dosyaları</b></summary>
+
+`public/brand/` klasöründe:
+
+- `logo-long.svg`, `logo-long.png`: yatay logo
+- `logo-mark.svg`, `logo-mark.png`: yalnız işaret
+- `logo-long-inverted.svg`, `logo-mark-inverted.svg`: koyu zemin için
+- `logo-mail.png`: maillerdeki logo
+
+Kaynak: marka kiti (brand-identity.pdf v1.0). Renkler `app/globals.css` dosyasında tanımlı: kırmızı `#E30A17`, siyah `#1A1A1A`. Kullanım kuralları sitenin `/medya` sayfasında. Paylaşım görseli `public/og.png`, `pnpm og` ile üretilir.
+
+Diğer statik dosyalar:
+
+- `public/docs/`: tüzük PDF'leri (`tuzuk-tr.pdf`, `tuzuk-en.pdf`). Yüklenince `/organizasyon/tuzuk` sayfasındaki bağlantılar otomatik açılır.
+- `public/galeri/`: galeri fotoğrafları. Panelin Galeri bölümünden yüklenir ve `content/gallery.json` dosyasına yazılır. Alt yazı ve açıklama isteğe bağlı. Liste boşken yer tutucu kareler görünür.
+- `public/images/news/`, `public/images/slides/`: haber ve slayt fotoğrafları, panelden yüklenir.
+
+</details>
+
+<details>
+<summary><b>Yayın</b></summary>
+
+- `main`'e her push Vercel'de production deploy'u, her pull request bir preview başlatır. Ayrı bir CI yok, kapı görevini build görür: içerik kontrolü ve TypeScript.
+- Alan adları Vercel'de. Asıl adres `speedcubingturkiye.org`. `www` ve `speedcubingturkiye.com` ona 308 ile yönlenir.
+- GitHub Actions'ta iki iş var: günlük sıralama verisi ve onaylanan bültenlerin gönderimi.
+- Cron (`vercel.json`) her gün 12:00'de (Türkiye saati) `/api/cron/wca-check` rotasını çağırır. Yeni WCA yarışmalarını haber olarak commit'ler, abonelere duyurur ve 7 günü geçmiş onaysız adresleri siler. Hobby planda cron günde bir kez çalışabiliyor.
+
+Cron'u yerelde kuru çalıştırmak için:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/wca-check?dry=1"
+```
+
+</details>
+
+## Belgeler
+
+- [Editör rehberi](docs/editor-kullanim.md): panelle içerik düzenleme
+- [Yayın kontrol listesi](docs/yayin-kontrol-listesi.md): kurulum adımları ve canlı testler
+- [Değişiklik günlüğü](CHANGELOG.md)
