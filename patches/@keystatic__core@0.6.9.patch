@@ -1,0 +1,22 @@
+diff --git a/dist/keystatic-core-ui.js b/dist/keystatic-core-ui.js
+index 2f8809b7a3292d0c35cd7617b561195fec49f083..992c98b54987cf6cf6ca423a9b19ef15daafbf62 100644
+--- a/dist/keystatic-core-ui.js
++++ b/dist/keystatic-core-ui.js
+@@ -1932,7 +1932,7 @@ function useUpsertItem(args) {
+             branch,
+             expectedHeadOid,
+             message: {
+-              headline: `Update ${args.basePath}`
++              headline: `chore(content): update ${args.basePath}`
+             },
+             fileChanges: {
+               additions: additions.map(addition_2 => ({
+@@ -2098,7 +2098,7 @@ function useDeleteItem(args) {
+               branchName: currentBranch
+             },
+             message: {
+-              headline: `Delete ${args.basePath}`
++              headline: `chore(content): delete ${args.basePath}`
+             },
+             expectedHeadOid: baseCommit,
+             fileChanges: {

@@ -12,7 +12,7 @@ cp .env.example .env.local   # anahtarları doldur (aşağıya bak); anahtarsız
 pnpm dev                     # http://localhost:3000
 ```
 
-`pnpm dev` sonrası `http://localhost:3000/keystatic` görsel editörü yerel modda açar (girişsiz; dosyaları diskte düzenler).
+`pnpm dev` sonrası `http://localhost:3000/keystatic` görsel editörü yerel modda açar (girişsiz; dosyaları diskte düzenler). Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` (silmede `chore(content): delete <yol>`) mesajıyla commit'ler; bu Conventional Commits biçimi `patches/@keystatic__core@0.6.9.patch` yamasından gelir. Keystatic yükseltilirken yamayı yeni sürüm için yenile (`pnpm patch @keystatic/core@<sürüm>`).
 
 Komutlar:
 

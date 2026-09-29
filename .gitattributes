@@ -1,0 +1,2 @@
+# pnpm applies these byte for byte: keep LF on every checkout, whatever core.autocrlf says.
+patches/*.patch text eol=lf
