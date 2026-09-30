@@ -274,10 +274,13 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 className={i === index ? 'col-start-1 row-start-1' : 'col-start-1 row-start-1 invisible'}
               >
                 <Photo slide={s} layout={layout} first={i === 0} mount={i <= reach + 1} />
-                {/* Adding .slide-in to the newly active slide's text restarts the entrance. The photo cuts in like the
-                    mark: the animation's transform would make this slide the containing block of an absolute photo
-                    (A/D/E from lg, G) for its 400ms, shrinking the photo to the slide's box until it snaps back. */}
-                <div className={`${TEXT[layout]}${i === index ? ' slide-in' : ''}`}>
+                {/* Adding .slide-in to the newly active slide's text restarts the entrance. Not on page load (reach is
+                    0 until the first slide change): the first slide's lead is the home page's LCP element, and the
+                    entrance's opacity 0 held LCP back by the animation (1383 ms against 932 ms, throttled phone).
+                    The photo cuts in like the mark: the animation's transform would make this slide the containing
+                    block of an absolute photo (A/D/E from lg, G) for its 400ms, shrinking the photo to the slide's box
+                    until it snaps back. */}
+                <div className={`${TEXT[layout]}${i === index && reach > 0 ? ' slide-in' : ''}`}>
                   <h2
                     className={[s.dataTitle && 'normal-case', TITLE, TITLE_LG[layout]].filter(Boolean).join(' ')}
                     style={{ '--fit': titleFit(s.title) } as React.CSSProperties}
