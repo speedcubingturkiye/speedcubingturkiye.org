@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { sendContact } from '@/app/actions/contact'
@@ -9,19 +9,19 @@ import { CONTACT_SUBJECTS, type ActionState, type ContactSubject } from '@/app/a
 import type { Locale } from '@/i18n/routing'
 
 const initial: ActionState = { ok: false }
+const failed: ActionState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
 const field = 'mt-1 w-full border border-line bg-bg px-3 py-2 text-fg focus:border-fg'
 
 export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Locale; presetSubject?: ContactSubject }) {
   const t = useTranslations('forms')
-  const [state, action, pending] = useActionState(sendContact, initial)
+  const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(sendContact, initial, failed, (s) => s.ok)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
-  const { onSubmit, statusRef } = useFormSubmit(action, pending, state.ok)
   const [subject, setSubject] = useState<ContactSubject>(presetSubject)
 
   return (
     <div className="grid max-w-xl gap-4">
       {state.ok ? null : (
-        <form action={action} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-4">
+        <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-4">
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
           {/* honeypot */}

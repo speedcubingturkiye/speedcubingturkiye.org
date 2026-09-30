@@ -1,6 +1,6 @@
 'use client'
 
-import { startTransition, useEffect, useRef, useState, type SubmitEvent } from 'react'
+import { useActionState, useEffect, useRef, useState, useTransition, type SubmitEvent } from 'react'
 
 /**
  * Time-trap start stamp read by `lib/form-guard.ts`'s `botCheck`. Set on the
@@ -24,24 +24,45 @@ export function useFormStartTime(succeeded: boolean) {
 }
 
 /**
- * Submit and result handling shared by the `useActionState` forms (ContactForm, NewsletterForm, UnsubscribeForm).
- * - React resets a `<form action>` after every result, errors included; dispatching from onSubmit keeps what was
- *   typed. The forms keep `action` on the <form> for submissions before hydration or without JS.
+ * Submit and result handling shared by the Server Action forms (ContactForm, NewsletterForm, UnsubscribeForm).
+ * - `formAction` goes on the <form> for submissions before hydration or without JS: React then renders the result
+ *   on the server (`useActionState`). With JS, onSubmit calls the action itself, so what was typed stays in the
+ *   form (React resets a `<form action>` after every result, errors included).
+ * - A call the action never answers (the Vercel firewall's rate limit answers 429, the network fails) resolves to
+ *   `failed` instead of throwing into Next's "This page couldn't load" screen.
  * - Returns early while pending, so a second Enter or click cannot submit twice.
  * - On success the form unmounts with its focused button, so focus moves to the status line (`statusRef`, tabIndex -1).
  */
-export function useFormSubmit(action: (data: FormData) => void, pending: boolean, succeeded: boolean) {
+export function useFormSubmit<S>(
+  serverAction: (prev: Awaited<S>, data: FormData) => Promise<S>,
+  initial: Awaited<S>,
+  failed: Awaited<S>,
+  isDone: (state: Awaited<S>) => boolean,
+) {
+  const [formState, formAction] = useActionState(serverAction, initial)
+  const [state, setState] = useState(formState)
+  const [pending, startSubmit] = useTransition()
   const statusRef = useRef<HTMLParagraphElement>(null)
+  const done = isDone(state)
 
   useEffect(() => {
-    if (succeeded) statusRef.current?.focus()
-  }, [succeeded])
+    if (done) statusRef.current?.focus()
+  }, [done])
 
   function onSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (pending) return
-    startTransition(() => action(new FormData(event.currentTarget)))
+    const data = new FormData(event.currentTarget)
+    startSubmit(async () => {
+      let next: Awaited<S>
+      try {
+        next = await serverAction(state, data)
+      } catch {
+        next = failed
+      }
+      startSubmit(() => setState(next))
+    })
   }
 
-  return { onSubmit, statusRef }
+  return { state, formAction, pending, done, onSubmit, statusRef }
 }

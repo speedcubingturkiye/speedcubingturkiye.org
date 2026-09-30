@@ -1,7 +1,6 @@
 // components/NewsletterForm.tsx
 'use client'
 
-import { useActionState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { subscribe } from '@/app/actions/newsletter'
@@ -10,6 +9,7 @@ import type { ActionState } from '@/app/actions/types'
 import type { Locale } from '@/i18n/routing'
 
 const initial: ActionState = { ok: false }
+const failed: ActionState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
 
 /**
  * Newsletter sign-up shared by NewsletterStrip (other pages) and FollowBand (home, on red).
@@ -18,9 +18,8 @@ const initial: ActionState = { ok: false }
  */
 export function NewsletterForm({ locale, tone = 'default' }: { locale: Locale; tone?: 'default' | 'on-brand' }) {
   const t = useTranslations('forms')
-  const [state, action, pending] = useActionState(subscribe, initial)
+  const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(subscribe, initial, failed, (s) => s.ok)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
-  const { onSubmit, statusRef } = useFormSubmit(action, pending, state.ok)
   const onBrand = tone === 'on-brand'
   // On red: solid white border (white/70 is 2.8:1, below the 3:1 a field boundary needs) and pure white text (white/90 on
   // #E30A17 is 4.1:1, below AA); focus shows the band's white outline instead of a border change.
@@ -32,7 +31,7 @@ export function NewsletterForm({ locale, tone = 'default' }: { locale: Locale; t
   return (
     <div className="grid gap-3">
       {state.ok ? null : (
-        <form action={action} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-3">
+        <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-3">
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
           {/* honeypot */}
