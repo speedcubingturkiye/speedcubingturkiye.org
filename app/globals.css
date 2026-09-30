@@ -130,9 +130,12 @@
   }
   /* Language switch (LangSwitch): the new language scrolls the reader's block back to its height, so the page lands
      --place-shift px away from where it was. The group jumps there at once and the old image moves by the same amount:
-     both images stay lined up on screen and only fade. The default morph would slide the page by the shift. */
+     both images stay lined up on screen and only fade. The default morph would slide the page by the shift.
+     animation-name only: the old and new images inherit the group's duration and fill mode, and the `animation`
+     shorthand reset them to 0s and none, so the fade never ran and the old image could stay on screen at full
+     opacity over the new page. */
   ::view-transition-group(page) {
-    animation: none;
+    animation-name: none;
   }
   ::view-transition-old(page) {
     translate: 0 var(--place-shift, 0px);
