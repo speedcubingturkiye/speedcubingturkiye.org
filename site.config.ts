@@ -1,7 +1,7 @@
 // site.config.ts: code settings stay here; the team-editable settings live in content/site.json (spec §3.6), edited
 // in the panel ("Site ayarları") and validated on import, so a bad value fails the build naming the file and field.
 import raw from '@/content/site.json'
-import { DOCS_PREFIX, EMAIL_RE, isRecord, text, WCA_ID_RE } from '@/lib/content-rules'
+import { EMAIL_RE, isRecord, text, WCA_ID_RE } from '@/lib/content-rules'
 
 export const CHANNEL_KEYS = ['instagram', 'discord', 'whatsapp', 'youtube', 'x', 'github', 'tiktok'] as const
 export type ChannelKey = (typeof CHANNEL_KEYS)[number]
@@ -13,7 +13,6 @@ export type SiteSettings = {
   dataController: { name: string; email: string }
   board: { name: string; role: { tr: string; en: string }; wcaId?: string }[]
   boardUpdatedAt: string
-  documents: { title: { tr: string; en: string }; date: string; file: string }[]
 }
 
 const FILE = 'content/site.json'
@@ -48,14 +47,7 @@ export function parseSiteSettings(raw: unknown): SiteSettings {
   })
   const boardUpdatedAt = text(raw.boardUpdatedAt)
   if (!DATE.test(boardUpdatedAt)) fail(`boardUpdatedAt YYYY-AA-GG biçiminde olmalı ("${boardUpdatedAt}")`)
-  const documents = (Array.isArray(raw.documents) ? raw.documents : []).map((d, i) => {
-    const at = `documents[${i + 1}]`
-    if (!isRecord(d) || !text(d.titleTr) || !text(d.titleEn)) fail(`${at} "titleTr" ve "titleEn" dolu olmalı`)
-    if (!DATE.test(text(d.date))) fail(`${at} "date" YYYY-AA-GG biçiminde olmalı ("${text(d.date)}")`)
-    if (!text(d.file).startsWith(DOCS_PREFIX)) fail(`${at} "file" "${DOCS_PREFIX}" ile başlamalı ("${text(d.file)}")`)
-    return { title: { tr: text(d.titleTr), en: text(d.titleEn) }, date: text(d.date), file: text(d.file) }
-  })
-  return { channels, dataController, board, boardUpdatedAt, documents }
+  return { channels, dataController, board, boardUpdatedAt }
 }
 
 export const site = {

@@ -190,7 +190,8 @@ Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` mesajıyla c
 
 `site.config.ts` site adını, adresini ve iletişim adresini tutar. Panelden düzenlenen ayarlar ise şu dosyalarda:
 
-- `content/site.json`: KVKK veri sorumlusu, sosyal kanallar (boş kanal sitede görünmez), yönetim listesi (`board`, `boardUpdatedAt`) ve `/organizasyon/belgeler` sayfasındaki belgeler
+- `content/site.json`: KVKK veri sorumlusu, sosyal kanallar (boş kanal sitede görünmez), yönetim listesi (`board`, `boardUpdatedAt`)
+- `content/documents/<adres>.yaml`: `/organizasyon/belgeler` sayfasındaki belgeler (panelde Belgeler). PDF'ler `public/docs/<adres>/tr.pdf` ve `en.pdf`.
 - `content/gallery.json`: `/medya` galerisi
 - `messages/tr.json`, `messages/en.json`: arayüz metinleri
 
@@ -268,7 +269,7 @@ Kaynak: marka kiti (brand-identity.pdf v1.0). Renkler `app/globals.css` dosyası
 
 Diğer statik dosyalar:
 
-- `public/docs/`: tüzük PDF'leri (`tuzuk-tr.pdf`, `tuzuk-en.pdf`). Yüklenince `/organizasyon/tuzuk` sayfasındaki bağlantılar otomatik açılır.
+- `public/docs/<adres>/`: belgelerin PDF'leri (`tr.pdf`, `en.pdf`). Panelin Belgeler bölümünden yüklenir; Keystatic dosyayı belgenin adresine ve alanın adına göre adlandırır.
 - `public/galeri/`: galeri fotoğrafları. Panelin Galeri bölümünden yüklenir ve `content/gallery.json` dosyasına yazılır. Alt yazı ve açıklama isteğe bağlı. Liste boşken yer tutucu kareler görünür.
 - `public/images/news/`, `public/images/slides/`: haber ve slayt fotoğrafları, panelden yüklenir.
 

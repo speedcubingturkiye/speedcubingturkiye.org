@@ -54,11 +54,13 @@ Sayfalar (TR) ve Sayfalar (EN): her sayfa iki dilde ayrı kayıttır; ikisini de
 
 Metin düzenleyicide başlık (2. ve 3. düzey), kalın, italik, liste, tablo, bağlantı ve şu kutular var: Açılır kutu (SSS maddesi), Not kutusu (isteğe bağlı başlık ve dil), Veri sorumlusu (ad ya da e-posta), Çapa (başlığın üstüne konan sayfa içi bağlantı hedefi), Kelimenin dili ve Diğer dildeki sayfaya bağlantı (seçili metne uygulanır).
 
-## 5. Arayüz metinleri, site ayarları, galeri
+## 5. Arayüz metinleri, site ayarları, belgeler, galeri
 
 Arayüz metinleri (TR) ve (EN): menü, düğme, form ve hata metinleri. Süslü parantezli yer tutucuları (`{date}` gibi) silme ya da çevirme. Anahtar eklemek ya da silmek kod ister.
 
-Site ayarları: kanallar (boş bırakılan kanal sitede görünmez; adres `https://` ile başlar), veri sorumlusu (yayından önce gerçek ad soyad), yönetim listesi ve güncelleme tarihi, belgeler (PDF `public/docs/` klasörüne yüklenir, `/organizasyon/belgeler` sayfasında listelenir).
+Site ayarları: kanallar (boş bırakılan kanal sitede görünmez; adres `https://` ile başlar), veri sorumlusu (yayından önce gerçek ad soyad), yönetim listesi ve güncelleme tarihi.
+
+Belgeler: tüzük, yönetmelikler, politikalar ve mali raporlar; `/organizasyon/belgeler` sayfasında bölüm bölüm listelenir. Türkçe ve İngilizce başlık, bölüm, tarih ve Türkçe PDF zorunlu; numara (yalnız yönetmeliklerde, `04.2026.1` gibi), sürüm (`1.0` gibi) ve İngilizce PDF isteğe bağlı. Bir belge değişince yeni belge açma: var olan belgenin PDF'ini, tarihini, numarasını ya da sürümünü değiştir; adresi aynı kalır. Bu bölümü değiştirmeden önce taslak dalı aç ve onaya gönder.
 
 Galeri: `/medya` sayfasındaki fotoğraflar; alt yazı (TR/EN) ve fotoğraf açıklaması (TR/EN) isteğe bağlı. Her dil kendi açıklamasını gösterir; o dilde açıklama boşsa fotoğraf süs sayılır (ekran okuyucu atlar).
 

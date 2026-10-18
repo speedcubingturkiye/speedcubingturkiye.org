@@ -289,15 +289,6 @@ const siteSingleton = singleton({
       { label: 'Yönetim', itemLabel: (props) => props.fields.name.value || 'Üye' },
     ),
     boardUpdatedAt: fields.date({ label: 'Yönetim listesi güncelleme tarihi', validation: { isRequired: true } }),
-    documents: fields.array(
-      fields.object({
-        titleTr: fields.text({ label: 'Başlık (TR)', validation: { isRequired: true } }),
-        titleEn: fields.text({ label: 'Başlık (EN)', validation: { isRequired: true } }),
-        date: fields.date({ label: 'Tarih', validation: { isRequired: true } }),
-        file: fields.file({ label: 'Dosya (PDF)', directory: 'public/docs', publicPath: DOCS_PREFIX, validation: { isRequired: true } }),
-      }),
-      { label: 'Belgeler', description: 'Tüzük ve resmi belgeler; /organizasyon/belgeler sayfasında listelenir.', itemLabel: (props) => props.fields.titleTr.value || 'Belge' },
-    ),
   },
 })
 

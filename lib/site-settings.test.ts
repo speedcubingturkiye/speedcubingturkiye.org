@@ -7,7 +7,6 @@ const ok = {
   dataController: { name: 'Ad Soyad', email: 'a@b.org' },
   board: [{ name: 'Ad', roleTr: 'Başkan', roleEn: 'Chair', wcaId: '2019TEME01' }],
   boardUpdatedAt: '2026-09-25',
-  documents: [{ titleTr: 'Tüzük', titleEn: 'Bylaws', date: '2026-09-01', file: '/docs/tuzuk-tr.pdf' }],
 }
 
 describe('parseSiteSettings', () => {
@@ -17,7 +16,6 @@ describe('parseSiteSettings', () => {
       dataController: { name: 'Ad Soyad', email: 'a@b.org' },
       board: [{ name: 'Ad', role: { tr: 'Başkan', en: 'Chair' }, wcaId: '2019TEME01' }],
       boardUpdatedAt: '2026-09-25',
-      documents: [{ title: { tr: 'Tüzük', en: 'Bylaws' }, date: '2026-09-01', file: '/docs/tuzuk-tr.pdf' }],
     })
     expect(parseSiteSettings({ ...ok, board: [{ name: 'Ad', roleTr: 'Üye', roleEn: 'Member' }] }).board).toEqual([{ name: 'Ad', role: { tr: 'Üye', en: 'Member' } }])
   })
@@ -29,7 +27,6 @@ describe('parseSiteSettings', () => {
     expect(() => parseSiteSettings({ ...ok, boardUpdatedAt: '25.09.2026' })).toThrow('boardUpdatedAt YYYY-AA-GG')
     expect(() => parseSiteSettings({ ...ok, board: [{ name: 'A', roleTr: 'B', roleEn: 'C', wcaId: 'nope' }] })).toThrow('board[1] "wcaId"')
     expect(() => parseSiteSettings({ ...ok, board: [{ name: 'A', roleTr: 'B' }] })).toThrow('board[1] "roleTr" ve "roleEn"')
-    expect(() => parseSiteSettings({ ...ok, documents: [{ titleTr: 'T', titleEn: 'T', date: '2026-01-01', file: 'tuzuk.pdf' }] })).toThrow('documents[1] "file" "/docs/" ile başlamalı')
     expect(() => parseSiteSettings([])).toThrow('content/site.json: bir JSON nesnesi bekleniyor')
   })
 

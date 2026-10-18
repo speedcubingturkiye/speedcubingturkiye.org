@@ -175,9 +175,8 @@ Aşağıdakiler bu depoda **şu anda eksik veya boş**; yayından önce doldurul
 - [ ] `content/site.json` içindeki (panelde Site ayarları):
   - `channels` (şu an yalnız `instagram` dolu; kullanılmayacak kanallar boş kalabilir, kullanılacaklar doldurulmalı),
   - `board` (şu an **boş**: yönetim üyeleri eklenmeli, `boardUpdatedAt` de güncellenmeli),
-  - `documents` (şu an **boş**: varsa yayınlanacak belgeler PDF olarak eklenmeli; dosyalar `public/docs/` altına gider)
   alanları takımla birlikte dolduruldu (`pnpm tsx scripts/check-content.ts` geçmeli).
-- [ ] `public/docs/tuzuk-tr.pdf` ve `public/docs/tuzuk-en.pdf` **şu an repoda yok** (`public/docs/` içinde yalnızca `.gitkeep` var); tüzük PDF'lerinin ikisi de eklenmeli.
+- [x] Tüzük, yönetmelikler ve politikalar (TR ve EN PDF) panelin **Belgeler** bölümünde (`content/documents/`, PDF'ler `public/docs/<adres>/`); `/organizasyon/belgeler` sayfasında listelenir.
 - [ ] Boş kalan kanallar footer'da gizli kalıyor mu, canlıda görsel olarak doğrula (`activeChannels()` boş olanları filtreliyor; kod tarafında ek iş yok).
 
 Yukarıdaki beş madde (özellikle `dataController.name`) onaylanmadan/doldurulmadan devam etme.
