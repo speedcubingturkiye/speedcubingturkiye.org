@@ -1,6 +1,8 @@
 // lib/reader.test.ts: every news entry and every singleton in the repo passes the panel's schema (spec §7).
 // The reader validates data files, not MDX bodies; lib/content-check.ts covers the bodies.
 import { describe, expect, it } from 'vitest'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 import config, { PAGES, pageKey } from '@/keystatic.config'
 import { DATA_SINGLETONS } from '@/lib/content-check'
 import { SLUG_RE } from '@/lib/content-rules'
@@ -14,6 +16,17 @@ describe('keystatic reader over the repo', () => {
       expect(slug).toMatch(SLUG_RE)
       expect((await entry.tr()).trim()).not.toBe('')
       expect((await entry.en()).trim()).not.toBe('')
+    }
+  })
+
+  it('reads every document, each with its PDFs on disk', async () => {
+    const entries = await reader.collections.documents.all()
+    expect(entries.length).toBeGreaterThan(0)
+    for (const { slug, entry } of entries) {
+      expect(slug).toMatch(SLUG_RE)
+      for (const pdf of [entry.tr, entry.en]) {
+        if (pdf) expect(existsSync(path.join(process.cwd(), 'public', pdf)), pdf).toBe(true)
+      }
     }
   })
 

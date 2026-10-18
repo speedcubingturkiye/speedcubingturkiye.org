@@ -10,7 +10,7 @@ import { listGalleryImages } from '@/lib/gallery' // validates content/gallery.j
 import { checkMessages } from '@/lib/messages'
 import { reader, singletons } from '@/lib/news'
 import { getSlides } from '@/lib/slides' // validates content/home/slides.json on import (Turkish message)
-import { site } from '@/site.config' // validates content/site.json on import (Turkish message)
+import '@/site.config' // validates content/site.json on import (Turkish message)
 import trMessages from '@/messages/tr.json'
 import enMessages from '@/messages/en.json'
 
@@ -80,7 +80,7 @@ async function main() {
   // 4. UI strings (spec §5.4).
   errors.push(...checkMessages(trMessages, enMessages))
 
-  // 5. The JSON singletons through the panel schema; site documents and gallery photos on disk (spec §5.5, §5.6).
+  // 5. The JSON singletons through the panel schema; gallery photos on disk (spec §5.5, §5.6).
   for (const [key, file] of Object.entries(DATA_SINGLETONS)) {
     try {
       await singletons[key].readOrThrow({ resolveLinkedFiles: true })
@@ -88,16 +88,27 @@ async function main() {
       errors.push(readerErrorTr(e, file))
     }
   }
-  for (const d of site.documents) checkAsset(`content/site.json (belge "${d.title.tr}")`, d.file, false)
   const gallery = listGalleryImages('tr')
   for (const g of gallery) checkAsset('content/gallery.json', g.src)
+
+  // 6. Documents (content/documents/<slug>.yaml): the panel schema and the PDFs on disk.
+  const docSlugs = await reader.collections.documents.list()
+  for (const slug of docSlugs) {
+    const file = `content/documents/${slug}.yaml`
+    const doc = await reader.collections.documents.readOrThrow(slug).catch((e: unknown) => {
+      errors.push(readerErrorTr(e, file))
+      return null
+    })
+    if (!doc) continue
+    for (const pdf of [doc.tr, doc.en]) if (pdf) checkAsset(file, pdf, false)
+  }
 
   if (errors.length > 0) {
     console.error('check-content: içerik hataları\n' + errors.map((e) => `  ${e}`).join('\n'))
     process.exit(1)
   }
   console.log(
-    `check-content: ${tr.size} sayfa (TR/EN), ${slugs.length} haber, ${slides.length} slayt, ${gallery.length} galeri fotoğrafı, ${site.documents.length} belge; arayüz metinleri eşleşiyor.`,
+    `check-content: ${tr.size} sayfa (TR/EN), ${slugs.length} haber, ${slides.length} slayt, ${gallery.length} galeri fotoğrafı, ${docSlugs.length} belge; arayüz metinleri eşleşiyor.`,
   )
 }
 
