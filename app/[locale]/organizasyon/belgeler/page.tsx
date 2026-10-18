@@ -40,7 +40,7 @@ function DocumentRow({ doc, locale, version, otherPdf, turkishOnly }: { doc: Sit
         {!own && (
           <span className="t-label ml-2 border border-line pt-[3px] pr-2 pb-px pl-[calc(0.5rem+0.08em)] text-fg-2">
             <span aria-hidden="true">TR</span>
-            <span className="sr-only">{turkishOnly}</span>
+            <span className="sr-only normal-case">{turkishOnly}</span>
           </span>
         )}
       </span>
@@ -55,7 +55,7 @@ function DocumentRow({ doc, locale, version, otherPdf, turkishOnly }: { doc: Sit
             className="t-label border border-line pt-[3px] pr-2 pb-px pl-[calc(0.5rem+0.08em)] text-brand-ink hover:border-brand-ink"
           >
             <span aria-hidden="true">{other.toUpperCase()}</span>
-            <span className="sr-only">{otherPdf}</span>
+            <span className="sr-only normal-case">{otherPdf}</span>
           </a>
         )}
       </span>
