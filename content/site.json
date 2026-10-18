@@ -9,7 +9,56 @@
     "name": "Kutay Temel",
     "email": "ktemel@speedcubingturkiye.org"
   },
-  "board": [],
+  "board": [
+    {
+      "name": "Muhammed Volkan Güngör",
+      "roleTr": "Yönetim Kurulu Başkanı",
+      "roleEn": "Board Chair",
+      "wcaId": "2019GUNG01"
+    },
+    {
+      "name": "Kutay Temel",
+      "roleTr": "Genel Koordinatör",
+      "roleEn": "Executive Director",
+      "wcaId": "2019TEME01"
+    },
+    {
+      "name": "Selim Büyükçolak",
+      "roleTr": "Yönetim Kurulu Başkan Yardımcısı",
+      "roleEn": "Board Vice-Chair",
+      "wcaId": "2022BUYU03"
+    },
+    {
+      "name": "Aysu Aydoğdu",
+      "roleTr": "Sekreter",
+      "roleEn": "Secretary",
+      "wcaId": "2024AYDO01"
+    },
+    {
+      "name": "Buğra Tosun",
+      "roleTr": "Sayman",
+      "roleEn": "Treasurer",
+      "wcaId": "2018TOSU01"
+    },
+    {
+      "name": "Alper Şakım",
+      "roleTr": "Denetim Kurulu Başkanı - Güvenlik Sorumlusu",
+      "roleEn": "Audit Board Chair - Safeguarding Officer",
+      "wcaId": "2018SAKI01"
+    },
+    {
+      "name": "Tuna Özsoy",
+      "roleTr": "Denetim Kurulu Üyesi - Yedek Güvenlik Sorumlusu",
+      "roleEn": "Audit Board Member - Deputy Safeguarding Officer",
+      "wcaId": "2014OZSO02"
+    },
+    {
+      "name": "Utku Yılmaz",
+      "roleTr": "Denetim Kurulu Üyesi",
+      "roleEn": "Audit Board Member",
+      "wcaId": "2018YILM06"
+    }
+  ],
   "boardUpdatedAt": "2026-09-25",
   "documents": []
 }
