@@ -19,7 +19,7 @@
 - İlk kez yarışacaklar ve veliler için rehberler, sık sorulan sorular.
 - Haberler ve RSS. Türkiye'de yeni bir yarışma açılınca duyurusu otomatik yazılır.
 - Çift onaylı e-posta bülteni.
-- Organizasyon sayfaları: tüzük, belgeler, ilanlar, gönüllülük, güvenli ortam.
+- Organizasyon sayfaları: tek sayfada belgeler (tüzük, yönetmelikler, politikalar, ilanlar), gönüllülük, güvenli ortam.
 - Türkçe ve İngilizce, açık ve koyu tema. Metinler tarayıcıdan, görsel editörle düzenlenir.
 
 ## Nasıl çalışır
@@ -130,7 +130,7 @@ bulten: false
 
 `tr.mdx` ve `en.mdx` yalnız metni içerir, başlarında ön bilgi (frontmatter) olmaz.
 
-- `category`: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/organizasyon/ilanlar` sayfasında da listelenir.
+- `category`: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/organizasyon/belgeler` sayfasında da listelenir.
 - `auto: true` yalnız cron'un yazdığı duyurularda olur ve "otomatik" rozeti gösterir.
 - Rota gerekmez. Haber `/haberler/<slug>` adresinde ve RSS'te (`/haberler/rss.xml`, `/en/haberler/rss.xml`) otomatik yayımlanır.
 

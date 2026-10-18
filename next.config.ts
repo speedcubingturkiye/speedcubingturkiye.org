@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
         destination: 'https://www.worldcubeassociation.org/competitions?region=Turkey',
         permanent: false, // 307
       },
+      // The bylaws and notices pages merged into the documents page (2026-10): old links land on their section.
+      // These run before the locale proxy, so the unprefixed, /tr and /en forms are all listed.
+      ...['tuzuk', 'ilanlar'].flatMap((page) => [
+        { source: `/organizasyon/${page}`, destination: `/organizasyon/belgeler#${page}`, permanent: true },
+        { source: `/tr/organizasyon/${page}`, destination: `/organizasyon/belgeler#${page}`, permanent: true },
+        { source: `/en/organizasyon/${page}`, destination: `/en/organizasyon/belgeler#${page}`, permanent: true },
+      ]),
     ]
   },
   async rewrites() {

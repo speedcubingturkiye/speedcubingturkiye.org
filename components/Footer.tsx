@@ -38,9 +38,7 @@ export async function Footer() {
       title: t('organization'),
       links: [
         ['/organizasyon', nav('about')],
-        ['/organizasyon/tuzuk', nav('bylaws')],
         ['/organizasyon/belgeler', nav('documents')],
-        ['/organizasyon/ilanlar', nav('announcements')],
         ['/organizasyon/guvenli-ortam', nav('safeguarding')],
       ],
     },

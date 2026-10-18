@@ -30,10 +30,10 @@ describe('keystatic reader over the repo', () => {
     }
   })
 
-  it('reads every singleton: the 12 pages in both languages and the data files the gate checks, nothing else', async () => {
+  it('reads every singleton: the 10 pages in both languages and the data files the gate checks, nothing else', async () => {
     const keys = Object.keys(config.singletons ?? {}) // typed optional: the config's singletons are a plain record
     const pages = PAGES.flatMap(([slug]) => [pageKey('tr', slug), pageKey('en', slug)])
-    expect([...keys].sort()).toEqual([...pages, ...Object.keys(DATA_SINGLETONS)].sort()) // 24 + 5 = 29
+    expect([...keys].sort()).toEqual([...pages, ...Object.keys(DATA_SINGLETONS)].sort()) // 20 + 5 = 25
     for (const key of keys) {
       const value = await singletons[key].readOrThrow({ resolveLinkedFiles: true })
       expect(value, key).toBeTruthy()

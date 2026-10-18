@@ -124,7 +124,6 @@ export const PAGES = [
   ['organizasyon', 'Hakkımızda'],
   ['organizasyon/goruntu-bildirimi', 'Görüntü bildirimi'],
   ['organizasyon/guvenli-ortam', 'Güvenli ortam'],
-  ['organizasyon/tuzuk', 'Tüzük'],
   ['yarismalar/ebeveynler-icin', 'Ebeveynler için'],
   ['yarismalar/ilk-yarismam', 'İlk yarışmam'],
   ['yarismalar/sss', 'SSS'],
@@ -388,7 +387,7 @@ export default config({
       },
     }),
   },
-  // A plain record: the 24 page keys are computed, and a literal-keyed object would reject them in `navigation`.
+  // A plain record: the 20 page keys are computed, and a literal-keyed object would reject them in `navigation`.
   singletons: <Record<string, Singleton<Record<string, ComponentSchema>>>>{
     slides: slidesSingleton,
     ...pageSingletons,
