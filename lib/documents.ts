@@ -1,4 +1,4 @@
-// lib/documents.ts: the documents page (/organizasyon/belgeler). Each document is content/documents/<slug>.yaml, read
+// lib/documents.ts: the documents page (/belgeler). Each document is content/documents/<slug>.yaml, read
 // through Keystatic's reader like the news; its PDFs are public/docs/<slug>/tr.pdf and en.pdf.
 import type { Locale } from '@/i18n/routing'
 import { DOC_SECTIONS, type DocSection } from '@/lib/content-rules'

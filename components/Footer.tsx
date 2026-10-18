@@ -31,15 +31,15 @@ export async function Footer() {
       links: [
         ['/haberler', nav('news')],
         ['/medya', nav('media')],
-        ['/organizasyon/gonullu-ol', nav('volunteer')],
+        ['/gonullu-ol', nav('volunteer')],
       ],
     },
     {
       title: t('organization'),
       links: [
-        ['/organizasyon', nav('about')],
-        ['/organizasyon/belgeler', nav('documents')],
-        ['/organizasyon/guvenli-ortam', nav('safeguarding')],
+        ['/hakkimizda', nav('about')],
+        ['/belgeler', nav('documents')],
+        ['/guvenli-ortam', nav('safeguarding')],
       ],
     },
   ]
@@ -47,7 +47,7 @@ export async function Footer() {
   const legal: [string, string][] = [
     ['/kvkk', nav('privacy')],
     ['/cerez-politikasi', nav('cookies')],
-    ['/organizasyon/goruntu-bildirimi', nav('filmingNotice')],
+    ['/goruntu-bildirimi', nav('filmingNotice')],
   ]
 
   const link = 'text-sm text-white/80 hover:text-white'

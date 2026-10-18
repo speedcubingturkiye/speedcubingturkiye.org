@@ -110,7 +110,7 @@ Dosya yolu adresi belirler: `content/tr/pages/yarismalar/sss.mdx`, `/yarismalar/
    Metin buraya. Başlık için `##`, liste için `-`, tablo için GFM tablosu.
    ```
 
-2. Rotayı ekle: `app/[locale]/kvkk/page.tsx` dosyasını `app/[locale]/<slug>/page.tsx` olarak kopyala ve `SLUG` sabitini değiştir. Sayfa `/yarismalar/*` ya da `/organizasyon/*` altındaysa yan menülü (`SectionNav`) bir örneği kopyala.
+2. Rotayı ekle: `app/[locale]/kvkk/page.tsx` dosyasını `app/[locale]/<slug>/page.tsx` olarak kopyala ve `SLUG` sabitini değiştir. Sayfa yarışmalar bölümündeyse (`/yarismalar/*`) ya da bir organizasyon sayfasıysa (kök adreste, `lib/nav.ts` içindeki `ORG_NAV` listesinde) yan menülü (`SectionNav`) bir örneği kopyala.
 3. Gerekirse `components/Footer.tsx` ve `app/sitemap.ts` dosyalarına bağlantı ekle.
 
 #### Haber eklemek
@@ -130,7 +130,7 @@ bulten: false
 
 `tr.mdx` ve `en.mdx` yalnız metni içerir, başlarında ön bilgi (frontmatter) olmaz.
 
-- `category`: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/organizasyon/belgeler` sayfasında da listelenir.
+- `category`: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/belgeler` sayfasında da listelenir.
 - `auto: true` yalnız cron'un yazdığı duyurularda olur ve "otomatik" rozeti gösterir.
 - Rota gerekmez. Haber `/haberler/<slug>` adresinde ve RSS'te (`/haberler/rss.xml`, `/en/haberler/rss.xml`) otomatik yayımlanır.
 
@@ -191,7 +191,7 @@ Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` mesajıyla c
 `site.config.ts` site adını, adresini ve iletişim adresini tutar. Panelden düzenlenen ayarlar ise şu dosyalarda:
 
 - `content/site.json`: KVKK veri sorumlusu, sosyal kanallar (boş kanal sitede görünmez), yönetim listesi (`board`, `boardUpdatedAt`)
-- `content/documents/<adres>.yaml`: `/organizasyon/belgeler` sayfasındaki belgeler (panelde Belgeler). PDF'ler `public/docs/<adres>/tr.pdf` ve `en.pdf`.
+- `content/documents/<adres>.yaml`: `/belgeler` sayfasındaki belgeler (panelde Belgeler). PDF'ler `public/docs/<adres>/tr.pdf` ve `en.pdf`.
 - `content/gallery.json`: `/medya` galerisi
 - `messages/tr.json`, `messages/en.json`: arayüz metinleri
 

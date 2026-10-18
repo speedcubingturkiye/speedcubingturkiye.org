@@ -171,13 +171,13 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" "https://speedcubingturkiye.org/
 
 Aşağıdakiler bu depoda **şu anda eksik veya boş**; yayından önce doldurulmalı/onaylanmalı:
 
-- [ ] KVKK, çerez, görüntü bildirimi ve güvenli ortam metinleri (`content/{tr,en}/pages/kvkk.mdx`, `cerez-politikasi.mdx`, `organizasyon/goruntu-bildirimi.mdx`, `organizasyon/guvenli-ortam.mdx`) takım tarafından okunup onaylandı. KVKK §3 (aktarım) e-postanın Google Workspace'te tutulduğunu yazar; sağlayıcı değişirse iki dilde de güncelle. Form mesajlarını 1 yıl sonra silmek (KVKK §2 saklama süresi) takımın işidir.
+- [ ] KVKK, çerez, görüntü bildirimi ve güvenli ortam metinleri (`content/{tr,en}/pages/kvkk.mdx`, `cerez-politikasi.mdx`, `goruntu-bildirimi.mdx`, `guvenli-ortam.mdx`) takım tarafından okunup onaylandı. KVKK §3 (aktarım) e-postanın Google Workspace'te tutulduğunu yazar; sağlayıcı değişirse iki dilde de güncelle. Form mesajlarını 1 yıl sonra silmek (KVKK §2 saklama süresi) takımın işidir.
 - [ ] **`content/site.json` → `dataController.name` EKSİK.** Şu anki değer (`Speedcubing Türkiye Topluluk Yönetimi`) bir kurul adı, kişi değil; topluluğun tüzel kişiliği yok ve KVKK md. 3(1)(ı) veri sorumlusunun gerçek ya da tüzel kişi olmasını istiyor (spec §2: "topluluk temsilcisi (gerçek kişi)", §9: bu gelmeden site açılamaz). Ekipten veri sorumlusu temsilcisinin **ad soyadını** al ve panelde Site ayarları → Veri sorumlusu → Ad soyad alanına (ya da dosyaya) yaz; KVKK sayfası (TR/EN) ve her sayfanın footer'ı bu alanı gösterir. `dataController.email` doğruysa aynen kalabilir.
 - [ ] `content/site.json` içindeki (panelde Site ayarları):
   - `channels` (şu an yalnız `instagram` dolu; kullanılmayacak kanallar boş kalabilir, kullanılacaklar doldurulmalı),
   - `board` (şu an **boş**: yönetim üyeleri eklenmeli, `boardUpdatedAt` de güncellenmeli),
   alanları takımla birlikte dolduruldu (`pnpm tsx scripts/check-content.ts` geçmeli).
-- [x] Tüzük, yönetmelikler ve politikalar (TR ve EN PDF) panelin **Belgeler** bölümünde (`content/documents/`, PDF'ler `public/docs/<adres>/`); `/organizasyon/belgeler` sayfasında listelenir.
+- [x] Tüzük, yönetmelikler ve politikalar (TR ve EN PDF) panelin **Belgeler** bölümünde (`content/documents/`, PDF'ler `public/docs/<adres>/`); `/belgeler` sayfasında listelenir.
 - [ ] Boş kalan kanallar footer'da gizli kalıyor mu, canlıda görsel olarak doğrula (`activeChannels()` boş olanları filtreliyor; kod tarafında ek iş yok).
 
 Yukarıdaki beş madde (özellikle `dataController.name`) onaylanmadan/doldurulmadan devam etme.

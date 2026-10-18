@@ -57,7 +57,7 @@ export const NEWS_CATEGORIES = [
   { label: 'İlan', value: 'ilan' },
 ] as const
 
-/** Sections of /organizasyon/belgeler, in page order, with their panel labels. */
+/** Sections of /belgeler, in page order, with their panel labels. */
 export const DOC_SECTIONS = [
   { label: 'Tüzük', value: 'tuzuk' },
   { label: 'Yönetmelik', value: 'yonetmelik' },

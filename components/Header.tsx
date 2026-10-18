@@ -7,14 +7,14 @@ import { LangSwitch } from '@/components/LangSwitch'
 import { Logo } from '@/components/Logo'
 import { MobileMenu } from '@/components/MobileMenu'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { isActivePath } from '@/lib/nav'
+import { isActiveNav } from '@/lib/nav'
 
 // spec §8 menu without Topluluk for now: its channels are in the footer and the home page's follow band
 const NAV = [
   { href: '/yarismalar', key: 'competitions' },
   { href: '/siralamalar', key: 'rankings' },
   { href: '/haberler', key: 'news' },
-  { href: '/organizasyon', key: 'organization' },
+  { href: '/hakkimizda', key: 'organization' },
 ] as const
 
 export function Header() {
@@ -22,7 +22,7 @@ export function Header() {
   const common = useTranslations('common')
   const pathname = usePathname()
   const items = NAV.map((n) => ({ href: n.href, label: t(n.key) }))
-  const isActive = (href: string) => isActivePath(pathname, href)
+  const isActive = (href: string) => isActiveNav(pathname, href)
 
   return (
     // Sticky, 64px: in-page anchors get scroll-margin-top in globals.css so they land below it (spec §4.1).

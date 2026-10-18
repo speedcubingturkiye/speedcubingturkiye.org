@@ -7,7 +7,7 @@ import { organizationSectionNav } from '@/lib/section-nav'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('forms')
-  return pageMeta(await getLocale(), '/organizasyon/gonullu-ol', { title: t('volunteerTitle'), description: t('volunteerDescription') })
+  return pageMeta(await getLocale(), '/gonullu-ol', { title: t('volunteerTitle'), description: t('volunteerDescription') })
 }
 
 export default async function VolunteerPage() {

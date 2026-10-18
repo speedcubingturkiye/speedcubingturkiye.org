@@ -60,7 +60,7 @@ Arayüz metinleri (TR) ve (EN): menü, düğme, form ve hata metinleri. Süslü 
 
 Site ayarları: kanallar (boş bırakılan kanal sitede görünmez; adres `https://` ile başlar), veri sorumlusu (yayından önce gerçek ad soyad), yönetim listesi ve güncelleme tarihi.
 
-Belgeler: tüzük, yönetmelikler, politikalar ve mali raporlar; `/organizasyon/belgeler` sayfasında bölüm bölüm listelenir. Türkçe ve İngilizce başlık, bölüm, tarih ve Türkçe PDF zorunlu; numara (yalnız yönetmeliklerde, `04.2026.1` gibi), sürüm (`1.0` gibi) ve İngilizce PDF isteğe bağlı. Bir belge değişince yeni belge açma: var olan belgenin PDF'ini, tarihini, numarasını ya da sürümünü değiştir; adresi aynı kalır. Bu bölümü değiştirmeden önce taslak dalı aç ve onaya gönder.
+Belgeler: tüzük, yönetmelikler, politikalar ve mali raporlar; `/belgeler` sayfasında bölüm bölüm listelenir. Türkçe ve İngilizce başlık, bölüm, tarih ve Türkçe PDF zorunlu; numara (yalnız yönetmeliklerde, `04.2026.1` gibi), sürüm (`1.0` gibi) ve İngilizce PDF isteğe bağlı. Bir belge değişince yeni belge açma: var olan belgenin PDF'ini, tarihini, numarasını ya da sürümünü değiştir; adresi aynı kalır. Bu bölümü değiştirmeden önce taslak dalı aç ve onaya gönder.
 
 Galeri: `/medya` sayfasındaki fotoğraflar; alt yazı (TR/EN) ve fotoğraf açıklaması (TR/EN) isteğe bağlı. Her dil kendi açıklamasını gösterir; o dilde açıklama boşsa fotoğraf süs sayılır (ekran okuyucu atlar).
 

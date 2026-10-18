@@ -7,7 +7,7 @@ import { formatDate } from '@/lib/wca/format'
 import { MdxPage } from '@/components/MdxPage'
 import { SectionNav } from '@/components/SectionNav'
 
-const SLUG = 'organizasyon'
+const SLUG = 'hakkimizda'
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale()

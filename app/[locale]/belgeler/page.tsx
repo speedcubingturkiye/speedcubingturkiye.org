@@ -10,7 +10,7 @@ import { organizationSectionNav } from '@/lib/section-nav'
 import { formatDate } from '@/lib/wca/format'
 import { SectionNav } from '@/components/SectionNav'
 
-// Section anchors. The old /organizasyon/tuzuk and /organizasyon/ilanlar redirect to #tuzuk and #ilanlar (next.config.ts).
+// Section anchors, linked from other pages (for example /guvenli-ortam links #politikalar).
 const ANCHOR: Record<DocSection, string> = { tuzuk: 'tuzuk', yonetmelik: 'yonetmelikler', politika: 'politikalar', mali: 'mali-raporlar' }
 const ROW = 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3'
 const LINK = 'font-semibold text-brand-ink underline underline-offset-2'
@@ -18,7 +18,7 @@ const LINK = 'font-semibold text-brand-ink underline underline-offset-2'
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale()
   const t = await getTranslations('legal')
-  return pageMeta(locale, '/organizasyon/belgeler', { title: t('documentsTitle'), description: t('documentsDescription') })
+  return pageMeta(locale, '/belgeler', { title: t('documentsTitle'), description: t('documentsDescription') })
 }
 
 /**

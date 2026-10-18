@@ -1,7 +1,7 @@
 // components/MobileMenu.tsx
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import { isActivePath } from '@/lib/nav'
+import { isActiveNav } from '@/lib/nav'
 
 type Props = { items: { href: string; label: string }[]; pathname: string }
 
@@ -17,7 +17,7 @@ type Props = { items: { href: string; label: string }[]; pathname: string }
 export function MobileMenu({ items, pathname }: Props) {
   const t = useTranslations('common')
   const locale = useLocale()
-  const isActive = (href: string) => isActivePath(pathname, href)
+  const isActive = (href: string) => isActiveNav(pathname, href)
   return (
     <details key={`${locale}${pathname}`} className="mobile-menu group">
       <summary className="inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center border border-line text-fg hover:border-fg [&::-webkit-details-marker]:hidden">

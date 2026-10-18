@@ -121,9 +121,9 @@ export const PAGES = [
   ['kvkk', 'KVKK'],
   ['cerez-politikasi', 'Çerez politikası'],
   ['medya', 'Medya'],
-  ['organizasyon', 'Hakkımızda'],
-  ['organizasyon/goruntu-bildirimi', 'Görüntü bildirimi'],
-  ['organizasyon/guvenli-ortam', 'Güvenli ortam'],
+  ['hakkimizda', 'Hakkımızda'],
+  ['goruntu-bildirimi', 'Görüntü bildirimi'],
+  ['guvenli-ortam', 'Güvenli ortam'],
   ['yarismalar/ebeveynler-icin', 'Ebeveynler için'],
   ['yarismalar/ilk-yarismam', 'İlk yarışmam'],
   ['yarismalar/sss', 'SSS'],
@@ -359,7 +359,7 @@ export default config({
         en: newsBody('Metin (EN)'),
       },
     }),
-    // content/documents/<slug>.yaml, listed on /organizasyon/belgeler. Keystatic names a collection's uploads after the
+    // content/documents/<slug>.yaml, listed on /belgeler. Keystatic names a collection's uploads after the
     // entry and the field, so the PDFs live at public/docs/<slug>/tr.pdf and en.pdf: the address changes only with the
     // slug, and saving one document never touches the others.
     documents: collection({
