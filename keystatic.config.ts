@@ -11,6 +11,7 @@ import { messagesSchema } from '@/lib/messages'
 import {
   ACTIONS_MAX,
   DOCS_PREFIX,
+  DOC_SECTIONS,
   EMAIL_RE,
   FOCUS_OPTIONS,
   GALLERY_PREFIX,
@@ -332,6 +333,7 @@ export default config({
       'Sayfalar (EN)': PAGES.map(([slug]) => pageKey('en', slug)),
       'Arayüz metinleri': ['messagesTr', 'messagesEn'],
       'Site ayarları': ['site'],
+      Belgeler: ['documents'],
       Galeri: ['gallery'],
     },
   },
@@ -365,6 +367,33 @@ export default config({
         }),
         tr: newsBody('Metin (TR)'),
         en: newsBody('Metin (EN)'),
+      },
+    }),
+    // content/documents/<slug>.yaml, listed on /organizasyon/belgeler. Keystatic names a collection's uploads after the
+    // entry and the field, so the PDFs live at public/docs/<slug>/tr.pdf and en.pdf: the address changes only with the
+    // slug, and saving one document never touches the others.
+    documents: collection({
+      label: 'Belgeler',
+      path: 'content/documents/*',
+      slugField: 'title',
+      format: { data: 'yaml' },
+      schema: {
+        title: fields.slug({
+          name: { label: 'Başlık (TR)', description: APPROVAL_NOTE, validation: { isRequired: true } },
+          slug: {
+            label: 'Adres',
+            description: "PDF'ler /docs/<adres>/tr.pdf ve en.pdf adresinde durur. Türkçe başlıktan kendiliğinden üretilir; yalnız küçük harf, rakam ve tire.",
+            generate: trSlug,
+            validation: { pattern: SLUG_PATTERN },
+          },
+        }),
+        titleEn: fields.text({ label: 'Başlık (EN)', validation: { isRequired: true } }),
+        section: fields.select({ label: 'Bölüm', options: DOC_SECTIONS, defaultValue: 'politika' }),
+        code: fields.text({ label: 'Numara', description: 'Yalnız yönetmeliklerde, 04.2026.1 gibi; başlığın önünde görünür.' }),
+        version: fields.text({ label: 'Sürüm', description: 'Örneğin 1.0; tarihin yanında "Sürüm 1.0" diye görünür. Boş bırakılabilir.' }),
+        date: fields.date({ label: 'Tarih', description: 'Kabul ya da son değişiklik tarihi.', validation: { isRequired: true } }),
+        tr: fields.file({ label: 'PDF (TR)', directory: 'public/docs', publicPath: DOCS_PREFIX, validation: { isRequired: true } }),
+        en: fields.file({ label: 'PDF (EN)', description: "Boş kalırsa İngilizce sayfa Türkçe PDF'i açar.", directory: 'public/docs', publicPath: DOCS_PREFIX }),
       },
     }),
   },
