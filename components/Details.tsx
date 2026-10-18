@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
-export function Details({ summary, children }: { summary: string; children: ReactNode }) {
+export function Details({ id, summary, children }: { id?: string; summary: string; children: ReactNode }) {
   return (
-    <details className="accordion my-3 border border-line bg-bg-2 px-4 py-3">
+    <details id={id} className="accordion my-3 border border-line bg-bg-2 px-4 py-3">
       <summary className="cursor-pointer font-semibold marker:text-brand">{summary}</summary>
       {/* The body grows on opening and shrinks on closing (accordion in globals.css) */}
       <div className="accordion-body">

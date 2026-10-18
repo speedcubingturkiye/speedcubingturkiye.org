@@ -8,9 +8,12 @@ import { documentSections, listDocuments, type SiteDocument } from '@/lib/docume
 import { pageMeta } from '@/lib/metadata'
 import { organizationSectionNav } from '@/lib/section-nav'
 import { formatDate } from '@/lib/wca/format'
+import { Details } from '@/components/Details'
+import { OpenDetailsFromHash } from '@/components/OpenDetailsFromHash'
 import { SectionNav } from '@/components/SectionNav'
 
-// Section anchors, linked from other pages (for example /guvenli-ortam links #politikalar).
+// Section anchors, linked from other pages (for example /guvenli-ortam links #politikalar). The boxes start closed, as on
+// the WCA's documents page; OpenDetailsFromHash opens the one a link names.
 const ANCHOR: Record<DocSection, string> = { tuzuk: 'tuzuk', yonetmelik: 'yonetmelikler', politika: 'politikalar', mali: 'mali-raporlar' }
 const ROW = 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3'
 const LINK = 'font-semibold text-brand-ink underline underline-offset-2'
@@ -68,6 +71,17 @@ export default async function Page() {
   const t = await getTranslations('legal')
   const [docs, notices] = await Promise.all([listDocuments(), listNews(locale, { category: 'ilan' })])
   const sections = documentSections(docs, locale)
+  const rows = (list: SiteDocument[]) =>
+    list.map((doc) => (
+      <DocumentRow
+        key={doc.slug}
+        doc={doc}
+        locale={locale}
+        version={doc.version ? t('documentsVersion', { version: doc.version }) : ''}
+        otherPdf={t('documentsOtherPdf')}
+        turkishOnly={t('documentsTurkishOnly')}
+      />
+    ))
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-10">
       <header className="mb-8">
@@ -76,41 +90,38 @@ export default async function Page() {
         <p className="mt-2 text-sm text-fg-2">{t('documentsLanguageNote')}</p>
       </header>
       <SectionNav items={await organizationSectionNav()} />
-      {sections.length === 0 && notices.length === 0 && <p className="mt-6 text-fg-2">{t('documentsEmpty')}</p>}
-      {sections.map(({ section, docs }) => (
-        <section key={section} id={ANCHOR[section]} className="mt-10">
-          <h2>{t(`documentsSections.${section}`)}</h2>
-          <ul className="mt-3 divide-y divide-line">
-            {docs.map((doc) => (
-              <DocumentRow
-                key={doc.slug}
-                doc={doc}
-                locale={locale}
-                version={doc.version ? t('documentsVersion', { version: doc.version }) : ''}
-                otherPdf={t('documentsOtherPdf')}
-                turkishOnly={t('documentsTurkishOnly')}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
-      {notices.length > 0 && (
-        <section id="ilanlar" className="mt-10">
-          <h2>{t('documentsSections.ilan')}</h2>
-          <ul className="mt-3 divide-y divide-line">
-            {notices.map(({ slug, frontmatter }) => (
-              <li key={slug} className={ROW}>
-                <Link href={`/haberler/${slug}`} className={LINK}>
-                  {frontmatter.title}
-                </Link>
-                <time dateTime={frontmatter.date} className="text-sm text-fg-2">
-                  {formatDate(frontmatter.date, locale)}
-                </time>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="mt-6">
+        {sections.length === 0 && notices.length === 0 && <p className="text-fg-2">{t('documentsEmpty')}</p>}
+        {sections.map(({ section, docs }) =>
+          section === 'tuzuk' ? (
+            // The bylaws stand alone at the top, framed like the boxes below: one row each, nothing to open.
+            <div key={section} id={ANCHOR.tuzuk} className="my-3 border border-line bg-bg-2 px-4">
+              <ul className="divide-y divide-line">{rows(docs)}</ul>
+            </div>
+          ) : (
+            <Details key={section} id={ANCHOR[section]} summary={`${t(`documentsSections.${section}`)} (${docs.length})`}>
+              <ul className="divide-y divide-line">{rows(docs)}</ul>
+            </Details>
+          ),
+        )}
+        {notices.length > 0 && (
+          <Details id="ilanlar" summary={`${t('documentsSections.ilan')} (${notices.length})`}>
+            <ul className="divide-y divide-line">
+              {notices.map(({ slug, frontmatter }) => (
+                <li key={slug} className={ROW}>
+                  <Link href={`/haberler/${slug}`} className={LINK}>
+                    {frontmatter.title}
+                  </Link>
+                  <time dateTime={frontmatter.date} className="text-sm text-fg-2">
+                    {formatDate(frontmatter.date, locale)}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          </Details>
+        )}
+      </div>
+      <OpenDetailsFromHash />
     </section>
   )
 }
