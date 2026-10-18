@@ -246,6 +246,15 @@ const slidesSingleton = singleton({
   },
 })
 
+// One member row, shared by the Yönetim Kurulu and Denetim Kurulu lists (site.config.ts parses both the same way).
+const boardMember = () =>
+  fields.object({
+    name: fields.text({ label: 'Ad soyad', validation: { isRequired: true } }),
+    roleTr: fields.text({ label: 'Görev (TR)', validation: { isRequired: true } }),
+    roleEn: fields.text({ label: 'Görev (EN)', validation: { isRequired: true } }),
+    wcaId: fields.text({ label: 'WCA ID (isteğe bağlı)', validation: { pattern: { regex: WCA_ID_RE, message: '2019TEME01 biçiminde' } } }),
+  })
+
 const siteSingleton = singleton({
   label: 'Site ayarları',
   path: 'content/site',
@@ -278,15 +287,16 @@ const siteSingleton = singleton({
       },
       { label: 'Veri sorumlusu (KVKK)' },
     ),
-    board: fields.array(
-      fields.object({
-        name: fields.text({ label: 'Ad soyad', validation: { isRequired: true } }),
-        roleTr: fields.text({ label: 'Görev (TR)', validation: { isRequired: true } }),
-        roleEn: fields.text({ label: 'Görev (EN)', validation: { isRequired: true } }),
-        wcaId: fields.text({ label: 'WCA ID (isteğe bağlı)', validation: { pattern: { regex: WCA_ID_RE, message: '2019TEME01 biçiminde' } } }),
-      }),
-      { label: 'Yönetim', itemLabel: (props) => props.fields.name.value || 'Üye' },
-    ),
+    board: fields.array(boardMember(), {
+      label: 'Yönetim Kurulu',
+      description: 'Görevi kısa yaz (Başkan, Sekreter...); kurulun adı sayfada başlık olarak görünür.',
+      itemLabel: (props) => props.fields.name.value || 'Üye',
+    }),
+    auditBoard: fields.array(boardMember(), {
+      label: 'Denetim Kurulu',
+      description: 'Görevi kısa yaz (Başkan, Güvenlik Sorumlusu; Üye...); kurulun adı sayfada başlık olarak görünür.',
+      itemLabel: (props) => props.fields.name.value || 'Üye',
+    }),
     boardUpdatedAt: fields.date({ label: 'Yönetim listesi güncelleme tarihi', validation: { isRequired: true } }),
   },
 })

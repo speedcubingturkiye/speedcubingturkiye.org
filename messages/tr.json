@@ -253,7 +253,8 @@
     "documentsVersion": "Sürüm {version}",
     "documentsOtherPdf": "İngilizce PDF",
     "documentsTurkishOnly": "Yalnız Türkçe",
-    "boardTitle": "Yönetim",
+    "boardTitle": "Yönetim Kurulu",
+    "auditBoardTitle": "Denetim Kurulu",
     "boardUpdated": "Liste güncelleme tarihi: {date}",
     "boardEmpty": "Yönetim listesi yakında burada.",
     "wcaDisclaimer": "Bu site World Cube Association'ın resmi sitesi değildir. Kayıt, sonuç ve sıralamalar WCA'da tutulur."

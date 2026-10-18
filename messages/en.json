@@ -254,6 +254,7 @@
     "documentsOtherPdf": "Turkish PDF",
     "documentsTurkishOnly": "Turkish only",
     "boardTitle": "Board",
+    "auditBoardTitle": "Audit Board",
     "boardUpdated": "List updated: {date}",
     "boardEmpty": "The board list will appear here soon.",
     "wcaDisclaimer": "This is not the official website of the World Cube Association. Registration, results and rankings live on the WCA."

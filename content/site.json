@@ -12,8 +12,8 @@
   "board": [
     {
       "name": "Muhammed Volkan Güngör",
-      "roleTr": "Yönetim Kurulu Başkanı",
-      "roleEn": "Board Chair",
+      "roleTr": "Başkan",
+      "roleEn": "Chair",
       "wcaId": "2019GUNG01"
     },
     {
@@ -24,8 +24,8 @@
     },
     {
       "name": "Selim Büyükçolak",
-      "roleTr": "Yönetim Kurulu Başkan Yardımcısı",
-      "roleEn": "Board Vice-Chair",
+      "roleTr": "Başkan Yardımcısı",
+      "roleEn": "Vice-Chair",
       "wcaId": "2022BUYU03"
     },
     {
@@ -39,23 +39,25 @@
       "roleTr": "Sayman",
       "roleEn": "Treasurer",
       "wcaId": "2018TOSU01"
-    },
+    }
+  ],
+  "auditBoard": [
     {
       "name": "Alper Şakım",
-      "roleTr": "Denetim Kurulu Başkanı - Güvenlik Sorumlusu",
-      "roleEn": "Audit Board Chair - Safeguarding Officer",
+      "roleTr": "Başkan, Güvenlik Sorumlusu",
+      "roleEn": "Chair, Safeguarding Officer",
       "wcaId": "2018SAKI01"
     },
     {
       "name": "Tuna Özsoy",
-      "roleTr": "Denetim Kurulu Üyesi - Yedek Güvenlik Sorumlusu",
-      "roleEn": "Audit Board Member - Deputy Safeguarding Officer",
+      "roleTr": "Üye, Yedek Güvenlik Sorumlusu",
+      "roleEn": "Member, Deputy Safeguarding Officer",
       "wcaId": "2014OZSO02"
     },
     {
       "name": "Utku Yılmaz",
-      "roleTr": "Denetim Kurulu Üyesi",
-      "roleEn": "Audit Board Member",
+      "roleTr": "Üye",
+      "roleEn": "Member",
       "wcaId": "2018YILM06"
     }
   ],

@@ -6,6 +6,7 @@ const ok = {
   channels: { instagram: 'https://instagram.com/x' },
   dataController: { name: 'Ad Soyad', email: 'a@b.org' },
   board: [{ name: 'Ad', roleTr: 'Başkan', roleEn: 'Chair', wcaId: '2019TEME01' }],
+  auditBoard: [{ name: 'Denetçi', roleTr: 'Üye', roleEn: 'Member' }],
   boardUpdatedAt: '2026-09-25',
 }
 
@@ -15,6 +16,7 @@ describe('parseSiteSettings', () => {
       channels: { instagram: 'https://instagram.com/x', discord: '', whatsapp: '', youtube: '', x: '', github: '', tiktok: '' },
       dataController: { name: 'Ad Soyad', email: 'a@b.org' },
       board: [{ name: 'Ad', role: { tr: 'Başkan', en: 'Chair' }, wcaId: '2019TEME01' }],
+      auditBoard: [{ name: 'Denetçi', role: { tr: 'Üye', en: 'Member' } }],
       boardUpdatedAt: '2026-09-25',
     })
     expect(parseSiteSettings({ ...ok, board: [{ name: 'Ad', roleTr: 'Üye', roleEn: 'Member' }] }).board).toEqual([{ name: 'Ad', role: { tr: 'Üye', en: 'Member' } }])
@@ -27,6 +29,7 @@ describe('parseSiteSettings', () => {
     expect(() => parseSiteSettings({ ...ok, boardUpdatedAt: '25.09.2026' })).toThrow('boardUpdatedAt YYYY-AA-GG')
     expect(() => parseSiteSettings({ ...ok, board: [{ name: 'A', roleTr: 'B', roleEn: 'C', wcaId: 'nope' }] })).toThrow('board[1] "wcaId"')
     expect(() => parseSiteSettings({ ...ok, board: [{ name: 'A', roleTr: 'B' }] })).toThrow('board[1] "roleTr" ve "roleEn"')
+    expect(() => parseSiteSettings({ ...ok, auditBoard: [{ name: '', roleTr: 'B', roleEn: 'C' }] })).toThrow('auditBoard[1] "name" boş olamaz')
     expect(() => parseSiteSettings([])).toThrow('content/site.json: bir JSON nesnesi bekleniyor')
   })
 

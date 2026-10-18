@@ -6,12 +6,17 @@ import { EMAIL_RE, isRecord, text, WCA_ID_RE } from '@/lib/content-rules'
 export const CHANNEL_KEYS = ['instagram', 'discord', 'whatsapp', 'youtube', 'x', 'github', 'tiktok'] as const
 export type ChannelKey = (typeof CHANNEL_KEYS)[number]
 
+export type BoardMember = { name: string; role: { tr: string; en: string }; wcaId?: string }
+
 export type SiteSettings = {
   /** empty string = channel hidden */
   channels: Record<ChannelKey, string>
   /** KVKK data controller; the name must be a real person before launch (docs/yayin-kontrol-listesi.md §10) */
   dataController: { name: string; email: string }
-  board: { name: string; role: { tr: string; en: string }; wcaId?: string }[]
+  /** Yönetim Kurulu (Tüzük Madde 6) */
+  board: BoardMember[]
+  /** Denetim Kurulu (Tüzük Madde 7) */
+  auditBoard: BoardMember[]
   boardUpdatedAt: string
 }
 
@@ -37,17 +42,23 @@ export function parseSiteSettings(raw: unknown): SiteSettings {
   const dataController = { name: text(dc.name), email: text(dc.email) }
   if (!dataController.name) fail('dataController.name boş olamaz')
   if (!EMAIL_RE.test(dataController.email)) fail(`dataController.email geçerli bir e-posta olmalı ("${dataController.email}")`)
-  const board = (Array.isArray(raw.board) ? raw.board : []).map((m, i) => {
-    const at = `board[${i + 1}]`
+  const board = boardMembers(raw.board, 'board')
+  const auditBoard = boardMembers(raw.auditBoard, 'auditBoard')
+  const boardUpdatedAt = text(raw.boardUpdatedAt)
+  if (!DATE.test(boardUpdatedAt)) fail(`boardUpdatedAt YYYY-AA-GG biçiminde olmalı ("${boardUpdatedAt}")`)
+  return { channels, dataController, board, auditBoard, boardUpdatedAt }
+}
+
+/** One board list from the panel ({ name, roleTr, roleEn, wcaId }[]); errors name the list and the 1-based row. */
+function boardMembers(list: unknown, key: string): BoardMember[] {
+  return (Array.isArray(list) ? list : []).map((m, i) => {
+    const at = `${key}[${i + 1}]`
     if (!isRecord(m) || !text(m.name)) fail(`${at} "name" boş olamaz`)
     if (!text(m.roleTr) || !text(m.roleEn)) fail(`${at} "roleTr" ve "roleEn" dolu olmalı`)
     const wcaId = text(m.wcaId)
     if (!WCA_ID_RE.test(wcaId)) fail(`${at} "wcaId" 2019TEME01 biçiminde olmalı ("${wcaId}")`)
     return { name: text(m.name), role: { tr: text(m.roleTr), en: text(m.roleEn) }, ...(wcaId ? { wcaId } : {}) }
   })
-  const boardUpdatedAt = text(raw.boardUpdatedAt)
-  if (!DATE.test(boardUpdatedAt)) fail(`boardUpdatedAt YYYY-AA-GG biçiminde olmalı ("${boardUpdatedAt}")`)
-  return { channels, dataController, board, boardUpdatedAt }
 }
 
 export const site = {
