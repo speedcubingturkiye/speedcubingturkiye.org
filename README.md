@@ -195,7 +195,7 @@ Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` mesajıyla c
 - `content/gallery.json`: `/medya` galerisi
 - `messages/tr.json`, `messages/en.json`: arayüz metinleri
 
-Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de hepsi Production'a tanımlı, `CONTACT_EMAIL` ve `MAIL_FROM` Preview'a da.
+Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de `SAFEGUARDING_EMAIL` dışında hepsi Production'a tanımlı, `CONTACT_EMAIL` ve `MAIL_FROM` Preview'a da.
 
 | Değişken | Ne için |
 |---|---|
@@ -204,6 +204,7 @@ Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de hepsi Prod
 | `BULTEN_SECRET` | `/api/bulten/gonder` rotasının anahtarı. GitHub'da yalnız `bulten` ortamında durur. |
 | `BULTEN_KAPALI` | `1` ise elle bülten gönderimi kapanır. Değişiklik yeni deploy'la geçerli olur. |
 | `CONTACT_EMAIL` | Form mesajlarının gittiği adres (`info@speedcubingturkiye.org`) |
+| `SAFEGUARDING_EMAIL` | İletişim formunda "Güvenlik" konusunun gittiği adres. Boşsa `guvenlik@speedcubingturkiye.org`; yerel testte kendi adresini yaz. |
 | `MAIL_FROM` | Gönderen adres (`news@speedcubingturkiye.org`) |
 | `CRON_SECRET` | `/api/cron/wca-check` rotasının anahtarı |
 | `GITHUB_TOKEN`, `GITHUB_REPO` | Cron'un haber commit'lemesi için yalnız bu repoya yazabilen fine-grained token ve `owner/repo` |

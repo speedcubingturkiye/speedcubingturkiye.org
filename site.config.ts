@@ -54,6 +54,9 @@ export const site = {
   name: 'Speedcubing Türkiye',
   url: 'https://speedcubingturkiye.org',
   contactEmail: process.env.CONTACT_EMAIL ?? 'info@speedcubingturkiye.org',
+  /** Safety reports from the contact form; only the Güvenlik Sorumlusu and the deputy read it (Güvenlik politikası 3).
+   *  `||`, not `??`: an empty SAFEGUARDING_EMAIL= in .env.local means the default too. */
+  safeguardingEmail: process.env.SAFEGUARDING_EMAIL || 'guvenlik@speedcubingturkiye.org',
   mailFrom: process.env.MAIL_FROM ?? 'news@speedcubingturkiye.org',
   ...parseSiteSettings(raw),
 }

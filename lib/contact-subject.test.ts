@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sendContact } from '@/app/actions/contact'
 import { CONTACT_SUBJECTS } from '@/app/actions/types'
-import { contactSubjectLine, TITLE_MAX } from '@/lib/contact-subject'
+import { contactRecipient, contactSubjectLine, TITLE_MAX } from '@/lib/contact-subject'
 import { sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 import tr from '@/messages/tr.json'
@@ -60,6 +60,13 @@ describe('contactSubjectLine', () => {
   })
 })
 
+describe('contactRecipient', () => {
+  it('sends safety reports to the safeguarding address and every other subject to the team', () => {
+    expect(contactRecipient('guvenlik')).toBe(site.safeguardingEmail)
+    for (const s of CONTACT_SUBJECTS.filter((x) => x !== 'guvenlik')) expect(contactRecipient(s)).toBe(site.contactEmail)
+  })
+})
+
 describe('sendContact', () => {
   const form =(fields: Record<string, string> = {}) => {
     const data = new FormData()
@@ -88,6 +95,11 @@ describe('sendContact', () => {
     await sendContact({ ok: false }, form({ locale: 'en', subject: 'medya' }))
     expect(vi.mocked(sendMail).mock.calls[0][0]).toMatchObject({ subject: 'Speedcubing Türkiye: Media / press' })
     expect(vi.mocked(sendMail).mock.calls[0][0].text).toContain('Konu: Media / press\nDil: en\n')
+  })
+
+  it('a safety report goes to the safeguarding address, not the team', async () => {
+    await sendContact({ ok: false }, form({ subject: 'guvenlik' }))
+    expect(vi.mocked(sendMail).mock.calls[0][0]).toMatchObject({ to: site.safeguardingEmail, subject: 'Speedcubing Türkiye: Güvenlik' })
   })
 
   it('"Diğer" with a title: the title is the subject and gets its own line under the subject label', async () => {

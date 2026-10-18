@@ -1,4 +1,4 @@
-// lib/contact-subject.ts: the subject line of the contact form's notification mail (docs/yayin-kontrol-listesi.md §7):
+// lib/contact-subject.ts: the recipient and the subject line of the contact form's notification mail (docs/yayin-kontrol-listesi.md §7):
 // "Speedcubing Türkiye: <label>", where the label is what the form's select shows, in the form's language. "Diğer" may
 // carry a title the writer chose, which then replaces the label. Pure, like lib/mail-render.ts: the action and the tests
 // read the same message files.
@@ -22,4 +22,10 @@ export function contactSubjectLine(subject: ContactSubject, rawTitle: string, lo
   // Cut by code points: a cut through an emoji would leave half a character behind.
   const title = [...rawTitle.trim().replace(/\s+/g, ' ')].slice(0, TITLE_MAX).join('').trimEnd()
   return { label, title, line: `${site.name}: ${title || label}` }
+}
+
+/** Where one submission goes: safety reports to the safeguarding address, which only the Güvenlik Sorumlusu and the
+ *  deputy read (Güvenlik politikası 3); every other subject to the team. */
+export function contactRecipient(subject: ContactSubject): string {
+  return subject === 'guvenlik' ? site.safeguardingEmail : site.contactEmail
 }

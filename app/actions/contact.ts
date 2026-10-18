@@ -1,9 +1,8 @@
 'use server'
 
-import { contactSubjectLine } from '@/lib/contact-subject'
+import { contactRecipient, contactSubjectLine } from '@/lib/contact-subject'
 import { botCheck } from '@/lib/form-guard'
 import { sendMail } from '@/lib/ses'
-import { site } from '@/site.config'
 import { CONTACT_SUBJECTS, EMAIL_RE, type ActionState, type ContactSubject } from '@/app/actions/types'
 
 export async function sendContact(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -39,6 +38,6 @@ export async function sendContact(_prev: ActionState, formData: FormData): Promi
     message,
   ].join('\n')
   // "<name> (form)" as the sender's name: a reply reads "Re: Speedcubing Türkiye: Genel", not the writer's own name.
-  const ok = await sendMail({ to: site.contactEmail, replyTo: email, fromName: `${name} (form)`, subject: heading.line, text })
+  const ok = await sendMail({ to: contactRecipient(subject), replyTo: email, fromName: `${name} (form)`, subject: heading.line, text })
   return ok ? { ok: true } : { ok: false, error: 'send_failed' }
 }
