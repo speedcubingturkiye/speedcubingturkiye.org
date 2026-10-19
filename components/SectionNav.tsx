@@ -20,9 +20,10 @@ export function SectionNav({ items, label }: { items: Item[]; label?: string }) 
   const navRef = useRef<HTMLElement>(null)
   const activeRef = useRef<HTMLAnchorElement>(null)
 
-  // The list scrolls back to the left on every navigation, which can leave the active tab
-  // off-screen on phones (e.g. Square-1 on /siralamalar/sq1/tekli). Re-centre it after mount
-  // and on each route change; scrollLeft only moves this container, never the page.
+  // A list rendered by the page scrolls back to the left on every navigation, which can leave the active tab
+  // off-screen on phones (e.g. Square-1 on /siralamalar/sq1/tekli). Centre it after mount and on each route change
+  // when it is cut off; a tab already in view stays where it is, so the row never moves under a tap (the Bilgi
+  // layout keeps its list mounted). scrollLeft only moves this container, never the page.
   useEffect(() => {
     const nav = navRef.current
     const active = activeRef.current
@@ -30,6 +31,7 @@ export function SectionNav({ items, label }: { items: Item[]; label?: string }) 
     // Rects, not offsetLeft: offsetLeft is measured from the offset parent, which includes the page gutter on wide screens
     const a = active.getBoundingClientRect()
     const n = nav.getBoundingClientRect()
+    if (a.left >= n.left && a.right <= n.right) return
     nav.scrollLeft += a.left - n.left - (n.width - a.width) / 2
   }, [pathname])
 

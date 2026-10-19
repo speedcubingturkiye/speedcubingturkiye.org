@@ -2,10 +2,8 @@ import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { site } from '@/site.config'
 import { pageMetadata } from '@/lib/content'
-import { organizationSectionNav } from '@/lib/section-nav'
 import { formatDate } from '@/lib/wca/format'
 import { MdxPage } from '@/components/MdxPage'
-import { SectionNav } from '@/components/SectionNav'
 
 const SLUG = 'hakkimizda'
 
@@ -24,7 +22,7 @@ export default async function Page() {
     { title: t('auditBoardTitle'), members: site.auditBoard },
   ].filter((b) => b.members.length > 0)
   return (
-    <MdxPage locale={locale} slug={SLUG} sectionNav={<SectionNav items={await organizationSectionNav()} />}>
+    <MdxPage locale={locale} slug={SLUG}>
       <section className="mt-10 border-t border-line pt-8">
         {boards.length === 0 && <p className="text-fg-2">{t('boardEmpty')}</p>}
         {boards.map(({ title, members }, i) => (

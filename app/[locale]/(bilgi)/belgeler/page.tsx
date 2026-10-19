@@ -6,11 +6,9 @@ import { listNews } from '@/lib/content'
 import type { DocSection } from '@/lib/content-rules'
 import { documentSections, listDocuments, type SiteDocument } from '@/lib/documents'
 import { pageMeta } from '@/lib/metadata'
-import { organizationSectionNav } from '@/lib/section-nav'
 import { formatDate } from '@/lib/wca/format'
 import { Details } from '@/components/Details'
 import { OpenDetailsFromHash } from '@/components/OpenDetailsFromHash'
-import { SectionNav } from '@/components/SectionNav'
 
 // Section anchors, linked from other pages (for example /guvenli-ortam links #politikalar). The boxes start closed, as on
 // the WCA's documents page; OpenDetailsFromHash opens the one a link names.
@@ -107,8 +105,7 @@ export default async function Page() {
         <p className="mt-3 text-lg text-fg-2">{t('documentsDescription')}</p>
         <p className="mt-2 text-sm text-fg-2">{t('documentsLanguageNote')}</p>
       </header>
-      <SectionNav items={await organizationSectionNav()} />
-      <div className="mt-6">
+      <div>
         {sections.length === 0 && notices.length === 0 && <p className="text-fg-2">{t('documentsEmpty')}</p>}
         {sections.map(({ section, docs }) =>
           section === 'tuzuk' ? (
