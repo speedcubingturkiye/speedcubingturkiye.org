@@ -39,8 +39,9 @@ export function MobileMenu({ items, pathname }: Props) {
               {items.map((item) =>
                 'items' in item ? (
                   // A group, as in the WCA's mobile menu: closed when the menu opens, a tap shows its pages indented under
-                  // it. A named group (group/sub): the menu's own <details> is an open `group` too.
-                  <details key={item.label} className="group/sub border-b border-line last:border-b-0">
+                  // it, growing open like the FAQ boxes (accordion in globals.css). A named group (group/sub): the menu's
+                  // own <details> is an open `group` too.
+                  <details key={item.label} className="accordion group/sub border-b border-line last:border-b-0">
                     <summary
                       data-active={item.active}
                       className="t-label flex cursor-pointer list-none items-center gap-1.5 pt-[13px] pb-[11px] text-fg data-[active=true]:text-brand-ink [&::-webkit-details-marker]:hidden"
@@ -50,17 +51,21 @@ export function MobileMenu({ items, pathname }: Props) {
                         <path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
                       </svg>
                     </summary>
-                    <div className="pb-2">
-                      {item.items.map((page) => (
-                        <Link
-                          key={page.href}
-                          href={page.href}
-                          aria-current={pathname === page.href ? 'page' : undefined}
-                          className="block py-2 pl-4 text-fg aria-[current=page]:font-semibold aria-[current=page]:text-brand-ink"
-                        >
-                          {page.label}
-                        </Link>
-                      ))}
+                    <div className="accordion-body">
+                      <div>
+                        <div className="pb-2">
+                          {item.items.map((page) => (
+                            <Link
+                              key={page.href}
+                              href={page.href}
+                              aria-current={pathname === page.href ? 'page' : undefined}
+                              className="block py-2 pl-4 text-fg aria-[current=page]:font-semibold aria-[current=page]:text-brand-ink"
+                            >
+                              {page.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </details>
                 ) : (
