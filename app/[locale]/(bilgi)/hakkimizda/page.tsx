@@ -31,21 +31,24 @@ export default async function Page() {
             <h2>{title}</h2>
             <ul className="mt-4 divide-y divide-line">
               {members.map((member) => (
-                <li key={member.name} className="flex flex-wrap items-baseline justify-between gap-2 py-3">
-                  <span>
-                    <span className="font-semibold">{member.name}</span>
-                    <span className="ml-2 text-fg-2">{member.role[locale]}</span>
-                  </span>
-                  {member.wcaId && (
+                <li key={member.name} className="py-3">
+                  {/* The name opens the WCA profile, plain like the competition names (CompetitionRow) */}
+                  {member.wcaId ? (
                     <a
                       href={`https://www.worldcubeassociation.org/persons/${member.wcaId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-brand-ink underline underline-offset-2"
+                      className="font-semibold hover:text-brand-ink"
                     >
-                      {tc('wcaProfile')} ({member.wcaId})
+                      {member.name}
+                      <span className="sr-only">
+                        , {tc('wcaProfile')} ({member.wcaId})
+                      </span>
                     </a>
+                  ) : (
+                    <span className="font-semibold">{member.name}</span>
                   )}
+                  <span className="ml-2 text-fg-2">{member.role[locale]}</span>
                 </li>
               ))}
             </ul>
