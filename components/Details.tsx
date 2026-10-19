@@ -1,9 +1,13 @@
 import type { ReactNode } from 'react'
 
-export function Details({ id, summary, children }: { id?: string; summary: string; children: ReactNode }) {
+export function Details({ id, summary, icon, children }: { id?: string; summary: string; icon?: ReactNode; children: ReactNode }) {
   return (
     <details id={id} className="accordion my-3 border border-line bg-bg-2 px-4 py-3">
-      <summary className="cursor-pointer font-semibold marker:text-brand">{summary}</summary>
+      {/* An icon, when given, takes the triangle's place */}
+      <summary className={icon ? 'cursor-pointer list-none font-semibold [&::-webkit-details-marker]:hidden' : 'cursor-pointer font-semibold marker:text-brand'}>
+        {icon}
+        {summary}
+      </summary>
       {/* The body grows on opening and shrinks on closing (accordion in globals.css) */}
       <div className="accordion-body">
         <div>
