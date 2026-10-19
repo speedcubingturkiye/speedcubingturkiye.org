@@ -95,7 +95,8 @@
   },
   "competitions": {
     "title": "Competitions",
-    "description": "WCA competitions in Türkiye: upcoming and past competitions, registration status and details.",
+    "description": "WCA competitions in Türkiye: upcoming and past, registration status and details.",
+    "source": "Competition details come from the WCA.",
     "upcoming": "Upcoming",
     "past": "Past",
     "noUpcoming": "No competition announced yet.",

@@ -34,7 +34,8 @@ export async function organizationSection(locale: Locale): Promise<SectionPage[]
 export async function competitionsSection(locale: Locale): Promise<SectionPage[]> {
   const [nav, competitions] = await Promise.all([getTranslations('nav'), getTranslations('competitions')])
   const headers: Record<(typeof COMPETITIONS_NAV)[number]['href'], Header | Promise<Header>> = {
-    '/yarismalar': { title: competitions('title'), lead: competitions('description'), note: '' },
+    // The calendar's note names its source, a line like the guides' last update, so the tabs sit level on all four
+    '/yarismalar': { title: competitions('title'), lead: competitions('description'), note: competitions('source') },
     '/yarismalar/ilk-yarismam': mdxHeader(locale, 'yarismalar/ilk-yarismam'),
     '/yarismalar/sss': mdxHeader(locale, 'yarismalar/sss'),
     '/yarismalar/ebeveynler-icin': mdxHeader(locale, 'yarismalar/ebeveynler-icin'),

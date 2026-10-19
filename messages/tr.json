@@ -96,6 +96,7 @@
   "competitions": {
     "title": "Yarışmalar",
     "description": "Türkiye'deki WCA yarışmaları: yaklaşan ve geçmiş yarışmalar, kayıt durumu ve detaylar.",
+    "source": "Yarışma bilgileri WCA'dan alınır.",
     "upcoming": "Yaklaşan",
     "past": "Geçmiş",
     "noUpcoming": "Şu an duyurulmuş yarışma yok.",
