@@ -6,11 +6,10 @@ import { Link, usePathname } from '@/i18n/navigation'
 import type { SectionPage } from '@/lib/section-nav'
 
 /**
- * A section's header and tabs (the Bilgi and Yarışmalar layouts), so nothing above the content moves when a tab opens
- * another page. Every page's title, lead and note sit in one grid cell: the cell takes the tallest, so the tabs under
- * it keep their place whichever page is open, and only the open page's text shows (the others hold the space, hidden
- * from everyone). From md the tabs are one row; below md they fold into a box naming the open page, which grows open
- * like the FAQ boxes (accordion in globals.css), instead of a row that scrolls sideways.
+ * A section's header and tabs (the Bilgi and Yarışmalar layouts): the open page's title, lead and note, then the tabs
+ * under them, in one frame for the whole section, so the title never moves from page to page and the tabs move only by
+ * the difference in the text above them. From md the tabs are one row; below md they fold into a box naming the open
+ * page, which grows open like the FAQ boxes (accordion in globals.css), instead of a row that scrolls sideways.
  */
 export function SectionHeader({ pages }: { pages: SectionPage[] }) {
   const t = useTranslations('nav')
@@ -18,24 +17,14 @@ export function SectionHeader({ pages }: { pages: SectionPage[] }) {
   const current = pages.find((page) => page.href === pathname)
   return (
     <>
-      <header className="grid">
-        {pages.map((page) =>
-          page === current ? (
-            <div key={page.href} className="col-start-1 row-start-1">
-              <h1>{page.title}</h1>
-              {/* max-w-3xl: a reading width in the calendar's wider frame */}
-              {page.lead && <p className="mt-3 max-w-3xl text-lg text-fg-2">{page.lead}</p>}
-              {page.note && <p className="mt-2 max-w-3xl text-sm text-fg-2">{page.note}</p>}
-            </div>
-          ) : (
-            <div key={page.href} aria-hidden="true" className="invisible col-start-1 row-start-1">
-              <p className="h1">{page.title}</p>
-              {page.lead && <p className="mt-3 max-w-3xl text-lg">{page.lead}</p>}
-              {page.note && <p className="mt-2 max-w-3xl text-sm">{page.note}</p>}
-            </div>
-          ),
-        )}
-      </header>
+      {current && (
+        <header>
+          <h1>{current.title}</h1>
+          {/* max-w-3xl: a reading width in the calendar's wider frame */}
+          {current.lead && <p className="mt-3 max-w-3xl text-lg text-fg-2">{current.lead}</p>}
+          {current.note && <p className="mt-2 max-w-3xl text-sm text-fg-2">{current.note}</p>}
+        </header>
+      )}
       <nav aria-label={t('sectionNav')} className="mt-8">
         <ul className="hidden flex-wrap gap-2 border-b border-line md:flex">
           {pages.map((page) => (

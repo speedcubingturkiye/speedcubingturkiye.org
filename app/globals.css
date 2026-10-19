@@ -70,10 +70,8 @@
     scroll-margin-top: 5rem;
   }
   /* Archivo wide caps (spec §3.2). text-transform follows the nearest lang, so i becomes İ in Turkish: an English
-     word on a TR page and a Turkish word on an EN page carry their own lang, and data titles are not uppercased (R8).
-     .h1: the h1's type on an element that is not a heading (the hidden titles that hold SectionHeader's height). */
+     word on a TR page and a Turkish word on an EN page carry their own lang, and data titles are not uppercased (R8). */
   h1,
-  .h1,
   h2,
   h3,
   h4 {
@@ -82,8 +80,7 @@
        overflowing. Our own words fit whole, down to 320px (the phone sizes below). */
     overflow-wrap: break-word;
   }
-  h1,
-  .h1 {
+  h1 {
     font-size: clamp(32px, 4.5vw, 56px);
     font-weight: 800;
     font-stretch: 125%;
@@ -100,8 +97,7 @@
   /* Phones (R7): smaller and slightly narrower, so the longest words we write (TR "BİLDİREBİLİRSİNİZ?", EN
      "PHOTOGRAPHY") fit a 320px column whole. From 640px the sizes above apply unchanged. */
   @media (width < 40rem) {
-    h1,
-    .h1 {
+    h1 {
       font-size: clamp(24px, 8.5vw, 32px);
       font-stretch: 120%;
     }
