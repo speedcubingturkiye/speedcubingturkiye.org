@@ -1,28 +1,33 @@
 // components/Header.tsx
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import { LangSwitch } from '@/components/LangSwitch'
 import { Logo } from '@/components/Logo'
-import { MobileMenu } from '@/components/MobileMenu'
+import { MobileMenu, type MenuItem } from '@/components/MobileMenu'
+import { NavDropdown } from '@/components/NavDropdown'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { isActiveNav } from '@/lib/nav'
-
-// spec §8 menu without Topluluk for now: its channels are in the footer and the home page's follow band
-const NAV = [
-  { href: '/yarismalar', key: 'competitions' },
-  { href: '/siralamalar', key: 'rankings' },
-  { href: '/haberler', key: 'news' },
-  { href: '/hakkimizda', key: 'organization' },
-] as const
+import { HEADER_NAV, isActiveItem } from '@/lib/nav'
 
 export function Header() {
   const t = useTranslations('nav')
   const common = useTranslations('common')
   const pathname = usePathname()
-  const items = NAV.map((n) => ({ href: n.href, label: t(n.key) }))
-  const isActive = (href: string) => isActiveNav(pathname, href)
+  // spec §8 menu without Topluluk for now: its channels are in the footer and the home page's follow band. Groups open a
+  // dropdown here (NavDropdown) and list their pages under the group's name in the mobile menu.
+  // One dropdown at a time: opening a group closes the other at once, so two lists never overlap. The open group is
+  // kept with the path it opened on, so any navigation closes it without an effect.
+  const [openGroup, setOpenGroup] = useState<{ label: string; path: string } | null>(null)
+  const openLabel = openGroup?.path === pathname ? openGroup.label : null
+  const setGroupOpen = (label: string, open: boolean) =>
+    setOpenGroup((current) => (open ? { label, path: pathname } : current?.label === label ? null : current))
+  const items: MenuItem[] = HEADER_NAV.map((item) =>
+    'items' in item
+      ? { label: t(item.key), active: isActiveItem(pathname, item), items: item.items.map((page) => ({ href: page.href, label: t(page.key) })) }
+      : { label: t(item.key), active: isActiveItem(pathname, item), href: item.href },
+  )
 
   return (
     // Sticky, 64px: in-page anchors get scroll-margin-top in globals.css so they land below it (spec §4.1).
@@ -47,17 +52,29 @@ export function Header() {
         {/* Desktop row from lg: the long logo, four items and the right cluster need 864px in TR and 810px in EN.
             Below lg the menu button carries the same links. */}
         <nav aria-label={t('mainNav')} className="hidden items-center gap-6 lg:flex">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item.href) ? 'page' : undefined}
-              // pt-2 pb-1: the 2px underline and the caps' missing descenders put the label 2px above the row's middle
-              className="t-label border-b-2 border-transparent pt-2 pb-1 text-fg-2 hover:text-fg aria-[current=page]:border-brand aria-[current=page]:text-fg"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {items.map((item) =>
+            'items' in item ? (
+              <NavDropdown
+                key={item.label}
+                label={item.label}
+                items={item.items}
+                active={item.active}
+                pathname={pathname}
+                open={openLabel === item.label}
+                onOpenChange={(open) => setGroupOpen(item.label, open)}
+              />
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={item.active ? 'page' : undefined}
+                // pt-2 pb-1: the 2px underline and the caps' missing descenders put the label 2px above the row's middle
+                className="t-label border-b-2 border-transparent pt-2 pb-1 text-fg-2 hover:text-fg aria-[current=page]:border-brand aria-[current=page]:text-fg"
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         {/* The language switch and the theme toggle stay in the bar at every width; below lg the menu button joins them */}

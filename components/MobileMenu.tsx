@@ -1,9 +1,11 @@
 // components/MobileMenu.tsx
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import { isActiveNav } from '@/lib/nav'
 
-type Props = { items: { href: string; label: string }[]; pathname: string }
+/** A header entry: a plain link, or a group whose pages the menu lists under its name (a dropdown on desktop). */
+export type MenuItem = { label: string; active: boolean } & ({ href: string } | { items: { href: string; label: string }[] })
+
+type Props = { items: MenuItem[]; pathname: string }
 
 /**
  * <details>-based dropdown, no JS dependency. Keyed on locale + pathname, so it remounts (closes) after any navigation,
@@ -17,7 +19,6 @@ type Props = { items: { href: string; label: string }[]; pathname: string }
 export function MobileMenu({ items, pathname }: Props) {
   const t = useTranslations('common')
   const locale = useLocale()
-  const isActive = (href: string) => isActiveNav(pathname, href)
   return (
     <details key={`${locale}${pathname}`} className="mobile-menu group">
       <summary className="inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center border border-line text-fg hover:border-fg [&::-webkit-details-marker]:hidden">
@@ -35,16 +36,44 @@ export function MobileMenu({ items, pathname }: Props) {
         <div className="mobile-menu-panel border-b border-line bg-bg">
           <div className="mx-auto max-w-6xl">
             <nav aria-label={t('menu')} className="px-4 py-2">
-              {items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={isActive(item.href) ? 'page' : undefined}
-                  className="t-label block border-b border-line pt-[13px] pb-[11px] text-fg last:border-b-0 aria-[current=page]:text-brand-ink"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {items.map((item) =>
+                'items' in item ? (
+                  // A group, as in the WCA's mobile menu: closed when the menu opens, a tap shows its pages indented under
+                  // it. A named group (group/sub): the menu's own <details> is an open `group` too.
+                  <details key={item.label} className="group/sub border-b border-line last:border-b-0">
+                    <summary
+                      data-active={item.active}
+                      className="t-label flex cursor-pointer list-none items-center gap-1.5 pt-[13px] pb-[11px] text-fg data-[active=true]:text-brand-ink [&::-webkit-details-marker]:hidden"
+                    >
+                      {item.label}
+                      <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" className="transition-transform group-open/sub:rotate-180">
+                        <path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+                    </summary>
+                    <div className="pb-2">
+                      {item.items.map((page) => (
+                        <Link
+                          key={page.href}
+                          href={page.href}
+                          aria-current={pathname === page.href ? 'page' : undefined}
+                          className="block py-2 pl-4 text-fg aria-[current=page]:font-semibold aria-[current=page]:text-brand-ink"
+                        >
+                          {page.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={item.active ? 'page' : undefined}
+                    className="t-label block border-b border-line pt-[13px] pb-[11px] text-fg last:border-b-0 aria-[current=page]:text-brand-ink"
+                  >
+                    {item.label}
+                  </Link>
+                ),
+              )}
             </nav>
           </div>
         </div>
