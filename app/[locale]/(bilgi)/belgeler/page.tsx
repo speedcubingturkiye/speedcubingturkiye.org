@@ -98,46 +98,40 @@ export default async function Page() {
     list.map((doc) => (
       <DocumentRow key={doc.slug} doc={doc} locale={locale} otherPdf={t('documentsOtherPdf')} turkishOnly={t('documentsTurkishOnly')} box={box} />
     ))
+  // The section layout draws the title, the lead and the language note (SectionHeader)
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-10">
-      <header className="mb-8">
-        <h1>{t('documentsTitle')}</h1>
-        <p className="mt-3 text-lg text-fg-2">{t('documentsDescription')}</p>
-        <p className="mt-2 text-sm text-fg-2">{t('documentsLanguageNote')}</p>
-      </header>
-      <div>
-        {sections.length === 0 && notices.length === 0 && <p className="text-fg-2">{t('documentsEmpty')}</p>}
-        {sections.map(({ section, docs }) =>
-          section === 'tuzuk' ? (
-            // The bylaws stand alone at the top, framed like the boxes below: one row each, nothing to open, and the
-            // whole box opens the PDF (the rows carry the box's padding, so their links cover it edge to edge).
-            <div key={section} id={ANCHOR.tuzuk} className="my-3 border border-line bg-bg-2 hover:border-brand-ink">
-              <ul className="divide-y divide-line">{rows(docs, true)}</ul>
-            </div>
-          ) : (
-            <Details key={section} id={ANCHOR[section]} icon={<ListIcon />} summary={`${t(`documentsSections.${section}`)} (${docs.length})`}>
-              <ul className="divide-y divide-line">{rows(docs)}</ul>
-            </Details>
-          ),
-        )}
-        {notices.length > 0 && (
-          <Details id="ilanlar" icon={<ListIcon />} summary={`${t('documentsSections.ilan')} (${notices.length})`}>
-            <ul className="divide-y divide-line">
-              {notices.map(({ slug, frontmatter }) => (
-                <li key={slug} className={ROW}>
-                  <Link href={`/haberler/${slug}`} className={LINK}>
-                    {frontmatter.title}
-                  </Link>
-                  <time dateTime={frontmatter.date} className="text-sm text-fg-2">
-                    {formatDate(frontmatter.date, locale)}
-                  </time>
-                </li>
-              ))}
-            </ul>
+    <>
+      {sections.length === 0 && notices.length === 0 && <p className="text-fg-2">{t('documentsEmpty')}</p>}
+      {sections.map(({ section, docs }) =>
+        section === 'tuzuk' ? (
+          // The bylaws stand alone at the top, framed like the boxes below: one row each, nothing to open, and the
+          // whole box opens the PDF (the rows carry the box's padding, so their links cover it edge to edge).
+          <div key={section} id={ANCHOR.tuzuk} className="my-3 border border-line bg-bg-2 hover:border-brand-ink">
+            <ul className="divide-y divide-line">{rows(docs, true)}</ul>
+          </div>
+        ) : (
+          <Details key={section} id={ANCHOR[section]} icon={<ListIcon />} summary={`${t(`documentsSections.${section}`)} (${docs.length})`}>
+            <ul className="divide-y divide-line">{rows(docs)}</ul>
           </Details>
-        )}
-      </div>
+        ),
+      )}
+      {notices.length > 0 && (
+        <Details id="ilanlar" icon={<ListIcon />} summary={`${t('documentsSections.ilan')} (${notices.length})`}>
+          <ul className="divide-y divide-line">
+            {notices.map(({ slug, frontmatter }) => (
+              <li key={slug} className={ROW}>
+                <Link href={`/haberler/${slug}`} className={LINK}>
+                  {frontmatter.title}
+                </Link>
+                <time dateTime={frontmatter.date} className="text-sm text-fg-2">
+                  {formatDate(frontmatter.date, locale)}
+                </time>
+              </li>
+            ))}
+          </ul>
+        </Details>
+      )}
       <OpenDetailsFromHash />
-    </section>
+    </>
   )
 }

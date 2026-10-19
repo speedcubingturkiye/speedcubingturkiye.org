@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { site } from '@/site.config'
 import { pageMetadata } from '@/lib/content'
 import { formatDate } from '@/lib/wca/format'
-import { MdxPage } from '@/components/MdxPage'
+import { MdxBody } from '@/components/MdxPage'
 
 const SLUG = 'hakkimizda'
 
@@ -22,7 +22,8 @@ export default async function Page() {
     { title: t('auditBoardTitle'), members: site.auditBoard },
   ].filter((b) => b.members.length > 0)
   return (
-    <MdxPage locale={locale} slug={SLUG}>
+    <>
+      <MdxBody locale={locale} slug={SLUG} />
       <section className="mt-10 border-t border-line pt-8">
         {boards.length === 0 && <p className="text-fg-2">{t('boardEmpty')}</p>}
         {boards.map(({ title, members }, i) => (
@@ -52,6 +53,6 @@ export default async function Page() {
         ))}
         <p className="mt-4 text-sm text-fg-2">{t('boardUpdated', { date: formatDate(site.boardUpdatedAt, locale) })}</p>
       </section>
-    </MdxPage>
+    </>
   )
 }

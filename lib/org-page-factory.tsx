@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getLocale } from 'next-intl/server'
 import { pageMetadata } from '@/lib/content'
-import { MdxPage } from '@/components/MdxPage'
+import { MdxBody } from '@/components/MdxPage'
 
 export function createOrgPageFactory(slug: string) {
   async function generateMetadata(): Promise<Metadata> {
@@ -10,7 +10,8 @@ export function createOrgPageFactory(slug: string) {
 
   async function Page() {
     const locale = await getLocale()
-    return <MdxPage locale={locale} slug={slug} />
+    // The section layout draws the title, the lead and the last update (SectionHeader)
+    return <MdxBody locale={locale} slug={slug} />
   }
 
   return { generateMetadata, Page }
