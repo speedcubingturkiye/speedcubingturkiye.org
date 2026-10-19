@@ -390,7 +390,6 @@ export default config({
         titleEn: fields.text({ label: 'Başlık (EN)', validation: { isRequired: true } }),
         section: fields.select({ label: 'Bölüm', options: DOC_SECTIONS, defaultValue: 'politika' }),
         code: fields.text({ label: 'Numara', description: 'Yalnız yönetmeliklerde, 04.2026.1 gibi; başlığın önünde görünür.' }),
-        version: fields.text({ label: 'Sürüm', description: 'Örneğin 1.0; tarihin yanında "Sürüm 1.0" diye görünür. Boş bırakılabilir.' }),
         date: fields.date({ label: 'Tarih', description: 'Kabul ya da son değişiklik tarihi.', validation: { isRequired: true } }),
         tr: fields.file({ label: 'PDF (TR)', directory: 'public/docs', publicPath: DOCS_PREFIX, validation: { isRequired: true } }),
         en: fields.file({ label: 'PDF (EN)', description: "Boş kalırsa İngilizce sayfa Türkçe PDF'i açar.", directory: 'public/docs', publicPath: DOCS_PREFIX }),

@@ -25,19 +25,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * One document. The title opens the PDF in the page's language, or the Turkish one when there is no English file
- * (marked "TR"). The small label opens the other language's PDF when both exist.
+ * One document. The title, with the motion number in front as on the WCA's documents page ("01.2025.1 - Spirit"), opens
+ * the PDF in the page's language, or the Turkish one when there is no English file (marked "TR"). The small label opens
+ * the other language's PDF when both exist. Stretched (the bylaws box): the title's link covers the whole row, and the
+ * label sits above it.
  */
-function DocumentRow({ doc, locale, version, otherPdf, turkishOnly }: { doc: SiteDocument; locale: Locale; version: string; otherPdf: string; turkishOnly: string }) {
+function DocumentRow({ doc, locale, otherPdf, turkishOnly, stretched = false }: { doc: SiteDocument; locale: Locale; otherPdf: string; turkishOnly: string; stretched?: boolean }) {
   const own = doc.file[locale]
   const other: Locale = locale === 'tr' ? 'en' : 'tr'
   const otherFile = own ? doc.file[other] : null
   return (
-    <li className={ROW}>
+    <li className={stretched ? `${ROW} relative px-4` : ROW}>
       <span>
-        {doc.code && <span className="mr-2 text-sm text-fg-2">{doc.code}</span>}
-        <a href={own ?? doc.file.tr} hrefLang={own ? locale : 'tr'} type="application/pdf" className={LINK}>
-          {doc.title[locale]}
+        <a href={own ?? doc.file.tr} hrefLang={own ? locale : 'tr'} type="application/pdf" className={stretched ? `${LINK} after:absolute after:inset-0` : LINK}>
+          {doc.code ? `${doc.code} - ${doc.title[locale]}` : doc.title[locale]}
           <span className="sr-only">, PDF</span>
         </a>
         {!own && (
@@ -48,14 +49,13 @@ function DocumentRow({ doc, locale, version, otherPdf, turkishOnly }: { doc: Sit
         )}
       </span>
       <span className="flex items-baseline gap-3 text-sm text-fg-2">
-        {version && <span>{version}</span>}
         <time dateTime={doc.date}>{formatDate(doc.date, locale)}</time>
         {otherFile && (
           <a
             href={otherFile}
             hrefLang={other}
             type="application/pdf"
-            className="t-label border border-line pt-[3px] pr-2 pb-px pl-[calc(0.5rem+0.08em)] text-brand-ink hover:border-brand-ink"
+            className="t-label relative z-10 border border-line pt-[3px] pr-2 pb-px pl-[calc(0.5rem+0.08em)] text-brand-ink hover:border-brand-ink"
           >
             <span aria-hidden="true">{other.toUpperCase()}</span>
             <span className="sr-only normal-case">{otherPdf}</span>
@@ -71,15 +71,15 @@ export default async function Page() {
   const t = await getTranslations('legal')
   const [docs, notices] = await Promise.all([listDocuments(), listNews(locale, { category: 'ilan' })])
   const sections = documentSections(docs, locale)
-  const rows = (list: SiteDocument[]) =>
+  const rows = (list: SiteDocument[], stretched = false) =>
     list.map((doc) => (
       <DocumentRow
         key={doc.slug}
         doc={doc}
         locale={locale}
-        version={doc.version ? t('documentsVersion', { version: doc.version }) : ''}
         otherPdf={t('documentsOtherPdf')}
         turkishOnly={t('documentsTurkishOnly')}
+        stretched={stretched}
       />
     ))
   return (
@@ -94,9 +94,10 @@ export default async function Page() {
         {sections.length === 0 && notices.length === 0 && <p className="text-fg-2">{t('documentsEmpty')}</p>}
         {sections.map(({ section, docs }) =>
           section === 'tuzuk' ? (
-            // The bylaws stand alone at the top, framed like the boxes below: one row each, nothing to open.
-            <div key={section} id={ANCHOR.tuzuk} className="my-3 border border-line bg-bg-2 px-4">
-              <ul className="divide-y divide-line">{rows(docs)}</ul>
+            // The bylaws stand alone at the top, framed like the boxes below: one row each, nothing to open, and the
+            // whole box opens the PDF (the rows carry the box's padding, so their links cover it edge to edge).
+            <div key={section} id={ANCHOR.tuzuk} className="my-3 border border-line bg-bg-2 hover:border-brand-ink">
+              <ul className="divide-y divide-line">{rows(docs, true)}</ul>
             </div>
           ) : (
             <Details key={section} id={ANCHOR[section]} summary={`${t(`documentsSections.${section}`)} (${docs.length})`}>

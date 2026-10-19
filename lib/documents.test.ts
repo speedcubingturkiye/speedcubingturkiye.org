@@ -6,7 +6,6 @@ const doc = (over: Partial<SiteDocument>): SiteDocument => ({
   slug: 'x',
   section: 'politika',
   code: '',
-  version: '',
   title: { tr: 'X', en: 'X' },
   date: '2026-10-10',
   file: { tr: '/docs/x/tr.pdf', en: null },

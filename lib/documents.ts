@@ -9,8 +9,6 @@ export type SiteDocument = {
   section: DocSection
   /** motion number such as 04.2026.1; '' when none */
   code: string
-  /** such as 1.0; '' when none */
-  version: string
   title: Record<Locale, string>
   date: string
   /** the English PDF is optional; the Turkish text prevails (Tüzük 1.5) */
@@ -23,7 +21,6 @@ export async function listDocuments(): Promise<SiteDocument[]> {
     slug,
     section: entry.section,
     code: entry.code,
-    version: entry.version,
     title: { tr: entry.title, en: entry.titleEn },
     date: entry.date,
     file: { tr: entry.tr, en: entry.en },
