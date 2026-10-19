@@ -81,11 +81,22 @@
     overflow-wrap: break-word;
   }
   h1 {
-    font-size: clamp(32px, 4.5vw, 56px);
+    --h1: clamp(32px, 4.5vw, 56px);
+    font-size: var(--h1);
     font-weight: 800;
     font-stretch: 125%;
     text-transform: uppercase;
     line-height: 1;
+  }
+  /* A section page's title (SectionHeader), from md where the tabs are one row under it: a title too long for one line
+     shrinks until it fits (TR "Görüntü ve ses kaydı bildirimi", EN "Safe environment"), and its line keeps a full
+     title's height, so the tabs below keep their place. --chars is the title's length; 0.88em is a little more than the
+     widest mean letter of the long titles (EN "Safe environment", 0.855em), cqi the header's width. */
+  @media (width >= 48rem) {
+    .section-title {
+      font-size: max(24px, min(var(--h1), 100cqi / (var(--chars) * 0.88)));
+      line-height: var(--h1);
+    }
   }
   h2 {
     font-size: clamp(28px, 2.6vw, 36px);
@@ -98,7 +109,7 @@
      "PHOTOGRAPHY") fit a 320px column whole. From 640px the sizes above apply unchanged. */
   @media (width < 40rem) {
     h1 {
-      font-size: clamp(24px, 8.5vw, 32px);
+      --h1: clamp(24px, 8.5vw, 32px);
       font-stretch: 120%;
     }
     h2 {

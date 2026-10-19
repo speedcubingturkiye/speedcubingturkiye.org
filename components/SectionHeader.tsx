@@ -1,6 +1,7 @@
 // components/SectionHeader.tsx
 'use client'
 
+import type { CSSProperties } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link, usePathname } from '@/i18n/navigation'
 import type { SectionPage } from '@/lib/section-nav'
@@ -18,8 +19,11 @@ export function SectionHeader({ pages }: { pages: SectionPage[] }) {
   return (
     <>
       {current && (
-        <header>
-          <h1>{current.title}</h1>
+        // @container: the title's fit (section-title in globals.css) measures against this width
+        <header className="@container">
+          <h1 className="section-title" style={{ '--chars': current.title.length } as CSSProperties}>
+            {current.title}
+          </h1>
           {/* max-w-3xl: a reading width in the calendar's wider frame */}
           {current.lead && <p className="mt-3 max-w-3xl text-lg text-fg-2">{current.lead}</p>}
           {current.note && <p className="mt-2 max-w-3xl text-sm text-fg-2">{current.note}</p>}
