@@ -46,6 +46,14 @@ const T = {
     confirmButton: 'Aboneliğimi onayla',
     confirmIgnore: 'Bu isteği sen yapmadıysan bu maili yok sayabilirsin; 7 gün içinde onaylanmayan adresler silinir.',
     confirmFooter: "Bu maili speedcubingturkiye.org'daki bülten formu doldurulduğu için aldın.",
+    membershipSubject: 'Üyeliğini onayla',
+    membershipLead: 'Speedcubing Türkiye üyeliğini başlatmak için aşağıdaki düğmeye tıkla.',
+    membershipButton: 'Üyeliğimi onayla',
+    membershipIgnore: 'Bu başvuruyu sen yapmadıysan bu maili yok sayabilirsin; 7 gün içinde onaylanmayan başvurular silinir.',
+    membershipFooter: "Bu maili speedcubingturkiye.org'daki üyelik formu doldurulduğu için aldın.",
+    memberSubject: 'Zaten üyesin',
+    memberLead: 'Bu e-posta adresiyle zaten Speedcubing Türkiye üyesisin; yeniden başvurman gerekmiyor.',
+    memberChange: 'Bilgilerini değiştirmek ya da üyelikten ayrılmak için {email} adresine yaz.',
   },
   en: {
     readMore: 'Read on our site',
@@ -56,6 +64,14 @@ const T = {
     confirmButton: 'Confirm my subscription',
     confirmIgnore: 'If you did not ask for this, ignore this email; addresses not confirmed within 7 days are deleted.',
     confirmFooter: 'You received this email because the newsletter form on speedcubingturkiye.org was filled in.',
+    membershipSubject: 'Confirm your membership',
+    membershipLead: 'To start your Speedcubing Türkiye membership, click the button below.',
+    membershipButton: 'Confirm my membership',
+    membershipIgnore: 'If you did not apply, ignore this email; applications not confirmed within 7 days are deleted.',
+    membershipFooter: 'You received this email because the membership form on speedcubingturkiye.org was filled in.',
+    memberSubject: 'You are already a member',
+    memberLead: 'You are already a Speedcubing Türkiye member with this email address; there is no need to apply again.',
+    memberChange: 'To change your details or to leave, write to {email}.',
   },
 } as const
 
@@ -329,6 +345,27 @@ export function renderConfirmMail({ locale, confirmUrl }: { locale: Locale; conf
   ].join('\n')
   const text = [s.confirmLead, consent, `${s.confirmButton}: ${confirmUrl}`, s.confirmIgnore, '--', s.confirmFooter].join('\n\n')
   return { subject: s.confirmSubject, html: frame(locale, content, s.confirmFooter), text }
+}
+
+/** Üye ol (spec 2026-10-19 §5): the confirm button of a new or renewed application. */
+export function renderMembershipConfirmMail({ locale, confirmUrl }: { locale: Locale; confirmUrl: string }): RenderedMail {
+  const s = T[locale]
+  const content = [
+    `<p style="margin:0 0 24px">${s.membershipLead}</p>`,
+    `<p style="margin:0 0 24px"><a href="${escapeHtml(confirmUrl)}" style="display:inline-block;background:${BRAND};color:#ffffff;font-weight:bold;padding:12px 20px;text-decoration:none">${s.membershipButton}</a></p>`,
+    `<p style="margin:0;font-size:14px;color:${INK2}">${s.membershipIgnore}</p>`,
+  ].join('\n')
+  const text = [s.membershipLead, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
+  return { subject: s.membershipSubject, html: frame(locale, content, s.membershipFooter), text }
+}
+
+/** Üye ol for an address that is already a member: no link, only the way to change details or leave. */
+export function renderAlreadyMemberMail({ locale }: { locale: Locale }): RenderedMail {
+  const s = T[locale]
+  const change = s.memberChange.replace('{email}', site.contactEmail)
+  const content = [`<p style="margin:0 0 16px">${s.memberLead}</p>`, `<p style="margin:0">${escapeHtml(change)}</p>`].join('\n')
+  const text = [s.memberLead, change, '--', s.membershipFooter].join('\n\n')
+  return { subject: s.memberSubject, html: frame(locale, content, s.membershipFooter), text }
 }
 
 /** RFC 8058 one-click unsubscribe, on every mailing (not on the confirmation mail). */

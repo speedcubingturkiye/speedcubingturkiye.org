@@ -1,6 +1,6 @@
 // lib/mail-render.test.ts
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { absoluteUrl, renderConfirmMail, renderNewsMail, unsubscribeHeaders } from '@/lib/mail-render'
+import { absoluteUrl, renderAlreadyMemberMail, renderConfirmMail, renderMembershipConfirmMail, renderNewsMail, unsubscribeHeaders } from '@/lib/mail-render'
 import { MDX_COMPONENTS } from '@/lib/content-check'
 import { escapeHtml } from '@/lib/escape-html'
 import { site } from '@/site.config'
@@ -164,5 +164,26 @@ describe('unsubscribeHeaders', () => {
       'List-Unsubscribe': '<https://x/api/bulten/cikis?t=abc>',
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     })
+  })
+})
+
+describe('membership mails', () => {
+  it('the confirm mail carries the link in both parts, in the page language', () => {
+    const url = 'https://speedcubingturkiye.org/en/uye-ol/onay?t=abc'
+    const m = renderMembershipConfirmMail({ locale: 'en', confirmUrl: url })
+    expect(m.subject).toBe('Confirm your membership')
+    expect(m.text).toContain(`Confirm my membership: ${url}`)
+    expect(m.html).toContain(`href="${url}"`)
+    expect(m.html).toContain('<html lang="en">')
+    expect(renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url }).subject).toBe('Üyeliğini onayla')
+  })
+
+  it('the already-member mail has no link, only the address to change details or leave', () => {
+    const m = renderAlreadyMemberMail({ locale: 'tr' })
+    expect(m.subject).toBe('Zaten üyesin')
+    expect(m.text).toContain(site.contactEmail)
+    expect(m.html).toContain(site.contactEmail)
+    expect(m.text).not.toContain('/uye-ol/onay')
+    expect(renderAlreadyMemberMail({ locale: 'en' }).subject).toBe('You are already a member')
   })
 })
