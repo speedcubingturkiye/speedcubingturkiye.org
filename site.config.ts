@@ -82,7 +82,7 @@ export const CHANNEL_LABELS: Record<ChannelKey, string> = {
   discord: 'Discord',
   whatsapp: 'WhatsApp',
   youtube: 'YouTube',
-  x: 'X (Twitter)',
+  x: 'X',
   github: 'GitHub',
   tiktok: 'TikTok',
 }
