@@ -21,7 +21,7 @@ const STATIC = [
   '/belgeler',
   '/guvenli-ortam',
   '/goruntu-bildirimi',
-  '/gonullu-ol',
+  '/uye-ol',
   '/medya',
   '/iletisim',
   '/kvkk',

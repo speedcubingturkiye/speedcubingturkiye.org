@@ -12,7 +12,7 @@ describe('header navigation', () => {
   it('has two dropdown groups and two plain links, in order, sharing the section tabs', () => {
     expect(HEADER_NAV.map((i) => i.key)).toEqual(['information', 'competitions', 'rankings', 'news'])
     expect(COMPETITIONS_NAV.map((p) => p.href)).toEqual(['/yarismalar', '/yarismalar/ilk-yarismam', '/yarismalar/sss', '/yarismalar/ebeveynler-icin'])
-    expect(ORG_NAV.map((p) => p.href)).toEqual(['/hakkimizda', '/belgeler', '/guvenli-ortam', '/goruntu-bildirimi', '/gonullu-ol'])
+    expect(ORG_NAV.map((p) => p.href)).toEqual(['/hakkimizda', '/belgeler', '/guvenli-ortam', '/goruntu-bildirimi', '/uye-ol'])
   })
 
   it('marks a group active on any of its pages and below them', () => {

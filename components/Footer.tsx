@@ -31,7 +31,7 @@ export async function Footer() {
       links: [
         ['/haberler', nav('news')],
         ['/medya', nav('media')],
-        ['/gonullu-ol', nav('volunteer')],
+        ['/uye-ol', nav('membership')],
       ],
     },
     {
