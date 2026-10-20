@@ -82,9 +82,9 @@ describe('with keys', () => {
     vi.unstubAllEnvs()
   })
 
-  it('sendMail sends UTF-8 text and HTML with Reply-To and headers', async () => {
+  it('sendMail sends a news mailing from news@, with UTF-8 text and HTML, Reply-To and headers', async () => {
     send.mockResolvedValue({})
-    const ok = await sendMail({ to: 'a@b.com', subject: 'Yeni yarışma', text: 't', html: '<p>h</p>', replyTo: 'info@x.org', headers: { 'List-Unsubscribe': '<https://x/u>' } })
+    const ok = await sendMail({ to: 'a@b.com', subject: 'Yeni yarışma', text: 't', html: '<p>h</p>', replyTo: 'info@x.org', news: true, headers: { 'List-Unsubscribe': '<https://x/u>' } })
     expect(ok).toBe(true)
     const c = call(0)
     expect(c.constructor.name).toBe('SendEmailCommand')
@@ -96,12 +96,14 @@ describe('with keys', () => {
     expect(c.input.Content.Simple.Headers).toEqual([{ Name: 'List-Unsubscribe', Value: '<https://x/u>' }])
   })
 
-  it('sendMail sends from "<fromName>" when the mail has one, with the address unchanged', async () => {
+  it('sendMail sends every other mail from noreply@, as "<fromName>" when the mail has one', async () => {
     send.mockResolvedValue({})
     await sendMail({ to: 'a@b.com', subject: 's', text: 't', fromName: 'Şule Yılmaz (form)' })
     const from = String(call(0).input.FromEmailAddress)
-    expect(from.endsWith(' <news@speedcubingturkiye.org>')).toBe(true)
+    expect(from.endsWith(' <noreply@speedcubingturkiye.org>')).toBe(true)
     expect(decoded(from)).toBe('Şule Yılmaz (form)')
+    await sendMail({ to: 'a@b.com', subject: 's', text: 't' })
+    expect(call(1).input.FromEmailAddress).toMatch(/^=\?UTF-8\?B\?.+\?= <noreply@speedcubingturkiye\.org>$/)
   })
 
   it('sendMail resolves false (and logs the error name) when SES refuses', async () => {

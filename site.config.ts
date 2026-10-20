@@ -68,7 +68,11 @@ export const site = {
   /** Safety reports from the contact form; only the Güvenlik Sorumlusu and the deputy read it (Güvenlik politikası 3).
    *  `||`, not `??`: an empty SAFEGUARDING_EMAIL= in .env.local means the default too. */
   safeguardingEmail: process.env.SAFEGUARDING_EMAIL || 'guvenlik@speedcubingturkiye.org',
+  /** The news and announcement mailings' sender */
   mailFrom: process.env.MAIL_FROM ?? 'news@speedcubingturkiye.org',
+  /** Every other mail's sender: confirmations and the contact form's notices, replies going to Reply-To. The SES key may
+   *  send as these two addresses only (IAM, docs/yayin-kontrol-listesi.md §2). */
+  noReplyFrom: 'noreply@speedcubingturkiye.org',
   ...parseSiteSettings(raw),
 }
 

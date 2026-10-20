@@ -205,7 +205,7 @@ Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de `SAFEGUARD
 | `BULTEN_KAPALI` | `1` ise elle bülten gönderimi kapanır. Değişiklik yeni deploy'la geçerli olur. |
 | `CONTACT_EMAIL` | Form mesajlarının gittiği adres (`info@speedcubingturkiye.org`) |
 | `SAFEGUARDING_EMAIL` | İletişim formunda "Güvenlik" konusunun gittiği adres. Boşsa `guvenlik@speedcubingturkiye.org`; yerel testte kendi adresini yaz. |
-| `MAIL_FROM` | Gönderen adres (`news@speedcubingturkiye.org`) |
+| `MAIL_FROM` | Haber ve duyuru maillerinin gönderen adresi (`news@speedcubingturkiye.org`). Onay mailleri ve iletişim formu bildirimi `noreply@speedcubingturkiye.org` adresinden gider (`site.config.ts`). |
 | `MEMBERSHIP_SCRIPT_URL` | Üyelik tablosundaki Apps Script web uygulamasının adresi (`…/exec`). Yoksa Üye ol formu "şu an kapalı" der. |
 | `MEMBERSHIP_SCRIPT_SECRET` | Betiğin Script Properties'teki `SECRET` değeriyle aynı, uzun rastgele bir değer. |
 | `CRON_SECRET` | `/api/cron/wca-check` rotasının anahtarı |
@@ -254,7 +254,7 @@ Kurulum (süper admin):
 <details>
 <summary><b>E-posta ve bülten</b></summary>
 
-Bütün mailler Amazon SES'ten (`us-east-1`) `news@speedcubingturkiye.org` adresinden gider. Maillerde takip pikseli yok, başka sunucudan görsel yüklenmez.
+Bütün mailler Amazon SES'ten (`us-east-1`) gider. Haber ve duyurular `news@`, onay mailleri ve iletişim formu bildirimi `noreply@` adresinden çıkar; cevaplar Reply-To ile info@'ya ya da formu dolduran kişiye gider. Maillerde takip pikseli yok, başka sunucudan görsel yüklenmez.
 
 - **İletişim formu:** Mesaj `info@` adresine gider. Konu `Speedcubing Türkiye: <konu>`, gönderen adı `<ad soyad> (form)` olur. "Yanıtla" formu dolduran kişiye yazar.
 - **Bülten kaydı:** Form kişiyi SES'teki `bulten` listesine onay bekleyen olarak yazar ve formun dilinde onay maili yollar. Aynı adrese 24 saatte en fazla bir onay maili gider. Onay bağlantısı (`/bulten/onay`) 7 gün geçerlidir ve kişiyi kendi dilinin konusuna (`tr` ya da `en`) abone eder. Onaylanmayan adresleri cron 7 gün sonra siler.

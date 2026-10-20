@@ -20,8 +20,9 @@ import { site } from '@/site.config'
 export const REGION = 'us-east-1'
 export const LIST = 'bulten'
 
-/** `fromName` is the sender's display name (default: the site's); the address is always MAIL_FROM. */
-export type Mail = { to: string; subject: string; text: string; html?: string; replyTo?: string; fromName?: string; headers?: Record<string, string> }
+/** `fromName` is the sender's display name (default: the site's). The address is MAIL_FROM (news@) for a news or
+ *  announcement mailing (`news`), noreply@ for every other mail. */
+export type Mail = { to: string; subject: string; text: string; html?: string; replyTo?: string; fromName?: string; news?: boolean; headers?: Record<string, string> }
 export type Subscriber = { status: 'pending' | 'confirmed'; locale: Locale | null; updatedAt: number }
 
 let client: SESv2Client | undefined
@@ -75,7 +76,7 @@ export async function sendMail(mail: Mail): Promise<boolean> {
     }
     await c.send(
       new SendEmailCommand({
-        FromEmailAddress: fromHeader(mail.fromName),
+        FromEmailAddress: fromHeader(mail.fromName, mail.news ? site.mailFrom : site.noReplyFrom),
         Destination: { ToAddresses: [mail.to] },
         ...(mail.replyTo ? { ReplyToAddresses: [mail.replyTo] } : {}),
         Content: {

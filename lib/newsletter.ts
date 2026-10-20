@@ -117,7 +117,7 @@ export async function mailSubscribers(
   }
   // The team's copy goes first, without list headers: a mailing that stops partway (a listing error, the 300 s cut) must
   // still have told info@ that it started.
-  const copy = await sendMail({ to: site.contactEmail, ...render('tr', { page: `${site.url}/bulten/cikis`, oneClick: `${site.url}/api/bulten/cikis` }) })
+  const copy = await sendMail({ to: site.contactEmail, news: true, ...render('tr', { page: `${site.url}/bulten/cikis`, oneClick: `${site.url}/api/bulten/cikis` }) })
   if (!copy) console.error('newsletter copy to info@ refused')
   await pause(GAP_MS) // the copy counts toward the 10 mails per second like any other
   const report: SendReport = { sent: { tr: 0, en: 0 }, failed: 0 }
@@ -125,7 +125,7 @@ export async function mailSubscribers(
     for await (const email of listSubscribers(locale)) {
       const token = makeToken('cikis', { email, locale })
       const links = { page: unsubscribePageUrl(token, locale), oneClick: oneClickUrl(token) }
-      const ok = await sendMail({ to: email, replyTo: site.contactEmail, headers: unsubscribeHeaders(links.oneClick), ...render(locale, links) })
+      const ok = await sendMail({ to: email, replyTo: site.contactEmail, news: true, headers: unsubscribeHeaders(links.oneClick), ...render(locale, links) })
       if (ok) report.sent[locale]++
       else report.failed++
       await pause(GAP_MS)

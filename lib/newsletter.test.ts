@@ -55,6 +55,7 @@ describe('requestSubscription', () => {
     expect(mail.subject).toBe('Confirm your newsletter subscription')
     expect(mail.text).toContain(`${site.url}/en/bulten/onay?t=`)
     expect(mail.headers).toBeUndefined()
+    expect(mail.news).toBeUndefined() // a confirmation goes out from noreply@
     expect(vi.mocked(putPending).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(sendMail).mock.invocationCallOrder[0])
   })
 
@@ -177,6 +178,8 @@ describe('mailSubscribers', () => {
     expect(calls[1].headers?.['List-Unsubscribe']).toMatch(new RegExp(`^<${site.url}/api/bulten/cikis\\?t=[A-Za-z0-9_-]+>$`))
     expect(calls[0].subject).toBe('s-tr') // the copy is the Turkish mail, without list headers
     expect(calls[0].headers).toBeUndefined()
+    expect(calls.every((m) => m.news)).toBe(true) // a mailing goes out from news@
+    expect(vi.mocked(sendMail).mock.calls.length).toBe(4)
     const [locale, links] = render.mock.calls[3] as unknown as ['tr' | 'en', { page: string }]
     expect(locale).toBe('en')
     expect(links.page).toMatch(new RegExp(`^${site.url}/en/bulten/cikis\\?t=`))

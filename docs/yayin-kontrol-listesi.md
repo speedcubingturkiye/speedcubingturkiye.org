@@ -12,7 +12,7 @@ E-posta Google Workspace'te. DNS kayıtları (şu an Porkbun'da) hazır: MX `smt
 
 - [ ] Yönetici konsolunda `info@speedcubingturkiye.org` adresini bir grup (formları görecek 2-3 kişi) ya da bir kullanıcının alias'ı olarak aç. Sitedeki iletişim ve gönüllü formları bu adrese gelir (`CONTACT_EMAIL`), KVKK başvuruları da (`dataController.email`). Grubun erişim ayarında "Yayın paylaşabilenler" satırında **Harici** işaretli olsun, yoksa dışarıdan gelen mailler (form bildirimleri dahil) geri döner; gruba yalnızca davet edilenler katılabilsin.
 - [ ] `guvenlik@speedcubingturkiye.org` ve `safeguarding@speedcubingturkiye.org` birbirinin takma adı olsun ve yalnız Güvenlik Sorumlusu ile yedeği okusun (Güvenlik politikası 3). İletişim formunun "Güvenlik" konusu buraya gider (`SAFEGUARDING_EMAIL`, boşsa guvenlik@). Kişisel bir hesaptan deneme maili atarak dışarıdan gelen postayı kabul ettiğini doğrula.
-- [ ] Sitenin gönderen adresi `news@speedcubingturkiye.org` (`MAIL_FROM`): bunu info@ grubuna **alias** olarak ekle. Duyurulara ve bültene gelen cevaplar zaten info@'ya yönlenir; alias, doğrudan news@ adresine yazılanların kaybolmamasını sağlar.
+- [ ] Sitenin gönderen adresi `news@speedcubingturkiye.org` (`MAIL_FROM`): bunu info@ grubuna **alias** olarak ekle. Duyurulara ve bültene gelen cevaplar zaten info@'ya yönlenir; alias, doğrudan news@ adresine yazılanların kaybolmamasını sağlar. Onay mailleri ve iletişim formu bildirimi `noreply@` adresinden gider; ona alias gerekmez (cevaplar Reply-To ile gider, doğrudan yazan hata mesajı alır).
 - [ ] Yönetici konsolu → Uygulamalar → Google Workspace → Gmail → **E-posta kimliğini doğrula**: DKIM "kimlik doğrulaması yapılıyor" durumunda olmalı (DNS kaydı var; durum farklıysa **Kimlik doğrulamayı başlat**'a bas).
 - [ ] **Doğrulama:** Kişisel bir hesaptan `info@speedcubingturkiye.org` adresine bir mail at; grubun üyelerine (ya da alias'ın sahibine) düşmeli.
 
@@ -25,7 +25,7 @@ SES kurulumu (ABD, Kuzey Virginia `us-east-1`; domain doğrulaması, DKIM) 2026-
   {
     "Version": "2012-10-17",
     "Statement": [
-      { "Sid": "SendAsNewsOnly", "Effect": "Allow", "Action": "ses:SendEmail", "Resource": "arn:aws:ses:us-east-1:<HESAP_NO>:identity/*", "Condition": { "StringEquals": { "ses:FromAddress": "news@speedcubingturkiye.org" } } },
+      { "Sid": "SendAsSiteSendersOnly", "Effect": "Allow", "Action": "ses:SendEmail", "Resource": "arn:aws:ses:us-east-1:<HESAP_NO>:identity/*", "Condition": { "StringEquals": { "ses:FromAddress": ["news@speedcubingturkiye.org", "noreply@speedcubingturkiye.org"] } } },
       { "Sid": "NewsletterList", "Effect": "Allow", "Action": ["ses:CreateContact", "ses:GetContact", "ses:UpdateContact", "ses:DeleteContact", "ses:ListContacts"], "Resource": "arn:aws:ses:us-east-1:<HESAP_NO>:contact-list/bulten" }
     ]
   }
