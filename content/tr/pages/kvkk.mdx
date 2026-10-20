@@ -1,7 +1,7 @@
 ---
 title: "Kişisel verilerin korunması hakkında aydınlatma metni"
 description: "Speedcubing Türkiye web sitesinde kişisel verilerinizin nasıl işlendiği"
-updated: "2026-10-19"
+updated: "2026-10-20"
 ---
 
 Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi ile Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ (Resmî Gazete 10.03.2018, sayı 30356) uyarınca hazırlanmıştır.
@@ -14,12 +14,22 @@ E-posta: <DataController field="email" />
 
 ## 2. Hangi verileri, hangi amaçla ve hangi hukuki sebeple işliyoruz?
 
-### İletişim formu ve gönüllü formu
+### İletişim formu
 
 - **Veriler:** ad soyad, e-posta adresi, seçtiğiniz konu, mesajınız, formun gönderildiği zaman.
 - **Amaç:** talebinizi yanıtlamak; gönüllü başvurunuzu değerlendirmek ve sizinle iletişime geçmek.
 - **Hukuki sebep:** KVKK md. 5/2-f: talebinizin yanıtlanması için veri işlemenin, temel hak ve özgürlüklerinize zarar vermemek kaydıyla, topluluğun meşru menfaati bakımından zorunlu olması.
 - **Saklama:** talebiniz sonuçlandıktan sonra en geç 1 yıl; gönüllü başvuruları görev süresince.
+
+<Anchor id="uyelik" />
+
+### Üyelik
+
+- **Veriler:** ad, soyad, e-posta adresi, doğum tarihi, şehir; isteğe bağlı WCA ID ve yarışmalara yardım etme isteği; 18 yaşından küçükseniz veli veya vasi onayı beyanınız; başvurunun ve onayın zamanı, formun dili.
+- **Amaç:** Tüzük Madde 4 ve 04.2026.01 Üyelik yönetmeliği uyarınca üyeliği kurmak ve sürdürmek, üye listesini tutmak ve üyelere duyuru göndermek. Doğum tarihi, veli onayı gerekip gerekmediğini belirlemek için kullanılır.
+- **Hukuki sebep:** KVKK md. 5/2-c: üyeliğin kurulması ve sürdürülmesiyle doğrudan ilgili olması.
+- **Erişim:** Sekreter ve işi gereken görevliler.
+- **Saklama:** E-postadaki linkle 7 gün içinde onaylanmayan başvurular silinir. Veriler üyelik sürdükçe saklanır, üyelik sona erince 30 gün içinde silinir. Üyelikten ayrılmak için <DataController field="email" /> adresine yazmanız yeterli.
 
 ### Bülten aboneliği
 
@@ -48,9 +58,9 @@ Bülten için ayrı aydınlatma aşağıda, [6. bölümde](#bulten) yer alır.
 
 ## 3. Verileriniz kimlere aktarılır?
 
-- **Amazon Web Services (Amazon SES):** iletişim ve gönüllü formu mesajlarının bize e-posta olarak iletilmesi, bülten abone listesinin tutulması ve bülten gönderimi. Veriler AWS'nin ABD'deki (Kuzey Virginia) veri merkezinde işlenir.
+- **Amazon Web Services (Amazon SES):** iletişim formu mesajlarının bize e-posta olarak iletilmesi, üyelik onay e-postalarının gönderilmesi, bülten abone listesinin tutulması ve bülten gönderimi. Veriler AWS'nin ABD'deki (Kuzey Virginia) veri merkezinde işlenir.
 - **Vercel Inc. (ABD):** sitenin barındırılması ve ziyaret istatistikleri.
-- **Google (Google Workspace):** kurumsal e-posta hizmetimiz; form mesajları ve e-postayla yapılan başvurular e-posta kutularımızda, Google'ın ABD dâhil yurt dışındaki veri merkezlerinde saklanır.
+- **Google (Google Workspace):** kurumsal e-posta hizmetimiz; form mesajları ve e-postayla yapılan başvurular e-posta kutularımızda, üyelik başvuruları ve üye listesi Google E-Tablolar'da, Google'ın ABD dâhil yurt dışındaki veri merkezlerinde saklanır.
 - **Yetkili kamu kurum ve kuruluşları:** yalnızca kanuni bir yükümlülük doğduğunda.
 
 Bu sağlayıcılar yurt dışında bulunduğundan verileriniz KVKK md. 9 kapsamında yurt dışına aktarılır. Aktarım, ilgili sağlayıcıların veri işleme sözleşmelerindeki güvencelere dayanır ve yalnızca yukarıdaki amaçlarla sınırlıdır.
