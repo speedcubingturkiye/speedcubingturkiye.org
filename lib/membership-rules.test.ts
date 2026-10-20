@@ -45,7 +45,7 @@ describe('parseApplication', () => {
   })
 
   it('rejects bad fields', () => {
-    for (const over of [
+    const bad: Record<string, string>[] = [
       { firstName: '' },
       { lastName: '=HYPERLINK("x")' },
       { firstName: 'a'.repeat(61) },
@@ -55,9 +55,8 @@ describe('parseApplication', () => {
       { birthDate: '1899-12-31' },
       { city: 'Gotham' },
       { wcaId: '2019TEM01' },
-    ]) {
-      expect(parseApplication(form(over), TODAY)).toEqual({ ok: false, error: 'invalid' })
-    }
+    ]
+    for (const over of bad) expect(parseApplication(form(over), TODAY)).toEqual({ ok: false, error: 'invalid' })
   })
 
   it('asks someone under 18 for the guardian box and records it', () => {
