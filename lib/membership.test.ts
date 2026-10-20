@@ -3,14 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { confirmMembership, istanbulStamp, requestMembership, wcaIdExists } from '@/lib/membership'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
+import { prepareSubscription, requestSubscription } from '@/lib/newsletter'
 import { sendMail } from '@/lib/ses'
+import trMessages from '@/messages/tr.json'
 import { site } from '@/site.config'
 
 vi.mock('@/lib/membership-sheet', () => ({ applyToSheet: vi.fn(), confirmInSheet: vi.fn() }))
+vi.mock('@/lib/newsletter', () => ({ prepareSubscription: vi.fn(), requestSubscription: vi.fn() }))
 vi.mock('@/lib/ses', () => ({ sendMail: vi.fn() }))
 
 const NOW = new Date(Date.UTC(2026, 9, 19, 11, 5)) // 14:05 in Istanbul
-const APP: Application = { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', helps: false }
+// What goes to the sheet; the newsletter box never does
+const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', helps: false }
+const APP: Application = { ...FIELDS, newsletter: false }
 
 beforeEach(() => {
   vi.resetAllMocks()
@@ -28,7 +33,8 @@ describe('requestMembership', () => {
     vi.mocked(applyToSheet).mockResolvedValue('pending')
     expect(await requestMembership(APP, 'en', NOW)).toBe(true)
     const row = vi.mocked(applyToSheet).mock.calls[0][0]
-    expect(row).toMatchObject({ ...APP, at: '2026-10-19 14:05', locale: 'en' })
+    expect(row).toMatchObject({ ...FIELDS, at: '2026-10-19 14:05', locale: 'en' })
+    expect(row).not.toHaveProperty('newsletter')
     expect(row.token).toMatch(/^[\w-]{43}$/)
     const mail = vi.mocked(sendMail).mock.calls[0][0]
     expect(mail.to).toBe('ayse@example.com')
@@ -42,6 +48,46 @@ describe('requestMembership', () => {
       expect(await requestMembership(APP, 'tr', NOW), result).toBe(true)
     }
     expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('with the newsletter box: the confirm link carries the newsletter token and the mail quotes the consent', async () => {
+    vi.mocked(applyToSheet).mockResolvedValue('pending')
+    vi.mocked(prepareSubscription).mockResolvedValue('NEWS')
+    expect(await requestMembership({ ...APP, newsletter: true }, 'tr', NOW)).toBe(true)
+    expect(prepareSubscription).toHaveBeenCalledWith('ayse@example.com', 'tr', NOW.getTime())
+    expect(vi.mocked(applyToSheet).mock.calls[0][0]).not.toHaveProperty('newsletter')
+    const mail = vi.mocked(sendMail).mock.calls[0][0]
+    expect(mail.text).toMatch(/\/uye-ol\/onay\?t=[\w-]{43}&b=NEWS/)
+    expect(mail.text).toContain(trMessages.forms.newsletterConsent)
+  })
+
+  it('with the newsletter box but no newsletter token (a subscriber, or SES failed): a plain membership mail', async () => {
+    vi.mocked(applyToSheet).mockResolvedValue('pending')
+    vi.mocked(prepareSubscription).mockResolvedValue(null)
+    expect(await requestMembership({ ...APP, newsletter: true }, 'tr', NOW)).toBe(true)
+    const mail = vi.mocked(sendMail).mock.calls[0][0]
+    expect(mail.text).not.toContain('&b=')
+    expect(mail.text).not.toContain(trMessages.forms.newsletterConsent)
+  })
+
+  it("with the newsletter box and no membership mail: the newsletter form's own path", async () => {
+    for (const result of ['member', 'recent'] as const) {
+      vi.mocked(applyToSheet).mockResolvedValue(result)
+      expect(await requestMembership({ ...APP, newsletter: true }, 'en', NOW)).toBe(true)
+    }
+    expect(requestSubscription).toHaveBeenCalledTimes(2)
+    expect(requestSubscription).toHaveBeenCalledWith('ayse@example.com', 'en', NOW.getTime())
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('without the box: no newsletter call and no token in the link', async () => {
+    vi.mocked(applyToSheet).mockResolvedValue('pending')
+    await requestMembership(APP, 'tr', NOW)
+    vi.mocked(applyToSheet).mockResolvedValue('member')
+    await requestMembership(APP, 'tr', NOW)
+    expect(prepareSubscription).not.toHaveBeenCalled()
+    expect(requestSubscription).not.toHaveBeenCalled()
+    expect(vi.mocked(sendMail).mock.calls[0][0].text).not.toContain('&b=')
   })
 
   it('fails when the sheet or the mail fails', async () => {

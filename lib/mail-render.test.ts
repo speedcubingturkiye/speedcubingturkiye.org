@@ -177,4 +177,15 @@ describe('membership mails', () => {
     expect(m.html).toContain('<html lang="en">')
     expect(renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url }).subject).toBe('Üyeliğini onayla')
   })
+
+  it('with the newsletter box, the confirm mail quotes the newsletter consent word for word', () => {
+    const url = 'https://speedcubingturkiye.org/uye-ol/onay?t=abc&b=def'
+    const consent = "Speedcubing Türkiye'nin yarışma duyurularını ve haberlerini e-posta ile almak istiyorum; e-posta adresimin bu amaçla işlenmesine açık rıza veriyorum."
+    const m = renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url, newsletter: true })
+    expect(m.text).toContain('Bültene de kaydolmak istedin')
+    expect(m.text).toContain(consent)
+    expect(m.html).toContain(consent.replace("'", '&#39;'))
+    expect(m.html).toContain('href="https://speedcubingturkiye.org/uye-ol/onay?t=abc&amp;b=def"')
+    expect(renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url }).text).not.toContain(consent)
+  })
 })

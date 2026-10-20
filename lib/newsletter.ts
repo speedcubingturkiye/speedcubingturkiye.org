@@ -43,6 +43,29 @@ export async function requestSubscription(email: string, locale: Locale, now = D
   }
 }
 
+/** Üye ol's newsletter box (spec 2026-10-20 §A): the address goes on the list unconfirmed, as the form's sign-up puts it,
+ *  and the returned confirm token rides in the membership confirm link, so one click confirms both. null when the
+ *  address is already a subscriber or SES failed; the membership goes ahead either way. */
+export async function prepareSubscription(email: string, locale: Locale, now = Date.now()): Promise<string | null> {
+  try {
+    const current = await getSubscriber(email)
+    if (current?.status === 'confirmed') return null
+    try {
+      await putPending(email, locale, current !== null, now)
+    } catch (e) {
+      // A parallel sign-up for the same new address claimed it first: it is on the list unconfirmed all the same
+      if (errorName(e) !== 'AlreadyExistsException') throw e
+    }
+    return makeToken('onay', { email, locale }, now)
+  } catch (e) {
+    console.error('newsletter sign-up failed:', errorName(e))
+    return null
+  }
+}
+
+/** The visitor's address for the double opt-in record: the first X-Forwarded-For hop, else X-Real-IP. */
+export const clientIp = (headers: Headers) => headers.get('x-forwarded-for')?.split(',')[0]?.trim() || headers.get('x-real-ip') || null
+
 /** The confirm link (spec §6.3): true when the address is now a confirmed subscriber. */
 export async function confirmSubscription(token: string, ip: string | null, now = Date.now()): Promise<boolean> {
   const data = readToken('onay', token, now)

@@ -3,13 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   cancelSubscription,
   cleanupPending,
+  clientIp,
   confirmSubscription,
   mailSubscribers,
   maskEmail,
+  prepareSubscription,
   requestSubscription,
   RESEND_AFTER_MS,
 } from '@/lib/newsletter'
-import { CONFIRM_TTL_MS, makeToken } from '@/lib/newsletter-token'
+import { CONFIRM_TTL_MS, makeToken, readToken } from '@/lib/newsletter-token'
 import { confirmSubscriber, getSubscriber, listStalePending, listSubscribers, putPending, removeSubscriber, sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 
@@ -210,5 +212,37 @@ describe('cleanupPending', () => {
     expect(await cleanupPending(NOW)).toBe(2)
     expect(listStalePending).toHaveBeenCalledWith(NOW - CONFIRM_TTL_MS)
     expect(vi.mocked(removeSubscriber).mock.calls.map(([e]) => e)).toEqual(['old1@x.com', 'old2@x.com'])
+  })
+})
+
+describe('prepareSubscription', () => {
+  it('puts a new or pending address on the list unconfirmed and returns a confirm token for it, without a mail', async () => {
+    vi.mocked(getSubscriber).mockResolvedValueOnce(null)
+    const token = await prepareSubscription('a@b.com', 'en', NOW)
+    expect(putPending).toHaveBeenCalledWith('a@b.com', 'en', false, NOW)
+    expect(readToken('onay', token ?? '', NOW)).toEqual({ email: 'a@b.com', locale: 'en' })
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'pending', locale: null, updatedAt: NOW - 1000 })
+    expect(await prepareSubscription('a@b.com', 'tr', NOW)).not.toBeNull()
+    expect(putPending).toHaveBeenLastCalledWith('a@b.com', 'tr', true, NOW)
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('returns null for a subscriber, a token when a parallel sign-up claimed the address, null when SES fails', async () => {
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'confirmed', locale: 'tr', updatedAt: 0 })
+    expect(await prepareSubscription('a@b.com', 'tr', NOW)).toBeNull()
+    expect(putPending).not.toHaveBeenCalled()
+    vi.mocked(getSubscriber).mockResolvedValueOnce(null)
+    vi.mocked(putPending).mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'AlreadyExistsException' }))
+    expect(await prepareSubscription('a@b.com', 'tr', NOW)).not.toBeNull()
+    vi.mocked(getSubscriber).mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'TooManyRequestsException' }))
+    expect(await prepareSubscription('a@b.com', 'tr', NOW)).toBeNull()
+  })
+})
+
+describe('clientIp', () => {
+  it('takes the first X-Forwarded-For address, then X-Real-IP', () => {
+    expect(clientIp(new Headers({ 'x-forwarded-for': '1.2.3.4, 10.0.0.1' }))).toBe('1.2.3.4')
+    expect(clientIp(new Headers({ 'x-real-ip': '5.6.7.8' }))).toBe('5.6.7.8')
+    expect(clientIp(new Headers())).toBeNull()
   })
 })

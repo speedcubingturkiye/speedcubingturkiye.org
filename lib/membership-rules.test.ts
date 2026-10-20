@@ -33,11 +33,12 @@ describe('ageOn', () => {
 
 describe('parseApplication', () => {
   it('accepts an adult, lower-cases the email and upper-cases the WCA ID', () => {
-    const r = parseApplication(form({ competed: 'yes', wcaId: '2019teme01', helps: 'on' }), TODAY)
+    const r = parseApplication(form({ competed: 'yes', wcaId: '2019teme01', helps: 'on', newsletter: 'on' }), TODAY)
     expect(r).toEqual({
       ok: true,
-      data: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: true },
+      data: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: true, newsletter: true },
     })
+    expect(parseApplication(form(), TODAY)).toMatchObject({ ok: true, data: { helps: false, newsletter: false } })
   })
 
   it('accepts abroad as the city', () => {

@@ -143,6 +143,17 @@ export function MembershipForm({ locale, today }: { locale: Locale; today: strin
             <span>{t('helps')}</span>
           </label>
 
+          {/* The newsletter form's consent word for word; the membership link confirms it (spec 2026-10-20 §A) */}
+          <label className={check}>
+            <input type="checkbox" name="newsletter" className="mt-1 accent-brand" />
+            <span>
+              {forms('newsletterConsent')}{' '}
+              <Link href="/kvkk#bulten" className="underline">
+                {forms('newsletterPrivacy')}
+              </Link>
+            </span>
+          </label>
+
           {/* KVKK md. 10: inform at the point of collection */}
           <p className="text-sm text-fg-2">
             {t('privacyNote')}{' '}

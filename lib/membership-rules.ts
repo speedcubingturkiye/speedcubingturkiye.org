@@ -25,6 +25,8 @@ export type Application = {
   wcaId: string
   /** "Yarışmalara yardım etmek istiyorum" */
   helps: boolean
+  /** the newsletter box: the membership link confirms the subscription too; never written to the sheet */
+  newsletter: boolean
 }
 export type ApplicationError = 'invalid' | 'guardian' | 'wcaId'
 
@@ -69,6 +71,16 @@ export function parseApplication(
   if (minor && !guardian) return { ok: false, error: 'guardian' }
   return {
     ok: true,
-    data: { firstName, lastName, email, birthDate, guardian: minor && guardian, city, wcaId, helps: formData.get('helps') === 'on' },
+    data: {
+      firstName,
+      lastName,
+      email,
+      birthDate,
+      guardian: minor && guardian,
+      city,
+      wcaId,
+      helps: formData.get('helps') === 'on',
+      newsletter: formData.get('newsletter') === 'on',
+    },
   }
 }

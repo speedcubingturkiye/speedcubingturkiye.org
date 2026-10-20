@@ -6,6 +6,7 @@ import type { Locale } from '@/i18n/routing'
 import { renderMembershipConfirmMail } from '@/lib/mail-render'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
+import { prepareSubscription, requestSubscription } from '@/lib/newsletter'
 import { sendMail } from '@/lib/ses'
 import { WCA_BASE, WCA_UA } from '@/lib/wca/client'
 import { site } from '@/site.config'
@@ -31,13 +32,22 @@ export const confirmUrl = (token: string, locale: Locale) => `${site.url}${local
 /** true in every case the form should call a success, so it never tells whether an address is a member; false only
  *  when the sheet or the mail failed. */
 export async function requestMembership(application: Application, locale: Locale, now = new Date()): Promise<boolean> {
+  const { newsletter, ...fields } = application
   const token = randomBytes(32).toString('base64url')
-  const result = await applyToSheet({ ...application, token, at: istanbulStamp(now), locale })
+  const result = await applyToSheet({ ...fields, token, at: istanbulStamp(now), locale })
   if (result === 'error') return false
   // No mail to a member, nor a second link within a day, so the form cannot flood an inbox; the form's message
-  // ("Üye değilsen…") covers both without telling whether the address is a member
-  if (result === 'member' || result === 'recent') return true
-  return sendMail({ to: application.email, replyTo: site.contactEmail, ...renderMembershipConfirmMail({ locale, confirmUrl: confirmUrl(token, locale) }) })
+  // ("Üye değilsen…") covers both without telling whether the address is a member. The newsletter box then takes the
+  // newsletter form's own path: its mail, its 24 hours.
+  if (result === 'member' || result === 'recent') {
+    if (newsletter) await requestSubscription(fields.email, locale, now.getTime())
+    return true
+  }
+  // With the box, the membership link confirms the subscription too (spec 2026-10-20 §A)
+  const newsletterToken = newsletter ? await prepareSubscription(fields.email, locale, now.getTime()) : null
+  const url = newsletterToken ? `${confirmUrl(token, locale)}&b=${newsletterToken}` : confirmUrl(token, locale)
+  const mail = renderMembershipConfirmMail({ locale, confirmUrl: url, newsletter: newsletterToken !== null })
+  return sendMail({ to: fields.email, replyTo: site.contactEmail, ...mail })
 }
 
 /** false only when the WCA answers that the ID does not exist (a typo or a made-up ID); an outage or a slow answer

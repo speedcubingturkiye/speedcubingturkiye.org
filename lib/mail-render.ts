@@ -51,6 +51,7 @@ const T = {
     membershipButton: 'Üyeliğimi onayla',
     membershipIgnore: 'Bu başvuruyu sen yapmadıysan bu maili yok sayabilirsin; 7 gün içinde onaylanmayan başvurular silinir.',
     membershipFooter: "Bu maili speedcubingturkiye.org'daki üyelik formu doldurulduğu için aldın.",
+    membershipNewsletter: 'Bültene de kaydolmak istedin; düğmeye tıklayınca bülten aboneliğin de başlar. Formda verdiğin onay:',
   },
   en: {
     readMore: 'Read on our site',
@@ -66,6 +67,7 @@ const T = {
     membershipButton: 'Confirm my membership',
     membershipIgnore: 'If you did not apply, ignore this email; applications not confirmed within 7 days are deleted.',
     membershipFooter: 'You received this email because the membership form on speedcubingturkiye.org was filled in.',
+    membershipNewsletter: 'You also asked for the newsletter; the button starts your subscription too. The consent you gave on the form:',
   },
 } as const
 
@@ -341,15 +343,25 @@ export function renderConfirmMail({ locale, confirmUrl }: { locale: Locale; conf
   return { subject: s.confirmSubject, html: frame(locale, content, s.confirmFooter), text }
 }
 
-/** Üye ol (spec 2026-10-19 §5): the confirm button of a new or renewed application. */
-export function renderMembershipConfirmMail({ locale, confirmUrl }: { locale: Locale; confirmUrl: string }): RenderedMail {
+/** Üye ol (spec 2026-10-19 §5): the confirm button of a new or renewed application. With the newsletter box (spec
+ *  2026-10-20 §A) the same button confirms the subscription, so the mail quotes the form's consent as the double opt-in
+ *  mail does. */
+export function renderMembershipConfirmMail({ locale, confirmUrl, newsletter = false }: { locale: Locale; confirmUrl: string; newsletter?: boolean }): RenderedMail {
   const s = T[locale]
+  const consent = (locale === 'tr' ? trMessages : enMessages).forms.newsletterConsent
   const content = [
-    `<p style="margin:0 0 24px">${s.membershipLead}</p>`,
+    `<p style="margin:0 0 ${newsletter ? 16 : 24}px">${s.membershipLead}</p>`,
+    ...(newsletter
+      ? [
+          `<p style="margin:0 0 16px">${s.membershipNewsletter}</p>`,
+          `<blockquote style="margin:0 0 24px;padding-left:12px;border-left:3px solid ${LINE};color:${INK2}">${escapeHtml(consent)}</blockquote>`,
+        ]
+      : []),
     `<p style="margin:0 0 24px"><a href="${escapeHtml(confirmUrl)}" style="display:inline-block;background:${BRAND};color:#ffffff;font-weight:bold;padding:12px 20px;text-decoration:none">${s.membershipButton}</a></p>`,
     `<p style="margin:0;font-size:14px;color:${INK2}">${s.membershipIgnore}</p>`,
   ].join('\n')
-  const text = [s.membershipLead, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
+  const quoted = newsletter ? [s.membershipNewsletter, consent] : []
+  const text = [s.membershipLead, ...quoted, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
   return { subject: s.membershipSubject, html: frame(locale, content, s.membershipFooter), text }
 }
 
