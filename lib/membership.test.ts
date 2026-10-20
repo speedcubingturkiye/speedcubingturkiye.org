@@ -5,7 +5,6 @@ import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
 import { prepareSubscription, requestSubscription } from '@/lib/newsletter'
 import { sendMail } from '@/lib/ses'
-import trMessages from '@/messages/tr.json'
 import { site } from '@/site.config'
 
 vi.mock('@/lib/membership-sheet', () => ({ applyToSheet: vi.fn(), confirmInSheet: vi.fn() }))
@@ -50,24 +49,20 @@ describe('requestMembership', () => {
     expect(sendMail).not.toHaveBeenCalled()
   })
 
-  it('with the newsletter box: the confirm link carries the newsletter token and the mail quotes the consent', async () => {
+  it('with the newsletter box: the confirm link carries the newsletter token', async () => {
     vi.mocked(applyToSheet).mockResolvedValue('pending')
     vi.mocked(prepareSubscription).mockResolvedValue('NEWS')
     expect(await requestMembership({ ...APP, newsletter: true }, 'tr', NOW)).toBe(true)
     expect(prepareSubscription).toHaveBeenCalledWith('ayse@example.com', 'tr', NOW.getTime())
     expect(vi.mocked(applyToSheet).mock.calls[0][0]).not.toHaveProperty('newsletter')
-    const mail = vi.mocked(sendMail).mock.calls[0][0]
-    expect(mail.text).toMatch(/\/uye-ol\/onay\?t=[\w-]{43}&b=NEWS/)
-    expect(mail.text).toContain(trMessages.forms.newsletterConsent)
+    expect(vi.mocked(sendMail).mock.calls[0][0].text).toMatch(/\/uye-ol\/onay\?t=[\w-]{43}&b=NEWS/)
   })
 
-  it('with the newsletter box but no newsletter token (a subscriber, or SES failed): a plain membership mail', async () => {
+  it('with the newsletter box but no newsletter token (a subscriber, or SES failed): the plain link', async () => {
     vi.mocked(applyToSheet).mockResolvedValue('pending')
     vi.mocked(prepareSubscription).mockResolvedValue(null)
     expect(await requestMembership({ ...APP, newsletter: true }, 'tr', NOW)).toBe(true)
-    const mail = vi.mocked(sendMail).mock.calls[0][0]
-    expect(mail.text).not.toContain('&b=')
-    expect(mail.text).not.toContain(trMessages.forms.newsletterConsent)
+    expect(vi.mocked(sendMail).mock.calls[0][0].text).not.toContain('&b=')
   })
 
   it("with the newsletter box and no membership mail: the newsletter form's own path", async () => {

@@ -46,8 +46,7 @@ export async function requestMembership(application: Application, locale: Locale
   // With the box, the membership link confirms the subscription too (spec 2026-10-20 §A)
   const newsletterToken = newsletter ? await prepareSubscription(fields.email, locale, now.getTime()) : null
   const url = newsletterToken ? `${confirmUrl(token, locale)}&b=${newsletterToken}` : confirmUrl(token, locale)
-  const mail = renderMembershipConfirmMail({ locale, confirmUrl: url, newsletter: newsletterToken !== null })
-  return sendMail({ to: fields.email, replyTo: site.contactEmail, ...mail })
+  return sendMail({ to: fields.email, replyTo: site.contactEmail, ...renderMembershipConfirmMail({ locale, confirmUrl: url }) })
 }
 
 /** false only when the WCA answers that the ID does not exist (a typo or a made-up ID); an outage or a slow answer

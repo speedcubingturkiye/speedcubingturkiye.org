@@ -178,14 +178,15 @@ describe('membership mails', () => {
     expect(renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url }).subject).toBe('Üyeliğini onayla')
   })
 
-  it('with the newsletter box, the confirm mail quotes the newsletter consent word for word', () => {
+  it('says only how to start the membership and to ignore the mail otherwise, with or without the newsletter token', () => {
     const url = 'https://speedcubingturkiye.org/uye-ol/onay?t=abc&b=def'
-    const consent = "Speedcubing Türkiye'nin yarışma duyurularını ve haberlerini e-posta ile almak istiyorum; e-posta adresimin bu amaçla işlenmesine açık rıza veriyorum."
-    const m = renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url, newsletter: true })
-    expect(m.text).toContain('Bültene de kaydolmak istedin')
-    expect(m.text).toContain(consent)
-    expect(m.html).toContain(consent.replace("'", '&#39;'))
+    const m = renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url })
+    expect(m.text.split('\n\n').slice(0, 3)).toEqual([
+      'Speedcubing Türkiye üyeliğini başlatmak için düğmeye tıkla.',
+      `Üyeliğimi onayla: ${url}`,
+      'Bu başvuruyu sen yapmadıysan bu maili yok say.',
+    ])
     expect(m.html).toContain('href="https://speedcubingturkiye.org/uye-ol/onay?t=abc&amp;b=def"')
-    expect(renderMembershipConfirmMail({ locale: 'tr', confirmUrl: url }).text).not.toContain(consent)
+    expect(renderMembershipConfirmMail({ locale: 'en', confirmUrl: url }).text).toContain('If you did not apply, ignore this email.\n')
   })
 })

@@ -47,11 +47,10 @@ const T = {
     confirmIgnore: 'Bu isteği sen yapmadıysan bu maili yok sayabilirsin; 7 gün içinde onaylanmayan adresler silinir.',
     confirmFooter: "Bu maili speedcubingturkiye.org'daki bülten formu doldurulduğu için aldın.",
     membershipSubject: 'Üyeliğini onayla',
-    membershipLead: 'Speedcubing Türkiye üyeliğini başlatmak için aşağıdaki düğmeye tıkla.',
+    membershipLead: 'Speedcubing Türkiye üyeliğini başlatmak için düğmeye tıkla.',
     membershipButton: 'Üyeliğimi onayla',
-    membershipIgnore: 'Bu başvuruyu sen yapmadıysan bu maili yok sayabilirsin; 7 gün içinde onaylanmayan başvurular silinir.',
+    membershipIgnore: 'Bu başvuruyu sen yapmadıysan bu maili yok say.',
     membershipFooter: "Bu maili speedcubingturkiye.org'daki üyelik formu doldurulduğu için aldın.",
-    membershipNewsletter: 'Bültene de kaydolmak istedin; düğmeye tıklayınca bülten aboneliğin de başlar. Formda verdiğin onay:',
   },
   en: {
     readMore: 'Read on our site',
@@ -63,11 +62,10 @@ const T = {
     confirmIgnore: 'If you did not ask for this, ignore this email; addresses not confirmed within 7 days are deleted.',
     confirmFooter: 'You received this email because the newsletter form on speedcubingturkiye.org was filled in.',
     membershipSubject: 'Confirm your membership',
-    membershipLead: 'To start your Speedcubing Türkiye membership, click the button below.',
+    membershipLead: 'To start your Speedcubing Türkiye membership, click the button.',
     membershipButton: 'Confirm my membership',
-    membershipIgnore: 'If you did not apply, ignore this email; applications not confirmed within 7 days are deleted.',
+    membershipIgnore: 'If you did not apply, ignore this email.',
     membershipFooter: 'You received this email because the membership form on speedcubingturkiye.org was filled in.',
-    membershipNewsletter: 'You also asked for the newsletter; the button starts your subscription too. The consent you gave on the form:',
   },
 } as const
 
@@ -344,24 +342,15 @@ export function renderConfirmMail({ locale, confirmUrl }: { locale: Locale; conf
 }
 
 /** Üye ol (spec 2026-10-19 §5): the confirm button of a new or renewed application. With the newsletter box (spec
- *  2026-10-20 §A) the same button confirms the subscription, so the mail quotes the form's consent as the double opt-in
- *  mail does. */
-export function renderMembershipConfirmMail({ locale, confirmUrl, newsletter = false }: { locale: Locale; confirmUrl: string; newsletter?: boolean }): RenderedMail {
+ *  2026-10-20 §A) the link also confirms the subscription; the mail says nothing more (user's call, 2026-10-20). */
+export function renderMembershipConfirmMail({ locale, confirmUrl }: { locale: Locale; confirmUrl: string }): RenderedMail {
   const s = T[locale]
-  const consent = (locale === 'tr' ? trMessages : enMessages).forms.newsletterConsent
   const content = [
-    `<p style="margin:0 0 ${newsletter ? 16 : 24}px">${s.membershipLead}</p>`,
-    ...(newsletter
-      ? [
-          `<p style="margin:0 0 16px">${s.membershipNewsletter}</p>`,
-          `<blockquote style="margin:0 0 24px;padding-left:12px;border-left:3px solid ${LINE};color:${INK2}">${escapeHtml(consent)}</blockquote>`,
-        ]
-      : []),
+    `<p style="margin:0 0 24px">${s.membershipLead}</p>`,
     `<p style="margin:0 0 24px"><a href="${escapeHtml(confirmUrl)}" style="display:inline-block;background:${BRAND};color:#ffffff;font-weight:bold;padding:12px 20px;text-decoration:none">${s.membershipButton}</a></p>`,
     `<p style="margin:0;font-size:14px;color:${INK2}">${s.membershipIgnore}</p>`,
   ].join('\n')
-  const quoted = newsletter ? [s.membershipNewsletter, consent] : []
-  const text = [s.membershipLead, ...quoted, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
+  const text = [s.membershipLead, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
   return { subject: s.membershipSubject, html: frame(locale, content, s.membershipFooter), text }
 }
 
