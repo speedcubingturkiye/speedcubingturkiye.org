@@ -19,13 +19,12 @@ async function mdxHeader(locale: Locale, slug: string): Promise<Header> {
 
 /** The Bilgi pages (the header's Bilgi menu), in tab order */
 export async function organizationSection(locale: Locale): Promise<SectionPage[]> {
-  const [nav, legal, membership] = await Promise.all([getTranslations('nav'), getTranslations('legal'), getTranslations('membership')])
+  const [nav, legal] = await Promise.all([getTranslations('nav'), getTranslations('legal')])
   const headers: Record<(typeof ORG_NAV)[number]['href'], Header | Promise<Header>> = {
     '/hakkimizda': mdxHeader(locale, 'hakkimizda'),
     '/belgeler': { title: legal('documentsTitle'), lead: legal('documentsDescription'), note: legal('documentsLanguageNote') },
     '/guvenli-ortam': mdxHeader(locale, 'guvenli-ortam'),
     '/goruntu-bildirimi': mdxHeader(locale, 'goruntu-bildirimi'),
-    '/uye-ol': { title: membership('title'), lead: membership('lead'), note: membership('note') },
   }
   return Promise.all(ORG_NAV.map(async ({ href, key }) => ({ href, label: nav(key), ...(await headers[href]) })))
 }

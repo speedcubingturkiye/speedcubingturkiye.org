@@ -225,10 +225,8 @@
   },
   "membership": {
     "title": "Üye ol",
-    "lead": "Speedcubing Türkiye'ye üye ol; duyuruları al, öneri ver, Genel Kurulu izle.",
+    "lead": "Speedcubing Türkiye'ye üye ol",
     "note": "Üyelik ücretsizdir ve yaş sınırı yoktur.",
-    "intro": "Formu gönderince e-postana bir onay linki gelir; linke tıklayınca üyeliğin başlar.",
-    "leave": "Üyelikten ayrılmak için {email} adresine yazman yeterli; bilgilerin 30 gün içinde silinir.",
     "firstName": "Ad",
     "lastName": "Soyad",
     "email": "E-posta",
@@ -236,8 +234,11 @@
     "city": "Şehir",
     "cityPlaceholder": "Seç",
     "abroad": "Yurt dışı",
-    "wcaId": "WCA ID (isteğe bağlı)",
-    "wcaIdHint": "Daha önce bir WCA yarışmasına katıldıysan; örneğin 2019TEME01.",
+    "competed": "Daha önce bir WCA yarışmasına katıldın mı?",
+    "yes": "Evet",
+    "no": "Hayır",
+    "wcaId": "WCA ID",
+    "wcaIdHint": "Örneğin 2019TEME01.",
     "guardian": "Bu formu göndererek veli veya vasimin onayı olduğunu beyan ederim.",
     "helps": "Yarışmalara yardım etmek istiyorum",
     "privacyNote": "Formdaki bilgiler üyeliğin ve duyurular için işlenir.",
@@ -250,6 +251,7 @@
       "invalid": "Lütfen tüm alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
       "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
+      "wcaId": "WCA ID'ni 2019TEME01 biçiminde gir.",
       "closed": "Üyelik formu şu an kapalı.",
       "send_failed": "Şu an kaydedemedik; birkaç dakika sonra tekrar dene."
     }

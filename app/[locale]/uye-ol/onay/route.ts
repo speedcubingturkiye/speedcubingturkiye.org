@@ -1,4 +1,4 @@
-// app/[locale]/(bilgi)/uye-ol/onay/route.ts: the confirm link in the membership mail (spec 2026-10-19 §3). It confirms on
+// app/[locale]/uye-ol/onay/route.ts: the confirm link in the membership mail (spec 2026-10-19 §3). It confirms on
 // open, as the newsletter's does, and lands on /uye-ol with the result.
 import type { NextRequest } from 'next/server'
 import { confirmMembership } from '@/lib/membership'

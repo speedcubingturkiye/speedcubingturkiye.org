@@ -250,6 +250,12 @@
   .btn[aria-disabled="true"] {
     opacity: 0.6;
   }
+  /* The date field's calendar icon right at the field's 12px padding, where the Üye ol form draws its select's chevron
+     (MembershipForm); Chrome adds a few pixels of its own around it */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
+  }
   /* The logo's 45° square as list marker and divider (spec §3.3) */
   .sq {
     display: inline-block;

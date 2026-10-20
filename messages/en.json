@@ -225,10 +225,8 @@
   },
   "membership": {
     "title": "Become a member",
-    "lead": "Join Speedcubing Türkiye: get the announcements and observe the General Assembly.",
+    "lead": "Join Speedcubing Türkiye",
     "note": "Membership is free, with no age limit.",
-    "intro": "When you send the form, a confirmation link comes to your email; your membership starts when you click it.",
-    "leave": "To leave, just write to {email}; your details are deleted within 30 days.",
     "firstName": "First name",
     "lastName": "Surname",
     "email": "Email",
@@ -236,8 +234,11 @@
     "city": "City",
     "cityPlaceholder": "Choose",
     "abroad": "Outside Türkiye",
-    "wcaId": "WCA ID (optional)",
-    "wcaIdHint": "If you have competed in a WCA competition; for example 2019TEME01.",
+    "competed": "Have you competed in a WCA competition before?",
+    "yes": "Yes",
+    "no": "No",
+    "wcaId": "WCA ID",
+    "wcaIdHint": "For example 2019TEME01.",
     "guardian": "By submitting this form, I declare that I have the consent of my parent or guardian.",
     "helps": "I'd like to help at competitions",
     "privacyNote": "Your details are processed for your membership and the announcements.",
@@ -250,6 +251,7 @@
       "invalid": "Please fill in all fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
+      "wcaId": "Enter your WCA ID in the form 2019TEME01.",
       "closed": "The membership form is closed right now.",
       "send_failed": "We couldn't save your application right now; please try again in a few minutes."
     }

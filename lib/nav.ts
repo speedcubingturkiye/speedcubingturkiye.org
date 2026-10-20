@@ -16,7 +16,6 @@ export const ORG_NAV = [
   { href: '/belgeler', key: 'documents' },
   { href: '/guvenli-ortam', key: 'safeguarding' },
   { href: '/goruntu-bildirimi', key: 'filmingNotice' },
-  { href: '/uye-ol', key: 'membership' },
 ] as const
 
 type HeaderItem = { readonly key: string; readonly href: string } | { readonly key: string; readonly items: readonly { readonly href: string }[] }

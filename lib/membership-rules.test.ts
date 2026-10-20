@@ -5,7 +5,7 @@ import { ABROAD, ageOn, parseApplication, PROVINCE_CHOICES } from '@/lib/members
 const TODAY = '2026-10-19'
 const form = (over: Record<string, string> = {}) => {
   const f = new FormData()
-  const base: Record<string, string> = { firstName: 'Ayşe', lastName: 'Yılmaz', email: ' Ayse@Example.com ', birthDate: '1990-05-04', city: 'İstanbul', wcaId: '' }
+  const base: Record<string, string> = { firstName: 'Ayşe', lastName: 'Yılmaz', email: ' Ayse@Example.com ', birthDate: '1990-05-04', city: 'İstanbul', competed: 'no', wcaId: '' }
   for (const [k, v] of Object.entries({ ...base, ...over })) f.set(k, v)
   return f
 }
@@ -33,7 +33,7 @@ describe('ageOn', () => {
 
 describe('parseApplication', () => {
   it('accepts an adult, lower-cases the email and upper-cases the WCA ID', () => {
-    const r = parseApplication(form({ wcaId: '2019teme01', helps: 'on' }), TODAY)
+    const r = parseApplication(form({ competed: 'yes', wcaId: '2019teme01', helps: 'on' }), TODAY)
     expect(r).toEqual({
       ok: true,
       data: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: true },
@@ -54,9 +54,17 @@ describe('parseApplication', () => {
       { birthDate: '2026-10-20' },
       { birthDate: '1899-12-31' },
       { city: 'Gotham' },
-      { wcaId: '2019TEM01' },
+      { competed: '' },
+      { competed: 'maybe' },
     ]
     for (const over of bad) expect(parseApplication(form(over), TODAY)).toEqual({ ok: false, error: 'invalid' })
+  })
+
+  it('asks someone who has competed for their WCA ID, and drops one given by someone who has not', () => {
+    expect(parseApplication(form({ competed: 'yes' }), TODAY)).toEqual({ ok: false, error: 'wcaId' })
+    expect(parseApplication(form({ competed: 'yes', wcaId: '2019TEM01' }), TODAY)).toEqual({ ok: false, error: 'wcaId' })
+    const r = parseApplication(form({ competed: 'no', wcaId: '2019TEME01' }), TODAY)
+    expect(r.ok && r.data.wcaId).toBe('')
   })
 
   it('asks someone under 18 for the guardian box and records it', () => {

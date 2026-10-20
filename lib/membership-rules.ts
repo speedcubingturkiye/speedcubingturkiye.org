@@ -21,12 +21,12 @@ export type Application = {
   /** the parent or guardian box (madde 2), ticked by someone under 18; always false for an adult */
   guardian: boolean
   city: string
-  /** '' when not given */
+  /** required when the applicant has competed in a WCA competition, '' when they have not */
   wcaId: string
   /** "Yarışmalara yardım etmek istiyorum" */
   helps: boolean
 }
-export type ApplicationError = 'invalid' | 'guardian'
+export type ApplicationError = 'invalid' | 'guardian' | 'wcaId'
 
 /** Whole years between two YYYY-MM-DD dates; someone born on 29 February turns a year older on 1 March. */
 export function ageOn(birthDate: string, today: string): number {
@@ -53,14 +53,17 @@ export function parseApplication(
   const email = text('email').toLowerCase()
   const birthDate = text('birthDate')
   const city = text('city')
-  const wcaId = text('wcaId').toUpperCase()
+  // "Daha önce bir WCA yarışmasına katıldın mı?": yes asks for the WCA ID, no drops one typed before the answer changed
+  const competed = text('competed')
+  const wcaId = competed === 'yes' ? text('wcaId').toUpperCase() : ''
   const valid =
     [firstName, lastName].every((name) => name.length <= 60 && NAME_RE.test(name)) &&
     EMAIL_RE.test(email) && email.length <= 254 &&
     isDate(birthDate) && birthDate >= '1900-01-01' && birthDate <= today &&
     (PROVINCES.includes(city) || city === ABROAD) &&
-    (wcaId === '' || WCA_ID_RE.test(wcaId))
+    (competed === 'yes' || competed === 'no')
   if (!valid) return { ok: false, error: 'invalid' }
+  if (competed === 'yes' && !WCA_ID_RE.test(wcaId)) return { ok: false, error: 'wcaId' }
   const minor = ageOn(birthDate, today) < 18
   const guardian = formData.get('guardian') === 'on'
   if (minor && !guardian) return { ok: false, error: 'guardian' }

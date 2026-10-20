@@ -32,7 +32,8 @@ export function Header() {
   return (
     // Sticky, 64px: in-page anchors get scroll-margin-top in globals.css so they land below it (spec §4.1).
     <header className="sticky top-0 z-40 border-b border-line bg-bg/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+      {/* gap-2 below sm: at 320px the mark (67px) and the right cluster (212px) fill 279 of the 288px, too little for gap-4 */}
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4">
         {/* The long logo (236px at h-7) plus the right cluster does not fit 320px; below sm show the mark. */}
         <Link href="/" aria-label={common('home')} className="min-w-0 shrink text-fg">
           <div aria-hidden="true">
@@ -77,10 +78,18 @@ export function Header() {
           )}
         </nav>
 
-        {/* The language switch and the theme toggle stay in the bar at every width; below lg the menu button joins them */}
+        {/* The language switch, the theme toggle and Üye ol stay in the bar at every width; below lg the menu button joins
+            them. Üye ol is a red button of the boxes' height, not a Bilgi page. */}
         <div className="flex items-center gap-2">
           <LangSwitch pathname={pathname} />
           <ThemeToggle />
+          <Link
+            href="/uye-ol"
+            // pt-0.5 and the extra 0.08em on the left: the uppercase label's optical centre, as on the language switch
+            className="t-label inline-flex h-9 items-center bg-brand pt-0.5 pr-3 pl-[calc(0.75rem+0.08em)] whitespace-nowrap text-white hover:brightness-[0.92]"
+          >
+            {t('membership')}
+          </Link>
           <div className="lg:hidden">
             <MobileMenu items={items} pathname={pathname} />
           </div>
