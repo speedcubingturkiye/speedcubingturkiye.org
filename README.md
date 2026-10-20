@@ -229,10 +229,10 @@ Yerelde:
 Üye ol formu başvuruları ortak drive'daki bir Google tablosuna yazar. Kurulumu süper admin hesabı yapar, çünkü betik yayınlayanın hesabıyla çalışır.
 
 1. Tabloyu aç, Uzantılar > Apps Script.
-2. `scripts/uyelik-apps-script.gs` dosyasının içeriğini yapıştırıp kaydet. "Üyeler" sekmesi ve başlık satırı ilk başvuruda kendiliğinden kurulur.
+2. `scripts/uyelik-apps-script.gs` dosyasının içeriğini yapıştırıp kaydet. "Üyeler" sekmesi ve başlık satırı ilk başvuruda kendiliğinden kurulur. Dosyadaki `@OnlyCurrentDoc` satırı betiğin erişimini bu tabloyla sınırlar; silme.
 3. Proje ayarları > Script Properties: `SECRET` adıyla uzun rastgele bir değer ekle.
 4. Dağıt > Yeni dağıtım > Web uygulaması: "Execute as: Me", "Who has access: Anyone". Çıkan `…/exec` adresini kopyala.
-5. Tetikleyiciler > Tetikleyici ekle: `cleanup`, zamana dayalı, her gün. 7 gün içinde onaylanmayan başvuruları siler.
+5. Tetikleyiciler > Tetikleyici ekle: işlev `cleanup`, etkinlik kaynağı "Zamana dayalı", tür "Gün zamanlayıcı". 7 gün içinde onaylanmayan başvuruları siler.
 6. Vercel'e `MEMBERSHIP_SCRIPT_URL` (adres) ve `MEMBERSHIP_SCRIPT_SECRET` (aynı değer) ekle, yeniden deploy et.
 7. Canlıda bir deneme başvurusu yap: tabloda "Onay bekliyor" satırı belirmeli, e-postadaki linkten sonra "Üye" olmalı.
 
@@ -245,7 +245,7 @@ Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları y
 
 Bütün mailler Amazon SES'ten (`us-east-1`) `news@speedcubingturkiye.org` adresinden gider. Maillerde takip pikseli yok, başka sunucudan görsel yüklenmez.
 
-- **İletişim ve gönüllü formu:** Mesaj `info@` adresine gider. Konu `Speedcubing Türkiye: <konu>`, gönderen adı `<ad soyad> (form)` olur. "Yanıtla" formu dolduran kişiye yazar.
+- **İletişim formu:** Mesaj `info@` adresine gider. Konu `Speedcubing Türkiye: <konu>`, gönderen adı `<ad soyad> (form)` olur. "Yanıtla" formu dolduran kişiye yazar.
 - **Bülten kaydı:** Form kişiyi SES'teki `bulten` listesine onay bekleyen olarak yazar ve formun dilinde onay maili yollar. Aynı adrese 24 saatte en fazla bir onay maili gider. Onay bağlantısı (`/bulten/onay`) 7 gün geçerlidir ve kişiyi kendi dilinin konusuna (`tr` ya da `en`) abone eder. Onaylanmayan adresleri cron 7 gün sonra siler.
 - **Çıkış:** Her mailin altındaki bağlantı `/bulten/cikis` sayfasını açar. Gmail ve Apple Mail'in "Abonelikten çık" düğmesi `/api/bulten/cikis` üzerinden tek tıkla çıkarır. Bağlantılardaki token AES-256-GCM ile şifrelidir, adres linkte görünmez.
 - **Otomatik duyuru:** Cron yeni yarışmanın haberini commit'ledikten sonra onaylı abonelere kendi dillerinde gönderir, Türkçe kopyasını da `info@` adresine yollar.

@@ -1,6 +1,9 @@
 // scripts/uyelik-apps-script.gs: Speedcubing Türkiye's Üye ol endpoint, bound to the members spreadsheet (spec
 // 2026-10-19 §4). The site's server posts JSON here with the shared secret; the browser never calls it. Setup: README,
 // "Üyelik tablosu". Dates are Istanbul time written as text ("2026-10-19 14:05"); Türkiye is UTC+3 all year.
+// The script runs with the rights of the super admin who deployed it, and anyone who can edit the spreadsheet can edit
+// the script: @OnlyCurrentDoc keeps its access to this spreadsheet alone.
+/** @OnlyCurrentDoc */
 const SHEET = 'Üyeler'
 const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu']
 const COL = Object.fromEntries(HEADERS.map((h, i) => [h, i]))
