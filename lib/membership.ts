@@ -3,10 +3,11 @@
 // lib/membership-sheet.ts, the mail bodies in lib/mail-render.ts.
 import { randomBytes } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
-import { renderAlreadyMemberMail, renderMembershipConfirmMail } from '@/lib/mail-render'
+import { renderMembershipConfirmMail } from '@/lib/mail-render'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
 import { sendMail } from '@/lib/ses'
+import { WCA_BASE, WCA_UA } from '@/lib/wca/client'
 import { site } from '@/site.config'
 
 // sv-SE writes the ISO order: "2026-10-19 14:05"
@@ -33,10 +34,27 @@ export async function requestMembership(application: Application, locale: Locale
   const token = randomBytes(32).toString('base64url')
   const result = await applyToSheet({ ...application, token, at: istanbulStamp(now), locale })
   if (result === 'error') return false
-  if (result === 'recent') return true // a link went out less than a day ago: no second mail, so the form cannot flood an inbox
-  const mail =
-    result === 'member' ? renderAlreadyMemberMail({ locale }) : renderMembershipConfirmMail({ locale, confirmUrl: confirmUrl(token, locale) })
-  return sendMail({ to: application.email, replyTo: site.contactEmail, ...mail })
+  // No mail to a member, nor a second link within a day, so the form cannot flood an inbox; the form's message
+  // ("Üye değilsen…") covers both without telling whether the address is a member
+  if (result === 'member' || result === 'recent') return true
+  return sendMail({ to: application.email, replyTo: site.contactEmail, ...renderMembershipConfirmMail({ locale, confirmUrl: confirmUrl(token, locale) }) })
+}
+
+/** false only when the WCA answers that the ID does not exist (a typo or a made-up ID); an outage or a slow answer
+ *  lets the application through. */
+export async function wcaIdExists(wcaId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${WCA_BASE}/api/v0/persons/${wcaId}`, {
+      headers: { 'User-Agent': WCA_UA, Accept: 'application/json' },
+      signal: AbortSignal.timeout(5_000),
+      cache: 'no-store',
+    })
+    if (res.status === 404) return false
+    if (!res.ok) console.error(`WCA person check: HTTP ${res.status}`)
+  } catch (e) {
+    console.error('WCA person check failed:', e instanceof Error ? e.name : String(e))
+  }
+  return true
 }
 
 /** The confirm link: true when the address is now, or already was, a member. */

@@ -51,9 +51,6 @@ const T = {
     membershipButton: 'Üyeliğimi onayla',
     membershipIgnore: 'Bu başvuruyu sen yapmadıysan bu maili yok sayabilirsin; 7 gün içinde onaylanmayan başvurular silinir.',
     membershipFooter: "Bu maili speedcubingturkiye.org'daki üyelik formu doldurulduğu için aldın.",
-    memberSubject: 'Zaten üyesin',
-    memberLead: 'Bu e-posta adresiyle zaten Speedcubing Türkiye üyesisin; yeniden başvurman gerekmiyor.',
-    memberChange: 'Bilgilerini değiştirmek ya da üyelikten ayrılmak için {email} adresine yaz.',
   },
   en: {
     readMore: 'Read on our site',
@@ -69,9 +66,6 @@ const T = {
     membershipButton: 'Confirm my membership',
     membershipIgnore: 'If you did not apply, ignore this email; applications not confirmed within 7 days are deleted.',
     membershipFooter: 'You received this email because the membership form on speedcubingturkiye.org was filled in.',
-    memberSubject: 'You are already a member',
-    memberLead: 'You are already a Speedcubing Türkiye member with this email address; there is no need to apply again.',
-    memberChange: 'To change your details or to leave, write to {email}.',
   },
 } as const
 
@@ -357,15 +351,6 @@ export function renderMembershipConfirmMail({ locale, confirmUrl }: { locale: Lo
   ].join('\n')
   const text = [s.membershipLead, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
   return { subject: s.membershipSubject, html: frame(locale, content, s.membershipFooter), text }
-}
-
-/** Üye ol for an address that is already a member: no link, only the way to change details or leave. */
-export function renderAlreadyMemberMail({ locale }: { locale: Locale }): RenderedMail {
-  const s = T[locale]
-  const change = s.memberChange.replace('{email}', site.contactEmail)
-  const content = [`<p style="margin:0 0 16px">${s.memberLead}</p>`, `<p style="margin:0">${escapeHtml(change)}</p>`].join('\n')
-  const text = [s.memberLead, change, '--', s.membershipFooter].join('\n\n')
-  return { subject: s.memberSubject, html: frame(locale, content, s.membershipFooter), text }
 }
 
 /** RFC 8058 one-click unsubscribe, on every mailing (not on the confirmation mail). */

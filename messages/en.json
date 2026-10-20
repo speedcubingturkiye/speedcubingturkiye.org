@@ -244,14 +244,14 @@
     "privacyNote": "Your details are processed for your membership and the announcements.",
     "submit": "Join",
     "sending": "Sending…",
-    "sent": "We've sent a confirmation link to your email; click it within 7 days. If it doesn't arrive, check your spam folder.",
+    "sent": "If you're not a member yet, we've sent a confirmation link to your email; click it within 7 days. If it doesn't arrive, check your spam folder.",
     "confirmed": "Your membership is confirmed. Welcome to Speedcubing Türkiye!",
     "invalidLink": "This confirmation link is invalid or has expired. You can fill in the form again.",
     "error": {
       "invalid": "Please fill in all fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
-      "wcaId": "Enter your WCA ID in the form 2019TEME01.",
+      "wcaId": "We couldn't find this WCA ID. Enter the ID from your WCA profile, in the form 2019TEME01.",
       "closed": "The membership form is closed right now.",
       "send_failed": "We couldn't save your application right now; please try again in a few minutes."
     }

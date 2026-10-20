@@ -1,6 +1,6 @@
 // lib/membership.test.ts
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmMembership, istanbulStamp, requestMembership } from '@/lib/membership'
+import { confirmMembership, istanbulStamp, requestMembership, wcaIdExists } from '@/lib/membership'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
 import { sendMail } from '@/lib/ses'
@@ -36,17 +36,11 @@ describe('requestMembership', () => {
     expect(mail.text).toContain(`${site.url}/en/uye-ol/onay?t=${row.token}`)
   })
 
-  it('tells a member they already are one, with no link', async () => {
-    vi.mocked(applyToSheet).mockResolvedValue('member')
-    expect(await requestMembership(APP, 'tr', NOW)).toBe(true)
-    const mail = vi.mocked(sendMail).mock.calls[0][0]
-    expect(mail.subject).toBe('Zaten üyesin')
-    expect(mail.text).not.toContain('/uye-ol/onay')
-  })
-
-  it('sends nothing for a link that went out less than a day ago, and still reports success', async () => {
-    vi.mocked(applyToSheet).mockResolvedValue('recent')
-    expect(await requestMembership(APP, 'tr', NOW)).toBe(true)
+  it('sends nothing to a member or for a link that went out less than a day ago, and still reports success', async () => {
+    for (const result of ['member', 'recent'] as const) {
+      vi.mocked(applyToSheet).mockResolvedValue(result)
+      expect(await requestMembership(APP, 'tr', NOW), result).toBe(true)
+    }
     expect(sendMail).not.toHaveBeenCalled()
   })
 
@@ -57,6 +51,25 @@ describe('requestMembership', () => {
     vi.mocked(applyToSheet).mockResolvedValue('pending')
     vi.mocked(sendMail).mockResolvedValue(false)
     expect(await requestMembership(APP, 'tr', NOW)).toBe(false)
+  })
+})
+
+describe('wcaIdExists', () => {
+  it('is false only when the WCA answers that the ID does not exist', async () => {
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    fetch.mockResolvedValueOnce(new Response('{}', { status: 200 }))
+    expect(await wcaIdExists('2019TEME01')).toBe(true)
+    expect(fetch.mock.calls[0][0]).toBe('https://www.worldcubeassociation.org/api/v0/persons/2019TEME01')
+    fetch.mockResolvedValueOnce(new Response('{}', { status: 404 }))
+    expect(await wcaIdExists('2019TEMA01')).toBe(false)
+    // an outage or a timeout lets the application through
+    fetch.mockResolvedValueOnce(new Response('', { status: 503 }))
+    expect(await wcaIdExists('2019TEME01')).toBe(true)
+    fetch.mockRejectedValueOnce(new DOMException('timed out', 'TimeoutError'))
+    expect(await wcaIdExists('2019TEME01')).toBe(true)
+    vi.unstubAllGlobals()
   })
 })
 
