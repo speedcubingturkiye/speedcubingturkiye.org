@@ -225,6 +225,37 @@
     "unsubscribeFailed": "Bir sorun oluştu. Lütfen biraz sonra tekrar dene.",
     "unsubscribeInvalid": "Bu çıkış bağlantısı geçersiz. Bültenden çıkmak için bize yazabilirsin:"
   },
+  "membership": {
+    "title": "Üye ol",
+    "lead": "Speedcubing Türkiye'ye üye ol; duyuruları al, öneri ver, Genel Kurulu izle.",
+    "note": "Üyelik ücretsizdir ve yaş sınırı yoktur.",
+    "intro": "Formu gönderince e-postana bir onay linki gelir; linke tıklayınca üyeliğin başlar.",
+    "leave": "Üyelikten ayrılmak için {email} adresine yazman yeterli; bilgilerin 30 gün içinde silinir.",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "email": "E-posta",
+    "birthDate": "Doğum tarihi",
+    "city": "Şehir",
+    "cityPlaceholder": "Seç",
+    "abroad": "Yurt dışı",
+    "wcaId": "WCA ID (isteğe bağlı)",
+    "wcaIdHint": "Daha önce bir WCA yarışmasına katıldıysan; örneğin 2019TEME01.",
+    "guardian": "Bu formu göndererek veli veya vasimin onayı olduğunu beyan ederim.",
+    "helps": "Yarışmalara yardım etmek istiyorum",
+    "privacyNote": "Formdaki bilgiler üyeliğin ve duyurular için işlenir.",
+    "submit": "Üye ol",
+    "sending": "Gönderiliyor…",
+    "sent": "E-postana bir onay linki gönderdik; 7 gün içinde tıkla. Gelmezse istenmeyen e-postalara da bak.",
+    "confirmed": "Üyeliğin onaylandı. Speedcubing Türkiye'ye hoş geldin!",
+    "invalidLink": "Bu onay linki geçersiz ya da süresi dolmuş. Formu yeniden doldurabilirsin.",
+    "error": {
+      "invalid": "Lütfen tüm alanları doğru doldur.",
+      "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
+      "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
+      "closed": "Üyelik formu şu an kapalı.",
+      "send_failed": "Şu an kaydedemedik; birkaç dakika sonra tekrar dene."
+    }
+  },
   "footer": {
     "competitions": "Yarışmalar",
     "community": "Topluluk",
