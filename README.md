@@ -206,6 +206,8 @@ Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de `SAFEGUARD
 | `CONTACT_EMAIL` | Form mesajlarının gittiği adres (`info@speedcubingturkiye.org`) |
 | `SAFEGUARDING_EMAIL` | İletişim formunda "Güvenlik" konusunun gittiği adres. Boşsa `guvenlik@speedcubingturkiye.org`; yerel testte kendi adresini yaz. |
 | `MAIL_FROM` | Gönderen adres (`news@speedcubingturkiye.org`) |
+| `MEMBERSHIP_SCRIPT_URL` | Üyelik tablosundaki Apps Script web uygulamasının adresi (`…/exec`). Yoksa Üye ol formu "şu an kapalı" der. |
+| `MEMBERSHIP_SCRIPT_SECRET` | Betiğin Script Properties'teki `SECRET` değeriyle aynı, uzun rastgele bir değer. |
 | `CRON_SECRET` | `/api/cron/wca-check` rotasının anahtarı |
 | `GITHUB_TOKEN`, `GITHUB_REPO` | Cron'un haber commit'lemesi için yalnız bu repoya yazabilen fine-grained token ve `owner/repo` |
 | `NEXT_PUBLIC_KEYSTATIC_REPO` | Panelin commit attığı repo (`owner/repo`) |
@@ -217,6 +219,24 @@ Yerelde:
 - `NEWSLETTER_SECRET` yoksa geliştirmeye özel sabit bir anahtar kullanılır.
 - `next dev` abonelere hiçbir zaman toplu mail atmaz. Cron hep kuru çalışır (commit, mail ve silme yok), elle bülten rotası 503 döner.
 - `.env.local` dosyasında SES anahtarları varsa form, onay ve çıkış gerçek listeye yazar.
+- `MEMBERSHIP_SCRIPT_URL` ve `MEMBERSHIP_SCRIPT_SECRET` yoksa Üye ol formu tabloya yazmaz; satır konsola yazılır ve başvuru başarılı sayılır.
+
+</details>
+
+<details>
+<summary><b>Üyelik tablosu</b></summary>
+
+Üye ol formu başvuruları ortak drive'daki bir Google tablosuna yazar. Kurulumu süper admin hesabı yapar, çünkü betik yayınlayanın hesabıyla çalışır.
+
+1. Tabloyu aç, Uzantılar > Apps Script.
+2. `scripts/uyelik-apps-script.gs` dosyasının içeriğini yapıştırıp kaydet. "Üyeler" sekmesi ve başlık satırı ilk başvuruda kendiliğinden kurulur.
+3. Proje ayarları > Script Properties: `SECRET` adıyla uzun rastgele bir değer ekle.
+4. Dağıt > Yeni dağıtım > Web uygulaması: "Execute as: Me", "Who has access: Anyone". Çıkan `…/exec` adresini kopyala.
+5. Tetikleyiciler > Tetikleyici ekle: `cleanup`, zamana dayalı, her gün. 7 gün içinde onaylanmayan başvuruları siler.
+6. Vercel'e `MEMBERSHIP_SCRIPT_URL` (adres) ve `MEMBERSHIP_SCRIPT_SECRET` (aynı değer) ekle, yeniden deploy et.
+7. Canlıda bir deneme başvurusu yap: tabloda "Onay bekliyor" satırı belirmeli, e-postadaki linkten sonra "Üye" olmalı.
+
+Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları yönet > Düzenle > Yeni sürüm); adres değişmez.
 
 </details>
 
