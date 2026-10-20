@@ -10,6 +10,8 @@ import {
   SendEmailCommand,
   SESv2Client,
   UpdateContactCommand,
+  type Contact,
+  type ListContactsFilter,
   type TopicPreference,
 } from '@aws-sdk/client-sesv2'
 import type { Locale } from '@/i18n/routing'
@@ -155,36 +157,41 @@ export async function removeSubscriber(email: string): Promise<void> {
   }
 }
 
-/** Every confirmed subscriber of one language, 1,000 per call. */
-export async function* listSubscribers(locale: Locale): AsyncGenerator<string> {
+/** Every contact on the list, or those the filter matches, 1,000 per call. */
+async function* contacts(Filter?: ListContactsFilter): AsyncGenerator<Contact> {
   const c = ses()
   if (!c) return
   let NextToken: string | undefined
   do {
-    const r = await c.send(
-      new ListContactsCommand({
-        ContactListName: LIST,
-        Filter: { FilteredStatus: 'OPT_IN', TopicFilter: { TopicName: locale, UseDefaultIfPreferenceUnavailable: false } },
-        PageSize: 1000,
-        NextToken,
-      }),
-    )
-    for (const contact of r.Contacts ?? []) if (contact.EmailAddress) yield contact.EmailAddress
+    const r = await c.send(new ListContactsCommand({ ContactListName: LIST, Filter, PageSize: 1000, NextToken }))
+    yield* r.Contacts ?? []
     NextToken = r.NextToken
   } while (NextToken)
 }
 
+const confirmedIn = (locale: Locale): ListContactsFilter => ({
+  FilteredStatus: 'OPT_IN',
+  TopicFilter: { TopicName: locale, UseDefaultIfPreferenceUnavailable: false },
+})
+
+/** Every confirmed subscriber of one language. */
+export async function* listSubscribers(locale: Locale): AsyncGenerator<string> {
+  for await (const contact of contacts(confirmedIn(locale))) if (contact.EmailAddress) yield contact.EmailAddress
+}
+
 /** Unconfirmed contacts last written before `before` (epoch ms). */
 export async function* listStalePending(before: number): AsyncGenerator<string> {
-  const c = ses()
-  if (!c) return
-  let NextToken: string | undefined
-  do {
-    const r = await c.send(new ListContactsCommand({ ContactListName: LIST, PageSize: 1000, NextToken }))
-    for (const contact of r.Contacts ?? []) {
-      const updated = contact.LastUpdatedTimestamp?.getTime() ?? 0
-      if (contact.EmailAddress && !optedIn(contact.TopicPreferences) && updated < before) yield contact.EmailAddress
+  for await (const contact of contacts()) {
+    const updated = contact.LastUpdatedTimestamp?.getTime() ?? 0
+    if (contact.EmailAddress && !optedIn(contact.TopicPreferences) && updated < before) yield contact.EmailAddress
+  }
+}
+
+/** Every confirmed subscriber with their language and last update, which for a confirmed contact is the confirmation. */
+export async function* listConfirmed(): AsyncGenerator<{ email: string; locale: Locale; updatedAt: number }> {
+  for (const locale of ['tr', 'en'] as const) {
+    for await (const contact of contacts(confirmedIn(locale))) {
+      if (contact.EmailAddress) yield { email: contact.EmailAddress, locale, updatedAt: contact.LastUpdatedTimestamp?.getTime() ?? 0 }
     }
-    NextToken = r.NextToken
-  } while (NextToken)
+  }
 }

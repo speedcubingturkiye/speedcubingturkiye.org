@@ -1,6 +1,6 @@
 // lib/ses.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmSubscriber, fromHeader, getSubscriber, listStalePending, listSubscribers, putPending, removeSubscriber, sendMail } from '@/lib/ses'
+import { confirmSubscriber, fromHeader, getSubscriber, listConfirmed, listStalePending, listSubscribers, putPending, removeSubscriber, sendMail } from '@/lib/ses'
 
 const { send } = vi.hoisted(() => ({ send: vi.fn() }))
 
@@ -184,6 +184,20 @@ describe('with keys', () => {
       ],
     })
     expect(await collect(listStalePending(5000))).toEqual(['old@x.com'])
+  })
+
+  it("listConfirmed yields both topics' opted-in contacts with their language and last update", async () => {
+    send
+      .mockResolvedValueOnce({ Contacts: [{ EmailAddress: 'a@b.com', LastUpdatedTimestamp: new Date(2000) }] })
+      .mockResolvedValueOnce({ Contacts: [{ EmailAddress: 'c@d.com', LastUpdatedTimestamp: new Date(3000) }] })
+    const out = []
+    for await (const s of listConfirmed()) out.push(s)
+    expect(out).toEqual([
+      { email: 'a@b.com', locale: 'tr', updatedAt: 2000 },
+      { email: 'c@d.com', locale: 'en', updatedAt: 3000 },
+    ])
+    expect(call(0).input.Filter.TopicFilter.TopicName).toBe('tr')
+    expect(call(1).input.Filter.TopicFilter.TopicName).toBe('en')
   })
 })
 
