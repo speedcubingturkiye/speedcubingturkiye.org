@@ -1,6 +1,7 @@
 // lib/wca/city.ts: pure, no I/O
-/** The 81 provinces in Turkish spelling (spec §7). WCA data often carries the ASCII form ("Istanbul", "Izmir"). */
-const PROVINCES = [
+/** The 81 provinces in Turkish spelling (spec §7). WCA data often carries the ASCII form ("Istanbul", "Izmir"). The Üye ol
+ *  form's city list comes from here too (lib/membership-rules.ts). */
+export const PROVINCES = [
   'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya', 'Ardahan', 'Artvin',
   'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur',
   'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan',
