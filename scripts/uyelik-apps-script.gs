@@ -11,6 +11,10 @@ const PENDING = 'Onay bekliyor'
 const MEMBER = 'Üye'
 const DAY_MS = 24 * 60 * 60 * 1000
 const CONFIRM_DAYS = 7
+// The newsletter tab (spec 2026-10-20 §B): a copy of the SES list, written again on each refresh
+const SITE = 'https://speedcubingturkiye.org'
+const NEWSLETTER = 'Bülten'
+const NEWSLETTER_HEADERS = ['E-posta', 'Dil', 'Onay tarihi', 'Sil']
 
 function doPost(e) {
   let body
@@ -38,6 +42,44 @@ function cleanup() {
       if (all[i][COL['Durum']] === PENDING && now - stampMs(all[i][COL['Başvuru tarihi']]) > CONFIRM_DAYS * DAY_MS) sh.deleteRow(i + 2)
     }
   })
+}
+
+/** The spreadsheet's menu: the Secretary refreshes the newsletter tab from here. */
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Bülten').addItem('Listeyi yenile', 'refreshNewsletter').addToUi()
+}
+
+/**
+ * The menu item and a daily time-driven trigger: the site deletes the addresses ticked "Sil" from the newsletter and
+ * sends back every confirmed subscriber, and the tab is written again. An address the site has not deleted yet (it
+ * takes 40 a call) stays ticked for the next refresh. It takes the document lock, not the script lock doPost waits for,
+ * so a slow refresh never holds up an application.
+ */
+function refreshNewsletter() {
+  withLock(() => {
+    const ss = SpreadsheetApp.getActiveSpreadsheet()
+    const sh = ss.getSheetByName(NEWSLETTER) || ss.insertSheet(NEWSLETTER)
+    const n = sh.getLastRow() - 1
+    const ticked = n > 0 ? sh.getRange(2, 1, n, NEWSLETTER_HEADERS.length).getValues().filter((r) => r[3] === true).map((r) => String(r[0])) : []
+    const res = UrlFetchApp.fetch(`${SITE}/api/bulten/liste`, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: `Bearer ${PropertiesService.getScriptProperties().getProperty('SECRET')}` },
+      payload: JSON.stringify({ sil: ticked }),
+      muteHttpExceptions: true,
+    })
+    if (res.getResponseCode() !== 200) throw new Error(`Bülten listesi alınamadı (HTTP ${res.getResponseCode()})`)
+    const stillTicked = new Set(ticked)
+    const rows = JSON.parse(res.getContentText()).aboneler.map((s) => [text(s.eposta), s.dil.toUpperCase(), text(s.tarih), stillTicked.has(s.eposta)])
+    sh.getRange(1, 1, sh.getMaxRows(), NEWSLETTER_HEADERS.length).clearDataValidations()
+    sh.clearContents()
+    sh.getRange(1, 1, 1, NEWSLETTER_HEADERS.length).setValues([NEWSLETTER_HEADERS])
+    sh.setFrozenRows(1)
+    if (rows.length === 0) return
+    // insertCheckboxes sets every cell to false, so the boxes go in before the values
+    sh.getRange(2, 4, rows.length, 1).insertCheckboxes()
+    sh.getRange(2, 1, rows.length, NEWSLETTER_HEADERS.length).setValues(rows)
+  }, LockService.getDocumentLock())
 }
 
 function apply(b) {
@@ -89,8 +131,7 @@ function stampMs(s) {
   return Date.parse(`${String(s).replace(' ', 'T')}:00+03:00`)
 }
 
-function withLock(fn) {
-  const lock = LockService.getScriptLock()
+function withLock(fn, lock = LockService.getScriptLock()) {
   lock.waitLock(20000)
   try {
     return fn()

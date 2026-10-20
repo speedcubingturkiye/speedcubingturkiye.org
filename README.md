@@ -238,6 +238,17 @@ Yerelde:
 
 Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları yönet > Düzenle > Yeni sürüm); adres değişmez.
 
+**Bülten sekmesi.** Tablonun "Bülten" sekmesi SES'teki onaylı abonelerin kopyasıdır: E-posta, Dil, Onay tarihi, Sil.
+- **Yenileme:** "Bülten > Listeyi yenile" menüsüyle ve günde bir kez kendiliğinden yenilenir. Betik, "Sil" işaretli adresleri sitenin `/api/bulten/liste` adresine `MEMBERSHIP_SCRIPT_SECRET` ile gönderir. Site onları SES'ten siler (bir seferde en fazla 40) ve güncel listeyi döndürür; betik sekmeyi baştan yazar.
+- **Sekme bir kopya:** elle yapılan değişiklikler bir sonraki yenilemede silinir; işe yarayan yalnız "Sil" kutusu.
+
+Kurulum (süper admin):
+
+1. Betiği güncelle ve yeni sürüm yayınla.
+2. Editörde `refreshNewsletter`'ı bir kez çalıştır. Google dış bağlantı iznini sorar; izin ver. Sekme kurulur.
+3. Tetikleyici ekle: işlev `refreshNewsletter`, "Zamana dayalı", "Gün zamanlayıcı".
+4. Menü tablo yeniden açılınca görünür. Sekreter menüyü ilk kullandığında Google ondan da bir kez izin ister.
+
 </details>
 
 <details>
