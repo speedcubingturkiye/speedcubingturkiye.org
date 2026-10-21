@@ -17,11 +17,11 @@ const row = (pos: number, personId: string, personName: string): RankingRow => (
 
 describe('parseListParams', () => {
   it('defaults to page 1, 100 per page, no search', () => {
-    expect(parseListParams({}, 2194)).toEqual({ page: 1, size: 100, query: '' })
+    expect(parseListParams({}, 2194)).toEqual({ page: 1, size: 100, query: '', il: '' })
   })
   it('reads valid values', () => {
-    expect(parseListParams({ sayfa: '3', boyut: '50', ara: '  ahmet  ' }, 2194)).toEqual({ page: 3, size: 50, query: 'ahmet' })
-    expect(parseListParams({ sayfa: ['2', '9'], boyut: ['25'] }, 2194)).toEqual({ page: 2, size: 25, query: '' })
+    expect(parseListParams({ sayfa: '3', boyut: '50', ara: '  ahmet  ' }, 2194)).toEqual({ page: 3, size: 50, query: 'ahmet', il: '' })
+    expect(parseListParams({ sayfa: ['2', '9'], boyut: ['25'] }, 2194)).toEqual({ page: 2, size: 25, query: '', il: '' })
   })
   it('repairs invalid values', () => {
     expect(parseListParams({ boyut: '30' }, 2194).size).toBe(100)
@@ -30,6 +30,12 @@ describe('parseListParams', () => {
     expect(parseListParams({ sayfa: '99' }, 2194).page).toBe(22)
     expect(parseListParams({ sayfa: '5' }, 0).page).toBe(1)
     expect(parseListParams({ ara: 'x'.repeat(80) }, 10).query).toHaveLength(50)
+  })
+  it('?il keeps a known province slug only', () => {
+    expect(parseListParams({ il: 'sanliurfa' }, 10).il).toBe('sanliurfa')
+    expect(parseListParams({ il: ['hakkari', 'van'] }, 10).il).toBe('hakkari')
+    expect(parseListParams({ il: 'atlantis' }, 10).il).toBe('')
+    expect(parseListParams({ il: 'Istanbul' }, 10).il).toBe('')
   })
 })
 
@@ -98,7 +104,8 @@ describe('filterRows', () => {
 
 describe('listQuery', () => {
   it('leaves the defaults out of the URL', () => {
-    expect(listQuery({ page: 1, size: 100, query: '' })).toEqual({})
-    expect(listQuery({ page: 2, size: 50, query: 'ahmet' })).toEqual({ sayfa: '2', boyut: '50', ara: 'ahmet' })
+    expect(listQuery({ page: 1, size: 100, query: '', il: '' })).toEqual({})
+    expect(listQuery({ page: 2, size: 50, query: 'ahmet', il: '' })).toEqual({ sayfa: '2', boyut: '50', ara: 'ahmet' })
+    expect(listQuery({ page: 1, size: 100, query: '', il: 'hakkari' })).toEqual({ il: 'hakkari' })
   })
 })

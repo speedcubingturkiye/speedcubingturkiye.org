@@ -155,7 +155,14 @@
     "attributionIntro": "Data source",
     "attribution": "This information is based on competition results owned and maintained by the World Cube Association, published at https://worldcubeassociation.org/results as of {date}.",
     "attributionTr": "Bu bilgiler, World Cube Association'a ait olan ve onun tarafından güncellenen, https://worldcubeassociation.org/results adresinde yayımlanan yarışma sonuçlarına dayanır ({date} itibarıyla).",
-    "rankSource": "Ranking data: the WCA results export, updated daily."
+    "rankSource": "Ranking data: the WCA results export, updated daily.",
+    "province": "Province",
+    "allProvinces": "All of Türkiye",
+    "provinceShow": "Show",
+    "provinceNote": "Only members who linked their WCA account and chose to take part appear in the province rankings. <join>Become a member</join> or join from <account>My account</account>.",
+    "provinceNone": "No one from {province} in this list yet.",
+    "provinceUnavailable": "The province list could not be loaded; try again in a few minutes.",
+    "nationalRank": "Türkiye"
   },
   "news": {
     "title": "News",

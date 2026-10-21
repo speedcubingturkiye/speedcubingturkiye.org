@@ -155,7 +155,14 @@
     "attributionIntro": "Veri kaynağı",
     "attribution": "This information is based on competition results owned and maintained by the World Cube Association, published at https://worldcubeassociation.org/results as of {date}.",
     "attributionTr": "Bu bilgiler, World Cube Association'a ait olan ve onun tarafından güncellenen, https://worldcubeassociation.org/results adresinde yayımlanan yarışma sonuçlarına dayanır ({date} itibarıyla).",
-    "rankSource": "Sıralama verisi: WCA sonuç dışa aktarımı, her gün güncellenir."
+    "rankSource": "Sıralama verisi: WCA sonuç dışa aktarımı, her gün güncellenir.",
+    "province": "İl",
+    "allProvinces": "Tüm Türkiye",
+    "provinceShow": "Göster",
+    "provinceNote": "İl sıralamasında yalnız WCA hesabını bağlayıp katılmayı seçen üyeler görünür. <join>Üye ol</join> ya da <account>Hesabım</account> sayfasından katıl.",
+    "provinceNone": "{province} için bu listede henüz kimse yok.",
+    "provinceUnavailable": "İl listesi şu an yüklenemedi; birkaç dakika sonra tekrar dene.",
+    "nationalRank": "Türkiye"
   },
   "news": {
     "title": "Haberler",

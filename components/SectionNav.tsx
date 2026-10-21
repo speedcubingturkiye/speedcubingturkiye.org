@@ -37,7 +37,8 @@ export function SectionNav({ items, label }: { items: Item[]; label?: string }) 
     <nav ref={navRef} aria-label={label ?? t('sectionNav')} className="tab-scroller -mx-4 overflow-x-auto px-4">
       <ul className="flex gap-2 border-b border-line">
         {items.map((item) => {
-          const active = pathname === item.href
+          // A tab may carry a query (the rankings' ?il=), which the pathname never has
+          const active = pathname === item.href.split('?')[0]
           return (
             <li key={item.href} className="shrink-0">
               <Link

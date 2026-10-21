@@ -5,6 +5,8 @@ import type { Locale } from '@/i18n/routing'
 import { DataUnavailable } from '@/components/DataUnavailable'
 import { Pager } from '@/components/Pager'
 import { SectionNav } from '@/components/SectionNav'
+import { provinceMembers, provinceRows } from '@/lib/il-ranking'
+import { PROVINCE_CHOICES } from '@/lib/membership-rules'
 import {
   DEFAULT_SIZE,
   filterRows,
@@ -18,11 +20,13 @@ import {
   type ListParams,
   type SearchParamsRecord,
 } from '@/lib/rankings-view'
+import { PROVINCE_BY_SLUG, provinceSlug } from '@/lib/wca/city'
 import { WCA_BASE } from '@/lib/wca/client'
 import { formatDate, formatResult } from '@/lib/wca/format'
 import { rankingsHref, type Rankings, type RankingType } from '@/lib/wca/rankings'
 import { EVENTS, eventNameLang } from '@/lib/wca/records'
 import { todayIstanbul } from '@/lib/wca/status'
+import type { RankingRow } from '@/lib/wca/types'
 
 type Props = {
   eventId: string
@@ -42,8 +46,13 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
   const t = await getTranslations('rankings')
   const event = EVENTS.find((e) => e.id === eventId)
   const all = rankings?.rows ?? []
-  // "Sıramı bul" filters the list itself (everyone keeps their national rank); the page is clamped to the filtered list.
-  const rows = filterRows(all, parseListParams(searchParams, all.length).query)
+  // ?il narrows the list to one province's members, numbered again within it (spec 2026-10-21, Parça 2)
+  const { il } = parseListParams(searchParams, all.length)
+  const byId = il ? await provinceMembers() : null
+  const province = PROVINCE_BY_SLUG.get(il) ?? ''
+  const base: (RankingRow & { provincePos?: number })[] = !il ? all : byId ? provinceRows(all, byId, il) : []
+  // "Sıramı bul" filters the list itself (everyone keeps their rank); the page is clamped to the filtered list.
+  const rows = filterRows(base, parseListParams(searchParams, base.length).query)
   const params = parseListParams(searchParams, rows.length)
   const { page, size, query } = params
   const pathname = rankingsHref(eventId, type)
@@ -54,9 +63,9 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
   // The WCA attribution names the export the data comes from (its README asks for "as of <export date>").
   const date = formatDate(rankings ? rankings.exportDate.slice(0, 10) : todayIstanbul(), locale)
   const wcaHref = `${WCA_BASE}/results/rankings/${eventId}/${type}?region=Turkey`
-  // Tabs keep the current type where the event has one (4BLD, 5BLD and MBLD have no average).
+  // Tabs keep the current type where the event has one (4BLD, 5BLD and MBLD have no average), and the province.
   const tabs = EVENTS.map((e) => ({
-    href: rankingsHref(e.id, e.hasAverage ? type : 'single'),
+    href: rankingsHref(e.id, e.hasAverage ? type : 'single') + (il ? `?il=${il}` : ''),
     label: e.name[locale],
     icon: e.id,
     lang: eventNameLang(e.id),
@@ -74,12 +83,12 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
         <h2 lang={eventNameLang(eventId)}>{event?.name[locale] ?? eventId}</h2>
-        {/* Switching the type keeps the page size and the search, and starts at page 1 */}
+        {/* Switching the type keeps the page size, the search and the province, and starts at page 1 */}
         <div role="group" aria-label={t('type')} className="flex border border-line">
           {types.map((s) => (
             <Link
               key={s}
-              href={{ pathname: rankingsHref(eventId, s), query: listQuery({ page: 1, size, query }) }}
+              href={{ pathname: rankingsHref(eventId, s), query: listQuery({ page: 1, size, query, il }) }}
               aria-current={s === type ? 'page' : undefined}
               className={SEGMENT}
             >
@@ -97,6 +106,54 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
         <p className="mt-8 border border-line bg-bg-2 p-6 font-semibold">{t('noResults')}</p>
       ) : (
         <>
+          {/* İl sıralaması (spec 2026-10-21, Parça 2): a GET form (no JS; a new province starts at page 1) */}
+          <form action={getPathname({ locale, href: pathname })} method="get" className="mt-6 w-full max-w-md">
+            <label htmlFor="rankings-province" className="block text-sm font-semibold">
+              {t('province')}
+            </label>
+            {/* Laid out as the search form below; the select keeps the Üye ol form's drawn arrow */}
+            <div className="mt-1 flex gap-2">
+              <span className="relative block min-w-0 flex-1">
+                <select
+                  id="rankings-province"
+                  name="il"
+                  defaultValue={il}
+                  className="h-full w-full appearance-none border border-line bg-bg px-3 py-2 pr-10 text-fg focus:border-fg"
+                >
+                  <option value="">{t('allProvinces')}</option>
+                  {PROVINCE_CHOICES.map((p) => (
+                    <option key={p} value={provinceSlug(p)}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-fg">
+                  <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="1.75" />
+                </svg>
+              </span>
+              {size !== DEFAULT_SIZE && <input type="hidden" name="boyut" value={size} />}
+              <button type="submit" className="btn btn-outline">
+                {t('provinceShow')}
+              </button>
+            </div>
+          </form>
+          {il ? (
+            <p className="mt-3 max-w-2xl text-sm text-fg-2">
+              {t.rich('provinceNote', {
+                join: (chunks) => (
+                  <Link href="/uye-ol" className="font-semibold text-brand-ink underline">
+                    {chunks}
+                  </Link>
+                ),
+                account: (chunks) => (
+                  <Link href="/hesabim" className="font-semibold text-brand-ink underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
+          ) : null}
+
           {/* Tools: a GET search form (no JS; a search starts at page 1) and the per-page switch */}
           <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <form action={getPathname({ locale, href: pathname })} method="get" role="search" className="w-full max-w-md">
@@ -122,6 +179,7 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
                   className="min-w-0 flex-1 border border-line bg-bg px-3 py-2 text-fg focus:border-fg"
                 />
                 {size !== DEFAULT_SIZE && <input type="hidden" name="boyut" value={size} />}
+                {il && <input type="hidden" name="il" value={il} />}
                 <button type="submit" className="btn btn-brand">
                   {t('searchButton')}
                 </button>
@@ -147,7 +205,9 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
           </div>
 
           {rows.length === 0 ? (
-            <p className="mt-8 border border-line bg-bg-2 p-6 font-semibold">{t('searchNone', { query })}</p>
+            <p className="mt-8 border border-line bg-bg-2 p-6 font-semibold">
+              {il && !byId ? t('provinceUnavailable') : query ? t('searchNone', { query }) : t('provinceNone', { province })}
+            </p>
           ) : (
             <>
               <p className="mt-6 text-sm text-fg-2 tabular-nums">
@@ -161,6 +221,12 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
                       <th scope="col" className="w-12 py-2 pr-3">
                         {t('rank')}
                       </th>
+                      {/* A province's list keeps the national rank beside its own */}
+                      {il ? (
+                        <th scope="col" className="w-20 py-2 pr-3">
+                          {t('nationalRank')}
+                        </th>
+                      ) : null}
                       <th scope="col" className="py-2 pr-3">
                         {t('competitor')}
                       </th>
@@ -172,7 +238,8 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
                   <tbody>
                     {rows.slice(from - 1, to).map((r) => (
                       <tr key={r.personId} className="border-b border-line">
-                        <td className="py-3 pr-3 font-bold tabular-nums">{r.pos}</td>
+                        <td className="py-3 pr-3 font-bold tabular-nums">{r.provincePos ?? r.pos}</td>
+                        {il ? <td className="py-3 pr-3 text-fg-2 tabular-nums">{r.pos}</td> : null}
                         <td className="py-3 pr-3">
                           <a href={`${WCA_BASE}/persons/${r.personId}`} rel="noopener noreferrer" target="_blank" className="font-semibold hover:text-brand-ink">
                             {r.personName}

@@ -25,7 +25,13 @@ function key(s: string): string {
   return foldCase(s).replace(/ı/g, 'i')
 }
 
-const BY_KEY = new Map(PROVINCES.map((p) => [key(p), p]))
+/** A province by its slug, the accent- and case-free key ('sanliurfa' → 'Şanlıurfa') */
+export const PROVINCE_BY_SLUG = new Map(PROVINCES.map((p) => [key(p), p]))
+
+/** The il ranking's `?il=` value (spec 2026-10-21, Parça 2): 'İstanbul' → 'istanbul', 'Hakkâri' → 'hakkari'. */
+export function provinceSlug(name: string): string {
+  return key(name)
+}
 
 /** Turkish spelling for every comma-separated part that is a province; other parts are kept as they are. */
 export function displayCity(raw: string): string {
@@ -33,6 +39,6 @@ export function displayCity(raw: string): string {
     .split(',')
     .map((part) => part.trim())
     .filter((part) => part !== '')
-    .map((part) => BY_KEY.get(key(part)) ?? part)
+    .map((part) => PROVINCE_BY_SLUG.get(key(part)) ?? part)
     .join(', ')
 }

@@ -12,8 +12,8 @@ type Props = { searchParams: Promise<SearchParamsRecord> }
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const [locale, t, sp] = await Promise.all([getLocale(), getTranslations('rankings'), searchParams])
   const meta = pageMeta(locale, '/siralamalar', { title: t('title'), description: t('description') })
-  // A search result is not a page of its own; the canonical stays the address without parameters.
-  return sp.ara ? { ...meta, robots: { index: false } } : meta
+  // A search result or a province's list is not a page of its own; the canonical stays the address without parameters.
+  return sp.ara || sp.il ? { ...meta, robots: { index: false } } : meta
 }
 
 export default async function RankingsPage({ searchParams }: Props) {

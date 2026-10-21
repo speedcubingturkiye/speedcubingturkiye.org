@@ -1,4 +1,5 @@
-// lib/rankings-view.ts: paging and "Sıramı bul" for the rankings pages (full rankings spec §7)
+// lib/rankings-view.ts: paging, "Sıramı bul" and the il choice for the rankings pages (full rankings spec §7)
+import { PROVINCE_BY_SLUG } from '@/lib/wca/city'
 import type { RankingRow } from '@/lib/wca/types'
 
 export const PAGE_SIZES = [25, 50, 100, 500] as const
@@ -7,7 +8,8 @@ export const DEFAULT_SIZE: PageSize = 100
 export const MAX_QUERY = 50
 
 export type SearchParamsRecord = Record<string, string | string[] | undefined>
-export type ListParams = { page: number; size: PageSize; query: string }
+/** `il`: a province slug for the il ranking (spec 2026-10-21, Parça 2), '' for all of Türkiye */
+export type ListParams = { page: number; size: PageSize; query: string; il: string }
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
 
@@ -21,12 +23,14 @@ export function parsePage(sp: SearchParamsRecord, total: number, size: number): 
   return Math.min(raw > 1 ? raw : 1, pageCount(total, size))
 }
 
-/** ?sayfa, ?boyut, ?ara → valid values: an unknown size is 100, the page stays within 1…last, the query ≤ 50 characters. */
+/** ?sayfa, ?boyut, ?ara, ?il → valid values: an unknown size is 100, the page stays within 1…last, the query ≤ 50
+ *  characters, an unknown province is all of Türkiye. */
 export function parseListParams(sp: SearchParamsRecord, total: number): ListParams {
   const asked = Number(first(sp.boyut))
   const size = PAGE_SIZES.find((s) => s === asked) ?? DEFAULT_SIZE
   const query = (first(sp.ara) ?? '').trim().slice(0, MAX_QUERY)
-  return { page: parsePage(sp, total, size), size, query }
+  const il = first(sp.il) ?? ''
+  return { page: parsePage(sp, total, size), size, query, il: PROVINCE_BY_SLUG.has(il) ? il : '' }
 }
 
 /** 1-based first and last row on a page; 0 and 0 for an empty ranking. */
@@ -66,7 +70,7 @@ export function normalize(text: string): string {
 }
 
 /** The rows whose name and WCA ID contain every word of the query, in ranking order; every row for an empty query. */
-export function filterRows(rows: RankingRow[], query: string): RankingRow[] {
+export function filterRows<T extends RankingRow>(rows: T[], query: string): T[] {
   const words = normalize(query).split(/\s+/).filter(Boolean)
   if (words.length === 0) return rows
   return rows.filter((row) => {
@@ -75,11 +79,12 @@ export function filterRows(rows: RankingRow[], query: string): RankingRow[] {
   })
 }
 
-/** Query object for a rankings link; the defaults (page 1, 100 per page, no search) stay out of the URL. */
-export function listQuery({ page, size, query }: ListParams): Record<string, string> {
+/** Query object for a rankings link; the defaults (page 1, 100 per page, no search, all of Türkiye) stay out of the URL. */
+export function listQuery({ page, size, query, il }: ListParams): Record<string, string> {
   const q: Record<string, string> = {}
   if (page > 1) q.sayfa = String(page)
   if (size !== DEFAULT_SIZE) q.boyut = String(size)
   if (query) q.ara = query
+  if (il) q.il = il
   return q
 }

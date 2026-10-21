@@ -35,8 +35,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     title: `${t('title')}: ${name}, ${t(type)}`,
     description: t('description'),
   })
-  // A search result is not a page of its own.
-  return sp.ara ? { ...meta, robots: { index: false } } : meta
+  // A search result or a province's list is not a page of its own.
+  return sp.ara || sp.il ? { ...meta, robots: { index: false } } : meta
 }
 
 export default async function EventRankingsPage({ params, searchParams }: Props) {
