@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { linkMemberWca } from '@/lib/membership-sheet'
 import { readToken } from '@/lib/newsletter-token'
-import { finishWcaLink, REDIRECT_URI, startWcaLink } from '@/lib/wca-link'
+import { finishWcaLink, REDIRECT_URI, splitName, startWcaLink, startWcaSignup } from '@/lib/wca-link'
 
 vi.mock('@/lib/membership-sheet', () => ({ linkMemberWca: vi.fn() }))
 
@@ -44,8 +44,8 @@ describe('startWcaLink', () => {
     expect(`${url.origin}${url.pathname}`).toBe('https://www.worldcubeassociation.org/oauth/authorize')
     expect(Object.fromEntries(url.searchParams)).toEqual({ client_id: 'id', redirect_uri: REDIRECT_URI, response_type: 'code', scope: 'public', state })
     expect(state).toMatch(/^[\w-]{43}$/)
-    expect(flow.cookie.startsWith(`${state}.`)).toBe(true)
-    expect(readToken('hesap', flow.cookie.slice(state.length + 1), NOW)).toEqual(DATA)
+    expect(flow.cookie.startsWith(`${state}.h.`)).toBe(true)
+    expect(readToken('hesap', flow.cookie.slice(state.length + 3), NOW)).toEqual(DATA)
   })
 
   it('is null without the keys', () => {
@@ -99,5 +99,59 @@ describe('finishWcaLink', () => {
     wcaAnswers({ wca_id: '2019TEME01' })
     vi.mocked(linkMemberWca).mockResolvedValue('none')
     expect(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).toBe('/en/hesabim?durum=gecersiz')
+  })
+})
+
+describe('the sign-up login (WCA ile kaydol, spec 2026-10-21)', () => {
+  it('asks the WCA for the public profile, the email and the date of birth; the cookie names the flow and the language', () => {
+    const flow = startWcaSignup('en')!
+    const url = new URL(flow.url)
+    expect(url.searchParams.get('scope')).toBe('public email dob')
+    expect(url.searchParams.get('redirect_uri')).toBe(REDIRECT_URI)
+    expect(flow.cookie).toBe(`${url.searchParams.get('state')}.k.en`)
+  })
+
+  it('returns to Üye ol with a 30-minute token carrying what the WCA gave', async () => {
+    const flow = startWcaSignup('en')!
+    const state = new URL(flow.url).searchParams.get('state')!
+    wcaAnswers({ wca_id: '2019TEME01', name: 'Ayşe Nur Yılmaz', email: 'Ayse@Example.com', dob: '2010-04-05' })
+    const u = new URL(await finishWcaLink(flow.cookie, new URLSearchParams({ state, code: 'c' }), NOW), 'https://example.test')
+    expect(u.pathname).toBe('/en/uye-ol')
+    const w = u.searchParams.get('w') ?? ''
+    expect(readToken('kaydol', w, NOW + 29 * 60_000)).toEqual({ email: 'Ayse@Example.com', locale: 'en', wcaId: '2019TEME01', name: 'Ayşe Nur Yılmaz', dob: '2010-04-05' })
+    expect(readToken('kaydol', w, NOW + 31 * 60_000)).toBeNull()
+    expect(linkMemberWca).not.toHaveBeenCalled()
+  })
+
+  it('a WCA account without a WCA ID or an email still comes back, empty where the WCA gave nothing', async () => {
+    const flow = startWcaSignup('tr')!
+    const state = new URL(flow.url).searchParams.get('state')!
+    wcaAnswers({ wca_id: null, name: 'Ali Veli', dob: 'yesterday' })
+    const u = new URL(await finishWcaLink(flow.cookie, new URLSearchParams({ state, code: 'c' }), NOW), 'https://example.test')
+    expect(u.pathname).toBe('/uye-ol')
+    expect(readToken('kaydol', u.searchParams.get('w') ?? '', NOW)).toEqual({ email: '', locale: 'tr', name: 'Ali Veli', dob: '' })
+  })
+
+  it('a refusal, a WCA failure and another state land on Üye ol', async () => {
+    const flow = startWcaSignup('en')!
+    const state = new URL(flow.url).searchParams.get('state')!
+    expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state, error: 'access_denied' }), NOW)).toBe('/en/uye-ol')
+    fetchMock.mockResolvedValueOnce(json({ error: 'server' }, 500))
+    expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state, code: 'c' }), NOW)).toBe('/en/uye-ol?durum=wca-hata')
+    expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state: 'other', code: 'c' }), NOW)).toBe('/en/uye-ol?durum=gecersiz')
+  })
+
+  it('is null without the keys', () => {
+    vi.stubEnv('WCA_CLIENT_ID', '')
+    expect(startWcaSignup('tr')).toBeNull()
+  })
+})
+
+describe('splitName', () => {
+  it('takes the last word as the surname and drops a local-script name in parentheses', () => {
+    expect(splitName('Ahmet Çınar Ablak')).toEqual({ firstName: 'Ahmet Çınar', lastName: 'Ablak' })
+    expect(splitName('Ali (Али) Veli')).toEqual({ firstName: 'Ali', lastName: 'Veli' })
+    expect(splitName('  Cher ')).toEqual({ firstName: 'Cher', lastName: '' })
+    expect(splitName('')).toEqual({ firstName: '', lastName: '' })
   })
 })

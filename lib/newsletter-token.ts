@@ -1,19 +1,23 @@
-// lib/newsletter-token.ts: confirm and unsubscribe links (spec §8), and Hesabım's links (spec 2026-10-21). AES-256-GCM: the address never appears in a URL,
-// a server log or the browser history, and a token only opens the door it was made for.
+// lib/newsletter-token.ts: confirm and unsubscribe links (spec §8), Hesabım's links and the WCA sign-up form (spec
+// 2026-10-21). AES-256-GCM: the address never appears in a URL, a server log or the browser history, and a token only
+// opens the door it was made for.
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
 
-export type TokenPurpose = 'onay' | 'cikis' | 'hesap' | 'eposta'
+export type TokenPurpose = 'onay' | 'cikis' | 'hesap' | 'eposta' | 'kaydol'
 /** `newEmail`: the address an `eposta` link changes the membership to; `issuedAt` (epoch ms): when that link was asked
- *  for, the double opt-in record of the newsletter that follows the change */
-export type TokenData = { email: string; locale: Locale; newEmail?: string; issuedAt?: number }
+ *  for, the double opt-in record of the newsletter that follows the change. `wcaId`, `name`, `dob`: what a WCA login
+ *  gave a `kaydol` sign-up (spec 2026-10-21, WCA ile kaydol); its `email` is '' when the WCA gave none. */
+export type TokenData = { email: string; locale: Locale; newEmail?: string; issuedAt?: number; wcaId?: string; name?: string; dob?: string }
 
 /** A confirm link lives as long as an unconfirmed address stays on the list (spec §5). */
 export const CONFIRM_TTL_MS = 7 * 86_400_000
 /** Hesabım's links (spec 2026-10-21): the page itself and a new address's confirm link */
 export const ACCOUNT_TTL_MS = 3_600_000
+/** The Üye ol page's WCA sign-up form, filled from the WCA login */
+export const SIGNUP_TTL_MS = 30 * 60_000
 // An unsubscribe link never expires
-const TTL: Partial<Record<TokenPurpose, number>> = { onay: CONFIRM_TTL_MS, hesap: ACCOUNT_TTL_MS, eposta: ACCOUNT_TTL_MS }
+const TTL: Partial<Record<TokenPurpose, number>> = { onay: CONFIRM_TTL_MS, hesap: ACCOUNT_TTL_MS, eposta: ACCOUNT_TTL_MS, kaydol: SIGNUP_TTL_MS }
 
 // The key for development and tests when NEWSLETTER_SECRET is unset. Production has no fallback: makeToken and
 // readToken both throw from key() unless the secret is at least 32 characters.
@@ -29,7 +33,16 @@ function key(): Buffer {
 export function makeToken(purpose: TokenPurpose, data: TokenData, now = Date.now()): string {
   const iv = randomBytes(12)
   const cipher = createCipheriv('aes-256-gcm', key(), iv)
-  const plain = JSON.stringify({ p: purpose, e: data.email, l: data.locale, t: Math.floor(now / 1000), ...(data.newEmail ? { n: data.newEmail } : {}) })
+  const plain = JSON.stringify({
+    p: purpose,
+    e: data.email,
+    l: data.locale,
+    t: Math.floor(now / 1000),
+    ...(data.newEmail ? { n: data.newEmail } : {}),
+    ...(data.wcaId ? { w: data.wcaId } : {}),
+    ...(data.name ? { m: data.name } : {}),
+    ...(data.dob ? { d: data.dob } : {}),
+  })
   const body = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()])
   return Buffer.concat([iv, body, cipher.getAuthTag()]).toString('base64url')
 }
@@ -46,11 +59,15 @@ export function readToken(purpose: TokenPurpose, token: string, now = Date.now()
     const decipher = createDecipheriv('aes-256-gcm', k, raw.subarray(0, 12))
     decipher.setAuthTag(raw.subarray(raw.length - 16))
     const plain = Buffer.concat([decipher.update(raw.subarray(12, raw.length - 16)), decipher.final()]).toString('utf8')
-    const v = JSON.parse(plain) as { p?: unknown; e?: unknown; l?: unknown; t?: unknown; n?: unknown }
+    const v = JSON.parse(plain) as { p?: unknown; e?: unknown; l?: unknown; t?: unknown; n?: unknown; w?: unknown; m?: unknown; d?: unknown }
     if (v.p !== purpose || typeof v.e !== 'string' || (v.l !== 'tr' && v.l !== 'en') || typeof v.t !== 'number') return null
     const ttl = TTL[purpose]
     if (ttl !== undefined && now - v.t * 1000 > ttl) return null
     if (purpose === 'eposta') return typeof v.n === 'string' ? { email: v.e, locale: v.l, newEmail: v.n, issuedAt: v.t * 1000 } : null
+    if (purpose === 'kaydol') {
+      const str = (x: unknown) => (typeof x === 'string' ? x : '')
+      return { email: v.e, locale: v.l, ...(typeof v.w === 'string' ? { wcaId: v.w } : {}), name: str(v.m), dob: str(v.d) }
+    }
     return { email: v.e, locale: v.l }
   } catch {
     return null

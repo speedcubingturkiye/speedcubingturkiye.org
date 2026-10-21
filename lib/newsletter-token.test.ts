@@ -1,6 +1,6 @@
 // lib/newsletter-token.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ACCOUNT_TTL_MS, CONFIRM_TTL_MS, makeToken, readToken } from '@/lib/newsletter-token'
+import { ACCOUNT_TTL_MS, CONFIRM_TTL_MS, makeToken, readToken, SIGNUP_TTL_MS } from '@/lib/newsletter-token'
 
 const data = { email: 'kutay@example.com', locale: 'en' as const }
 
@@ -32,6 +32,17 @@ describe('newsletter tokens', () => {
     expect(readToken('eposta', change, now)).toEqual({ ...data, newEmail: 'yeni@example.com', issuedAt: now })
     expect(readToken('eposta', change, now + ACCOUNT_TTL_MS + 1000)).toBeNull()
     expect(readToken('eposta', makeToken('eposta', data, now), now)).toBeNull() // no new address: not a change link
+  })
+
+  it('a WCA sign-up (kaydol) carries what the WCA gave and lasts 30 minutes', () => {
+    const now = Date.UTC(2026, 9, 21, 12)
+    const signup = { ...data, wcaId: '2019TEME01', name: 'Kutay Temel', dob: '2005-06-07' }
+    const token = makeToken('kaydol', signup, now)
+    expect(readToken('kaydol', token, now + SIGNUP_TTL_MS - 1000)).toEqual(signup)
+    expect(readToken('kaydol', token, now + SIGNUP_TTL_MS + 1000)).toBeNull()
+    expect(readToken('hesap', token, now)).toBeNull()
+    // a WCA account without a WCA ID, an email or a date of birth
+    expect(readToken('kaydol', makeToken('kaydol', { email: '', locale: 'tr', name: 'Ali Veli' }, now), now)).toEqual({ email: '', locale: 'tr', name: 'Ali Veli', dob: '' })
   })
 
   it('refuses a token made for the other purpose', () => {

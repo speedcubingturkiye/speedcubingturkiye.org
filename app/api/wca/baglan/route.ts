@@ -2,7 +2,7 @@
 // with the state cookie. A form POST, so the page's token stays out of addresses and logs.
 import { NextResponse, type NextRequest } from 'next/server'
 import { readAccountToken } from '@/lib/account'
-import { backToAccount, FLOW_COOKIE, FLOW_MAX_AGE, FLOW_PATH, startWcaLink } from '@/lib/wca-link'
+import { backToAccount, FLOW_COOKIE, FLOW_COOKIE_OPTIONS, startWcaLink } from '@/lib/wca-link'
 
 export async function POST(request: NextRequest) {
   const form = await request.formData()
@@ -12,6 +12,6 @@ export async function POST(request: NextRequest) {
   const flow = startWcaLink(data)
   if (!flow) return to(backToAccount(data, 'wca-hata'))
   const res = NextResponse.redirect(flow.url, 303)
-  res.cookies.set(FLOW_COOKIE, flow.cookie, { httpOnly: true, secure: true, sameSite: 'lax', path: FLOW_PATH, maxAge: FLOW_MAX_AGE })
+  res.cookies.set(FLOW_COOKIE, flow.cookie, FLOW_COOKIE_OPTIONS)
   return res
 }
