@@ -30,7 +30,7 @@ E-posta: <DataController field="email" />
 - **Hukuki sebep:** KVKK md. 5/2-c: üyeliğin kurulması ve sürdürülmesiyle doğrudan ilgili olması.
 - **Erişim:** Sekreter ve işi gereken görevliler.
 - **Saklama:** E-postadaki linkle 7 gün içinde onaylanmayan başvurular silinir. Veriler üyelik sürdükçe saklanır, üyelik sona erince 30 gün içinde silinir.
-- **Hesabım:** Bilgilerinizi [Hesabım](/hesabim) sayfasında görebilir ve düzeltebilir, e-posta adresinizi değiştirebilir, üyelikten ayrılabilirsiniz; sayfa e-postanıza gelen ve 1 saat geçerli olan bir linkle açılır. Üyelikten ayrılınca bilgileriniz hemen silinir. Bunları <DataController field="email" /> adresine yazarak da isteyebilirsiniz.
+- **Hesabım:** Bilgilerinizi [Hesabım](/hesabim) sayfasında görebilir ve düzeltebilir, e-posta adresinizi değiştirebilir, üyelikten ayrılabilirsiniz; sayfa e-postanıza gelen ve 1 saat geçerli olan bir linkle açılır. Adresinizi değiştirirseniz bülten aboneliğiniz de yeni adrese taşınır. Üyelikten ayrılınca bilgileriniz hemen silinir. Bunları <DataController field="email" /> adresine yazarak da isteyebilirsiniz.
 
 ### Bülten aboneliği
 
@@ -95,7 +95,7 @@ haklarına sahipsiniz.
 - **Veri:** e-posta adresiniz; bülten dili; onay e-postasının gönderildiği ve onayın verildiği zaman; onayın verildiği IP adresi (çift onay kaydı için).
 - **Amaç:** yeni yarışma duyurularını ve topluluk haberlerini e-posta ile göndermek. Başka hiçbir amaçla kullanılmaz, kimseyle paylaşılmaz.
 - **Hukuki sebep:** açık rızanız (KVKK md. 5/1). Rıza vermeden de siteyi kullanabilirsiniz.
-- **Çift onay:** Kaydolduktan sonra gelen e-postadaki bağlantıya tıklamadan abonelik başlamaz. Kutuyu Üye ol formunda işaretlediyseniz bu bağlantı üyelik onay e-postasındakidir ve ikisini birlikte onaylar.
+- **Çift onay:** Kaydolduktan sonra gelen e-postadaki bağlantıya tıklamadan abonelik başlamaz. Kutuyu Üye ol formunda işaretlediyseniz bu bağlantı üyelik onay e-postasındakidir ve ikisini birlikte onaylar. Hesabım'dan adresinizi değiştirirseniz yeni adrese giden onay bağlantısı, aboneliğin oraya taşınması için de çift onaydır.
 - **Rızayı geri alma:** Her e-postanın altındaki "abonelikten çık" bağlantısı ile veya <DataController field="email" /> adresine yazarak dilediğiniz zaman. Geri alma, o ana kadarki işlemenin hukuka uygunluğunu etkilemez.
 - **Aktarım:** Liste Amazon SES üzerinde (ABD, Kuzey Virginia) tutulur; e-postalar Amazon SES ile gönderilir. Sekreterin görebilmesi için onaylı abonelerin listesi (e-posta adresi, bülten dili, onay zamanı) Google E-Tablolar'da da tutulur.
 - **Saklama:** 7 gün içinde onaylanmayan adresler silinir. Abonelik, abonelikten çıkana kadar sürer; çıkınca adresiniz listeden silinir. Geri dönen ya da şikâyet bildirilen adresler, onlara yeniden e-posta gönderilmesin diye Amazon SES'in engelleme listesinde tutulur.
