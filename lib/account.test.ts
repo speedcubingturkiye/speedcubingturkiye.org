@@ -2,12 +2,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { confirmEmailChange, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
 import { changeMemberEmail, deleteMember, linkFromSheet } from '@/lib/membership-sheet'
+import { moveSubscription } from '@/lib/newsletter'
 import { makeToken } from '@/lib/newsletter-token'
 import { removeSubscriber, sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 
 vi.mock('@/lib/membership-sheet', () => ({ linkFromSheet: vi.fn(), changeMemberEmail: vi.fn(), deleteMember: vi.fn() }))
 vi.mock('@/lib/ses', () => ({ sendMail: vi.fn(), removeSubscriber: vi.fn() }))
+vi.mock('@/lib/newsletter', () => ({ moveSubscription: vi.fn() }))
 
 const NOW = Date.UTC(2026, 9, 21, 12)
 const tokenIn = (text: string, path: string) => text.match(new RegExp(`${path}\\?t=([\\w-]+)`))?.[1] ?? ''
@@ -47,19 +49,26 @@ describe('the address change', () => {
     const link = vi.mocked(sendMail).mock.calls[0][0]
     expect(link.to).toBe('yeni@example.com')
     vi.mocked(changeMemberEmail).mockResolvedValue('ok')
-    expect(await confirmEmailChange(tokenIn(link.text, 'hesabim/eposta'), NOW)).toBe('ok')
+    expect(await confirmEmailChange(tokenIn(link.text, 'hesabim/eposta'), '1.2.3.4', NOW + 60_000)).toBe('ok')
     expect(changeMemberEmail).toHaveBeenCalledWith('ayse@example.com', 'yeni@example.com')
+    // The newsletter follows, with the change link as the new address's double opt-in
+    expect(moveSubscription).toHaveBeenCalledWith('ayse@example.com', 'yeni@example.com', {
+      sentAt: new Date(NOW).toISOString(),
+      confirmedAt: new Date(NOW + 60_000).toISOString(),
+      ip: '1.2.3.4',
+    })
     expect(vi.mocked(sendMail).mock.calls[1][0].to).toBe('ayse@example.com')
   })
 
   it('answers taken and invalid without a word to the old address', async () => {
     const token = makeToken('eposta', { email: 'ayse@example.com', newEmail: 'yeni@example.com', locale: 'tr' }, NOW)
     vi.mocked(changeMemberEmail).mockResolvedValue('taken')
-    expect(await confirmEmailChange(token, NOW)).toBe('taken')
+    expect(await confirmEmailChange(token, null, NOW)).toBe('taken')
     vi.mocked(changeMemberEmail).mockResolvedValue('none')
-    expect(await confirmEmailChange(token, NOW)).toBe('invalid')
-    expect(await confirmEmailChange(makeToken('hesap', { email: 'ayse@example.com', locale: 'tr' }, NOW), NOW)).toBe('invalid')
+    expect(await confirmEmailChange(token, null, NOW)).toBe('invalid')
+    expect(await confirmEmailChange(makeToken('hesap', { email: 'ayse@example.com', locale: 'tr' }, NOW), null, NOW)).toBe('invalid')
     expect(sendMail).not.toHaveBeenCalled()
+    expect(moveSubscription).not.toHaveBeenCalled()
   })
 })
 

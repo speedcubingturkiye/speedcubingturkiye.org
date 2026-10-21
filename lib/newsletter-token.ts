@@ -4,8 +4,9 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import type { Locale } from '@/i18n/routing'
 
 export type TokenPurpose = 'onay' | 'cikis' | 'hesap' | 'eposta'
-/** `newEmail`: the address an `eposta` link changes the membership to */
-export type TokenData = { email: string; locale: Locale; newEmail?: string }
+/** `newEmail`: the address an `eposta` link changes the membership to; `issuedAt` (epoch ms): when that link was asked
+ *  for, the double opt-in record of the newsletter that follows the change */
+export type TokenData = { email: string; locale: Locale; newEmail?: string; issuedAt?: number }
 
 /** A confirm link lives as long as an unconfirmed address stays on the list (spec §5). */
 export const CONFIRM_TTL_MS = 7 * 86_400_000
@@ -49,7 +50,7 @@ export function readToken(purpose: TokenPurpose, token: string, now = Date.now()
     if (v.p !== purpose || typeof v.e !== 'string' || (v.l !== 'tr' && v.l !== 'en') || typeof v.t !== 'number') return null
     const ttl = TTL[purpose]
     if (ttl !== undefined && now - v.t * 1000 > ttl) return null
-    if (purpose === 'eposta') return typeof v.n === 'string' ? { email: v.e, locale: v.l, newEmail: v.n } : null
+    if (purpose === 'eposta') return typeof v.n === 'string' ? { email: v.e, locale: v.l, newEmail: v.n, issuedAt: v.t * 1000 } : null
     return { email: v.e, locale: v.l }
   } catch {
     return null

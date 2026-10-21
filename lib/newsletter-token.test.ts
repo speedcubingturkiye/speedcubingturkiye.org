@@ -28,7 +28,8 @@ describe('newsletter tokens', () => {
     expect(readToken('hesap', page, now + ACCOUNT_TTL_MS + 1000)).toBeNull()
     expect(readToken('onay', page, now)).toBeNull()
     const change = makeToken('eposta', { ...data, newEmail: 'yeni@example.com' }, now)
-    expect(readToken('eposta', change, now)).toEqual({ ...data, newEmail: 'yeni@example.com' })
+    // issuedAt: when the link was asked for, the double opt-in record of the newsletter that follows the change
+    expect(readToken('eposta', change, now)).toEqual({ ...data, newEmail: 'yeni@example.com', issuedAt: now })
     expect(readToken('eposta', change, now + ACCOUNT_TTL_MS + 1000)).toBeNull()
     expect(readToken('eposta', makeToken('eposta', data, now), now)).toBeNull() // no new address: not a change link
   })

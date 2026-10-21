@@ -63,6 +63,24 @@ export async function prepareSubscription(email: string, locale: Locale, now = D
   }
 }
 
+/** Hesabım's address change (spec 2026-10-21): a confirmed subscription follows the membership to the new address. The
+ *  change link sent there was that address's double opt-in, so `record` (when the link was asked for, when it was used,
+ *  from which IP) is kept as the form's sign-up keeps its own. A subscription still waiting for its link stays put. */
+export async function moveSubscription(
+  oldEmail: string,
+  newEmail: string,
+  record: { sentAt: string; confirmedAt: string; ip: string | null },
+): Promise<void> {
+  const current = await getSubscriber(oldEmail)
+  if (current?.status !== 'confirmed' || !current.locale) return
+  const target = await getSubscriber(newEmail)
+  if (target?.status !== 'confirmed') {
+    if (!target) await putPending(newEmail, current.locale, false)
+    await confirmSubscriber(newEmail, current.locale, record)
+  }
+  await removeSubscriber(oldEmail)
+}
+
 /** The visitor's address for the double opt-in record: the first X-Forwarded-For hop, else X-Real-IP. */
 export const clientIp = (headers: Headers) => headers.get('x-forwarded-for')?.split(',')[0]?.trim() || headers.get('x-real-ip') || null
 

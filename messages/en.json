@@ -246,7 +246,7 @@
     "newEmail": "New address",
     "sendConfirm": "Send confirmation link",
     "confirmSent": "We've sent a confirmation link to the new address; it works for one hour.",
-    "newsletterStays": "Your newsletter subscription stays with the old address.",
+    "newsletterStays": "Your newsletter subscription moves to the new address too.",
     "newsletterTitle": "Newsletter",
     "subscribed": "You're subscribed to the newsletter.",
     "pending": "Your newsletter subscription is waiting for confirmation.",

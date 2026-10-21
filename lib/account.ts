@@ -4,6 +4,7 @@
 import type { Locale } from '@/i18n/routing'
 import { renderAccountLinkMail, renderEmailChangedMail, renderEmailChangeMail } from '@/lib/mail-render'
 import { changeMemberEmail, deleteMember, linkFromSheet } from '@/lib/membership-sheet'
+import { moveSubscription } from '@/lib/newsletter'
 import { makeToken, readToken, type TokenData } from '@/lib/newsletter-token'
 import { removeSubscriber, sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
@@ -31,13 +32,20 @@ export async function requestEmailChange(email: string, newEmail: string, locale
   return sendMail({ to: newEmail, replyTo: site.contactEmail, ...renderEmailChangeMail({ locale, url }) })
 }
 
-/** The new address's link. On 'ok' the old address gets a notice; whether that mail went never changes the answer. */
-export async function confirmEmailChange(token: string, now = Date.now()): Promise<'ok' | 'taken' | 'invalid' | 'error'> {
+/** The new address's link (`ip`: who opened it). On 'ok' a confirmed newsletter subscription follows to the new address,
+ *  this link being its double opt-in, and the old address gets a notice; neither ever changes the answer. */
+export async function confirmEmailChange(token: string, ip: string | null, now = Date.now()): Promise<'ok' | 'taken' | 'invalid' | 'error'> {
   const data = readToken('eposta', token, now)
   if (!data?.newEmail) return 'invalid'
   const result = await changeMemberEmail(data.email, data.newEmail)
   if (result === 'none') return 'invalid' // left, or changed already
   if (result !== 'ok') return result
+  try {
+    const record = { sentAt: new Date(data.issuedAt ?? now).toISOString(), confirmedAt: new Date(now).toISOString(), ip }
+    await moveSubscription(data.email, data.newEmail, record)
+  } catch (e) {
+    console.error('newsletter move on address change failed:', e instanceof Error ? e.name : String(e))
+  }
   await sendMail({ to: data.email, replyTo: site.contactEmail, ...renderEmailChangedMail({ locale: data.locale }) })
   return 'ok'
 }

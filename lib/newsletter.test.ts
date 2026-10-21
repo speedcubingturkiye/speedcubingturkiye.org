@@ -7,6 +7,7 @@ import {
   confirmSubscription,
   mailSubscribers,
   maskEmail,
+  moveSubscription,
   prepareSubscription,
   requestSubscription,
   RESEND_AFTER_MS,
@@ -239,6 +240,36 @@ describe('prepareSubscription', () => {
     expect(await prepareSubscription('a@b.com', 'tr', NOW)).not.toBeNull()
     vi.mocked(getSubscriber).mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'TooManyRequestsException' }))
     expect(await prepareSubscription('a@b.com', 'tr', NOW)).toBeNull()
+  })
+})
+
+describe('moveSubscription', () => {
+  const record = { sentAt: '2026-10-21T09:00:00.000Z', confirmedAt: '2026-10-21T09:05:00.000Z', ip: '1.2.3.4' }
+
+  it('carries a confirmed subscription to a new or pending address, the change link as its double opt-in', async () => {
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'confirmed', locale: 'en', updatedAt: 0 }).mockResolvedValueOnce(null)
+    await moveSubscription('eski@x.com', 'yeni@x.com', record)
+    expect(putPending).toHaveBeenCalledWith('yeni@x.com', 'en', false)
+    expect(confirmSubscriber).toHaveBeenCalledWith('yeni@x.com', 'en', record)
+    expect(removeSubscriber).toHaveBeenCalledWith('eski@x.com')
+    vi.mocked(putPending).mockClear()
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'confirmed', locale: 'tr', updatedAt: 0 }).mockResolvedValueOnce({ status: 'pending', locale: null, updatedAt: 0 })
+    await moveSubscription('eski@x.com', 'yeni@x.com', record)
+    expect(putPending).not.toHaveBeenCalled()
+    expect(confirmSubscriber).toHaveBeenLastCalledWith('yeni@x.com', 'tr', record)
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('leaves a subscription still waiting for its link alone, and only drops the old one when the new address subscribes already', async () => {
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'pending', locale: null, updatedAt: 0 })
+    await moveSubscription('eski@x.com', 'yeni@x.com', record)
+    vi.mocked(getSubscriber).mockResolvedValueOnce(null)
+    await moveSubscription('eski@x.com', 'yeni@x.com', record)
+    expect(removeSubscriber).not.toHaveBeenCalled()
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'confirmed', locale: 'tr', updatedAt: 0 }).mockResolvedValueOnce({ status: 'confirmed', locale: 'tr', updatedAt: 0 })
+    await moveSubscription('eski@x.com', 'yeni@x.com', record)
+    expect(confirmSubscriber).not.toHaveBeenCalled()
+    expect(removeSubscriber).toHaveBeenCalledWith('eski@x.com')
   })
 })
 
