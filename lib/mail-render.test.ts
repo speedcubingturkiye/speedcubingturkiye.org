@@ -1,6 +1,6 @@
 // lib/mail-render.test.ts
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { absoluteUrl, renderAccountLinkMail, renderConfirmMail, renderEmailChangedMail, renderEmailChangeMail, renderMembershipConfirmMail, renderNewsMail, unsubscribeHeaders } from '@/lib/mail-render'
+import { absoluteUrl, renderAccountLinkMail, renderConfirmMail, renderEmailChangedMail, renderEmailChangeMail, renderMembershipConfirmMail, renderMembershipStartedMail, renderNewsMail, unsubscribeHeaders } from '@/lib/mail-render'
 import { MDX_COMPONENTS } from '@/lib/content-check'
 import { escapeHtml } from '@/lib/escape-html'
 import { site } from '@/site.config'
@@ -214,5 +214,17 @@ describe('membership mails', () => {
     ])
     expect(m.html).toContain('href="https://speedcubingturkiye.org/uye-ol/onay?t=abc&amp;b=def"')
     expect(renderMembershipConfirmMail({ locale: 'en', confirmUrl: url }).text).toContain('If you did not apply, ignore this email.\n')
+  })
+})
+
+describe('the started mail (WCA ile kaydol)', () => {
+  it('says the membership started and where to write, with no link, in the page language', () => {
+    const m = renderMembershipStartedMail({ locale: 'tr' })
+    expect(m.subject).toBe('Üyeliğin başladı')
+    expect(m.text).toContain('WCA hesabınla kaydoldun')
+    expect(m.text).toContain(site.contactEmail)
+    expect(m.text).not.toContain('http')
+    expect(m.html).toContain('<html lang="tr">')
+    expect(renderMembershipStartedMail({ locale: 'en' }).subject).toBe('Your membership has started')
   })
 })

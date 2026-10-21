@@ -330,7 +330,10 @@
       "too_fast": "Please wait a few seconds and try again.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
       "closed": "The membership form is closed right now.",
-      "send_failed": "We couldn't save your application right now; please try again in a few minutes."
+      "send_failed": "We couldn't save your application right now; please try again in a few minutes.",
+      "wca_expired": "Your WCA details expired; sign up with WCA again.",
+      "wca_taken": "This WCA account is already verified on another membership; reach it from My account.",
+      "not_allowed": "For the province rankings your city cannot be abroad."
     }
   },
   "footer": {

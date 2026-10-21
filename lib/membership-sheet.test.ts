@@ -57,6 +57,14 @@ describe('applyToSheet', () => {
     expect(await applyToSheet(ROW)).toBe('member')
   })
 
+  it('passes the WCA sign-up results through (WCA ile kaydol)', async () => {
+    for (const result of ['started', 'linked', 'taken'] as const) {
+      answer({ result })
+      expect(await applyToSheet({ ...ROW, wcaId: '2019TEME01', wcaVerified: true, ranking: true, confirmed: true })).toBe(result)
+    }
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ wcaVerified: true, ranking: true, confirmed: true })
+  })
+
   it('turns an HTTP error, bad JSON, a thrown fetch or an unknown result into error', async () => {
     answer({ result: 'pending' }, 500)
     expect(await applyToSheet(ROW)).toBe('error')

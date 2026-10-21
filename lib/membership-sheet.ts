@@ -16,10 +16,16 @@ export type SheetRow = {
   wcaId: string
   helps: boolean
   locale: Locale
+  /** WCA ile kaydol (spec 2026-10-21): the WCA ID came from a WCA login; join the il ranking; the WCA login proved the
+   *  address. A typed application leaves them out. */
+  wcaVerified?: boolean
+  ranking?: boolean
+  confirmed?: boolean
 }
 /** pending: a new or renewed application waits for its link; recent: its link went out less than a day ago;
- *  member: the address is already a member */
-export type ApplyResult = 'pending' | 'recent' | 'member' | 'error'
+ *  member: the address is already a member. WCA ile kaydol adds started (a proved address became a member at once),
+ *  linked (the WCA ID joined the member the address already is) and taken (another member verified this WCA ID). */
+export type ApplyResult = 'pending' | 'recent' | 'member' | 'started' | 'linked' | 'taken' | 'error'
 export type ConfirmResult = 'ok' | 'invalid' | 'error'
 
 const TIMEOUT_MS = 10_000
@@ -78,7 +84,8 @@ async function call<R extends string>(action: Action, payload: object, allowed: 
 }
 
 export async function applyToSheet(row: SheetRow): Promise<ApplyResult> {
-  return call('apply', row, ['pending', 'recent', 'member'], 'pending')
+  // Development without the script: a WCA sign-up with a proved address starts at once, as the script would answer
+  return call('apply', row, ['pending', 'recent', 'member', 'started', 'linked', 'taken'], row.confirmed ? 'started' : 'pending')
 }
 
 export async function confirmInSheet(token: string, at: string): Promise<ConfirmResult> {

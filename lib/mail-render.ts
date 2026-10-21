@@ -61,6 +61,8 @@ const T = {
     emailChangeButton: 'Adresimi değiştir',
     emailChangedSubject: 'E-posta adresin değişti',
     emailChangedLead: 'Speedcubing Türkiye üyeliğinin e-posta adresi değiştirildi. Bunu sen yapmadıysan {email} adresine yaz.',
+    startedSubject: 'Üyeliğin başladı',
+    startedLead: "Speedcubing Türkiye üyeliğin başladı. WCA hesabınla kaydoldun; bilgilerini Hesabım'dan değiştirebilirsin. Bu kaydı sen yapmadıysan {email} adresine yaz.",
   },
   en: {
     readMore: 'Read on our site',
@@ -86,6 +88,8 @@ const T = {
     emailChangeButton: 'Change my address',
     emailChangedSubject: 'Your email address changed',
     emailChangedLead: 'The email address of your Speedcubing Türkiye membership was changed. If you did not do this, write to {email}.',
+    startedSubject: 'Your membership has started',
+    startedLead: 'Your Speedcubing Türkiye membership has started. You signed up with your WCA account; you can change your details on My account. If you did not sign up, write to {email}.',
   },
 } as const
 
@@ -404,6 +408,15 @@ export function renderEmailChangedMail({ locale }: { locale: Locale }): Rendered
   const lead = s.emailChangedLead.replace('{email}', site.contactEmail)
   const text = [lead, '--', s.accountFooter].join('\n\n')
   return { subject: s.emailChangedSubject, html: frame(locale, `<p style="margin:0">${escapeHtml(lead)}</p>`, s.accountFooter), text }
+}
+
+/** WCA ile kaydol (spec 2026-10-21): a membership that started at once, with the address the WCA verified. No link;
+ *  only where to write if someone else signed up with this WCA account. */
+export function renderMembershipStartedMail({ locale }: { locale: Locale }): RenderedMail {
+  const s = T[locale]
+  const lead = s.startedLead.replace('{email}', site.contactEmail)
+  const text = [lead, '--', s.membershipFooter].join('\n\n')
+  return { subject: s.startedSubject, html: frame(locale, `<p style="margin:0">${escapeHtml(lead)}</p>`, s.membershipFooter), text }
 }
 
 /** RFC 8058 one-click unsubscribe, on every mailing (not on the confirmation mail). */

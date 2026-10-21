@@ -1,14 +1,14 @@
 // lib/membership.test.ts
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmMembership, istanbulStamp, requestMembership } from '@/lib/membership'
+import { confirmMembership, istanbulStamp, requestMembership, requestWcaMembership } from '@/lib/membership'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
-import { prepareSubscription, requestSubscription } from '@/lib/newsletter'
+import { prepareSubscription, requestSubscription, subscribeVerified } from '@/lib/newsletter'
 import { sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 
 vi.mock('@/lib/membership-sheet', () => ({ applyToSheet: vi.fn(), confirmInSheet: vi.fn() }))
-vi.mock('@/lib/newsletter', () => ({ prepareSubscription: vi.fn(), requestSubscription: vi.fn() }))
+vi.mock('@/lib/newsletter', () => ({ prepareSubscription: vi.fn(), requestSubscription: vi.fn(), subscribeVerified: vi.fn() }))
 vi.mock('@/lib/ses', () => ({ sendMail: vi.fn() }))
 
 const NOW = new Date(Date.UTC(2026, 9, 19, 11, 5)) // 14:05 in Istanbul
@@ -108,5 +108,47 @@ describe('confirmMembership', () => {
     expect(await confirmMembership('short', NOW)).toBe(false)
     expect(await confirmMembership('', NOW)).toBe(false)
     expect(confirmInSheet).not.toHaveBeenCalled()
+  })
+})
+
+describe('requestWcaMembership (WCA ile kaydol)', () => {
+  const WCA = { wcaId: '2019TEME01', ranking: true, confirmed: true, ip: '1.2.3.4' }
+
+  it('a proved address: the row starts as a member with the WCA marks, the started mail goes, the newsletter starts', async () => {
+    vi.mocked(applyToSheet).mockResolvedValue('started')
+    expect(await requestWcaMembership({ ...APP, newsletter: true }, WCA, 'en', NOW)).toBe('started')
+    expect(vi.mocked(applyToSheet).mock.calls[0][0]).toMatchObject({ ...FIELDS, wcaId: '2019TEME01', wcaVerified: true, ranking: true, confirmed: true, locale: 'en' })
+    expect(subscribeVerified).toHaveBeenCalledWith('ayse@example.com', 'en', '1.2.3.4', NOW.getTime())
+    expect(vi.mocked(sendMail).mock.calls[0][0]).toMatchObject({ to: 'ayse@example.com', subject: 'Your membership has started' })
+  })
+
+  it('a member linked or found: no mail; the newsletter box still starts the subscription', async () => {
+    for (const result of ['linked', 'member'] as const) {
+      vi.mocked(applyToSheet).mockResolvedValue(result)
+      expect(await requestWcaMembership({ ...APP, newsletter: true }, WCA, 'tr', NOW)).toBe(result)
+    }
+    expect(sendMail).not.toHaveBeenCalled()
+    expect(subscribeVerified).toHaveBeenCalledTimes(2)
+  })
+
+  it('a changed address takes the confirm link, the WCA marks waiting in the row', async () => {
+    vi.mocked(applyToSheet).mockResolvedValue('pending')
+    expect(await requestWcaMembership(APP, { ...WCA, confirmed: false }, 'tr', NOW)).toBe('sent')
+    expect(vi.mocked(applyToSheet).mock.calls[0][0]).toMatchObject({ confirmed: false, wcaVerified: true, ranking: true })
+    expect(vi.mocked(sendMail).mock.calls[0][0].subject).toBe('Üyeliğini onayla')
+    expect(subscribeVerified).not.toHaveBeenCalled()
+    vi.mocked(applyToSheet).mockResolvedValue('member')
+    expect(await requestWcaMembership({ ...APP, newsletter: true }, { ...WCA, confirmed: false }, 'tr', NOW)).toBe('sent')
+    expect(requestSubscription).toHaveBeenCalledWith('ayse@example.com', 'tr', NOW.getTime())
+  })
+
+  it('no WCA ID: no mark and no ranking; a taken WCA ID and a sheet failure pass on', async () => {
+    vi.mocked(applyToSheet).mockResolvedValue('started')
+    await requestWcaMembership(APP, { ...WCA, wcaId: null }, 'tr', NOW)
+    expect(vi.mocked(applyToSheet).mock.calls[0][0]).toMatchObject({ wcaId: '', wcaVerified: false, ranking: false })
+    vi.mocked(applyToSheet).mockResolvedValue('taken')
+    expect(await requestWcaMembership(APP, WCA, 'tr', NOW)).toBe('taken')
+    vi.mocked(applyToSheet).mockResolvedValue('error')
+    expect(await requestWcaMembership(APP, WCA, 'tr', NOW)).toBe('error')
   })
 })

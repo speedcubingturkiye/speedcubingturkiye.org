@@ -81,6 +81,17 @@ export async function moveSubscription(
   await removeSubscriber(oldEmail)
 }
 
+/** WCA ile kaydol (spec 2026-10-21) with the address the WCA verified: the subscription starts without a confirm mail.
+ *  The record is when the box was ticked and from which IP, marked `via: 'wca'`. A confirmed subscriber stays as they
+ *  are; one waiting for its link is confirmed in place. */
+export async function subscribeVerified(email: string, locale: Locale, ip: string | null, now = Date.now()): Promise<void> {
+  const current = await getSubscriber(email)
+  if (current?.status === 'confirmed') return
+  if (!current) await putPending(email, locale, false, now)
+  const at = new Date(now).toISOString()
+  await confirmSubscriber(email, locale, { sentAt: at, confirmedAt: at, ip, via: 'wca' })
+}
+
 /** The visitor's address for the double opt-in record: the first X-Forwarded-For hop, else X-Real-IP. */
 export const clientIp = (headers: Headers) => headers.get('x-forwarded-for')?.split(',')[0]?.trim() || headers.get('x-real-ip') || null
 

@@ -11,6 +11,7 @@ import {
   prepareSubscription,
   requestSubscription,
   RESEND_AFTER_MS,
+  subscribeVerified,
 } from '@/lib/newsletter'
 import { CONFIRM_TTL_MS, makeToken, readToken } from '@/lib/newsletter-token'
 import { confirmSubscriber, getSubscriber, listStalePending, listSubscribers, putPending, removeSubscriber, sendMail } from '@/lib/ses'
@@ -278,5 +279,26 @@ describe('clientIp', () => {
     expect(clientIp(new Headers({ 'x-forwarded-for': '1.2.3.4, 10.0.0.1' }))).toBe('1.2.3.4')
     expect(clientIp(new Headers({ 'x-real-ip': '5.6.7.8' }))).toBe('5.6.7.8')
     expect(clientIp(new Headers())).toBeNull()
+  })
+})
+
+describe('subscribeVerified', () => {
+  it('starts the subscription of an address the WCA verified, with no confirm mail (WCA ile kaydol)', async () => {
+    vi.mocked(getSubscriber).mockResolvedValueOnce(null)
+    await subscribeVerified('ayse@x.com', 'en', '1.2.3.4', NOW)
+    const at = new Date(NOW).toISOString()
+    expect(putPending).toHaveBeenCalledWith('ayse@x.com', 'en', false, NOW)
+    expect(confirmSubscriber).toHaveBeenCalledWith('ayse@x.com', 'en', { sentAt: at, confirmedAt: at, ip: '1.2.3.4', via: 'wca' })
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('confirms an address waiting for its link in place, and leaves a confirmed one as it is', async () => {
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'pending', locale: null, updatedAt: 0 })
+    await subscribeVerified('ayse@x.com', 'tr', null, NOW)
+    expect(putPending).not.toHaveBeenCalled()
+    expect(confirmSubscriber).toHaveBeenCalledTimes(1)
+    vi.mocked(getSubscriber).mockResolvedValueOnce({ status: 'confirmed', locale: 'en', updatedAt: 0 })
+    await subscribeVerified('ayse@x.com', 'tr', null, NOW)
+    expect(confirmSubscriber).toHaveBeenCalledTimes(1)
   })
 })

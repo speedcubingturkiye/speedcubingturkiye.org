@@ -133,7 +133,8 @@ export async function putPending(email: string, locale: Locale, exists: boolean,
 export async function confirmSubscriber(
   email: string,
   locale: Locale,
-  record: { sentAt: string; confirmedAt: string; ip: string | null },
+  // via 'wca': no confirm mail, the WCA had verified the address (WCA ile kaydol, spec 2026-10-21)
+  record: { sentAt: string; confirmedAt: string; ip: string | null; via?: 'wca' },
 ): Promise<void> {
   const c = ses()
   if (!c) return console.log('[ses:dev] confirmed contact', locale)

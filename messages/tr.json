@@ -330,7 +330,10 @@
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
       "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
       "closed": "Üyelik formu şu an kapalı.",
-      "send_failed": "Şu an kaydedemedik; birkaç dakika sonra tekrar dene."
+      "send_failed": "Şu an kaydedemedik; birkaç dakika sonra tekrar dene.",
+      "wca_expired": "WCA bilgisinin süresi doldu; WCA ile tekrar kaydol.",
+      "wca_taken": "Bu WCA hesabı başka bir üyelikte doğrulanmış; o üyeliğe Hesabım'dan ulaşabilirsin.",
+      "not_allowed": "İl sıralaması için şehrin Yurt dışı olmamalı."
     }
   },
   "footer": {
