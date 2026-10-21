@@ -1,6 +1,6 @@
 // lib/mail-render.test.ts
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { absoluteUrl, renderConfirmMail, renderMembershipConfirmMail, renderNewsMail, unsubscribeHeaders } from '@/lib/mail-render'
+import { absoluteUrl, renderAccountLinkMail, renderConfirmMail, renderEmailChangedMail, renderEmailChangeMail, renderMembershipConfirmMail, renderNewsMail, unsubscribeHeaders } from '@/lib/mail-render'
 import { MDX_COMPONENTS } from '@/lib/content-check'
 import { escapeHtml } from '@/lib/escape-html'
 import { site } from '@/site.config'
@@ -164,6 +164,32 @@ describe('unsubscribeHeaders', () => {
       'List-Unsubscribe': '<https://x/api/bulten/cikis?t=abc>',
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     })
+  })
+})
+
+describe('Hesabım mails', () => {
+  it('the link and the change mail carry their link, a terse lead and the ignore line', () => {
+    const url = `${site.url}/hesabim?t=abc&x=1`
+    const m = renderAccountLinkMail({ locale: 'tr', url })
+    expect(m.subject).toBe('Hesabım linkin')
+    expect(m.text.split('\n\n').slice(0, 3)).toEqual([
+      'Üyelik bilgilerini görmek ve düzenlemek için düğmeye tıkla. Link 1 saat geçerli.',
+      `Hesabımı aç: ${url}`,
+      'Bu isteği sen yapmadıysan bu maili yok say.',
+    ])
+    expect(m.html).toContain(`href="${site.url}/hesabim?t=abc&amp;x=1"`)
+    const c = renderEmailChangeMail({ locale: 'en', url })
+    expect(c.subject).toBe('Confirm your email address')
+    expect(c.text).toContain(`Change my address: ${url}`)
+    expect(c.text).toContain('If you did not ask for this, ignore this email.')
+  })
+
+  it('the notice to the old address has no link, only where to write', () => {
+    const n = renderEmailChangedMail({ locale: 'tr' })
+    expect(n.subject).toBe('E-posta adresin değişti')
+    expect(n.text).toContain(site.contactEmail)
+    expect(n.text).not.toContain('http')
+    expect(renderEmailChangedMail({ locale: 'en' }).subject).toBe('Your email address changed')
   })
 })
 

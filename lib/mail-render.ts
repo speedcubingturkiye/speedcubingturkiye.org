@@ -51,6 +51,16 @@ const T = {
     membershipButton: 'Üyeliğimi onayla',
     membershipIgnore: 'Bu başvuruyu sen yapmadıysan bu maili yok say.',
     membershipFooter: "Bu maili speedcubingturkiye.org'daki üyelik formu doldurulduğu için aldın.",
+    accountSubject: 'Hesabım linkin',
+    accountLead: 'Üyelik bilgilerini görmek ve düzenlemek için düğmeye tıkla. Link 1 saat geçerli.',
+    accountButton: 'Hesabımı aç',
+    accountIgnore: 'Bu isteği sen yapmadıysan bu maili yok say.',
+    accountFooter: "Bu maili speedcubingturkiye.org'daki Hesabım sayfası kullanıldığı için aldın.",
+    emailChangeSubject: 'E-posta adresini onayla',
+    emailChangeLead: 'Speedcubing Türkiye üyeliğinin e-posta adresini bu adresle değiştirmek için düğmeye tıkla. Link 1 saat geçerli.',
+    emailChangeButton: 'Adresimi değiştir',
+    emailChangedSubject: 'E-posta adresin değişti',
+    emailChangedLead: 'Speedcubing Türkiye üyeliğinin e-posta adresi değiştirildi. Bunu sen yapmadıysan {email} adresine yaz.',
   },
   en: {
     readMore: 'Read on our site',
@@ -66,6 +76,16 @@ const T = {
     membershipButton: 'Confirm my membership',
     membershipIgnore: 'If you did not apply, ignore this email.',
     membershipFooter: 'You received this email because the membership form on speedcubingturkiye.org was filled in.',
+    accountSubject: 'Your account link',
+    accountLead: 'To see and edit your membership details, click the button. The link works for one hour.',
+    accountButton: 'Open my account',
+    accountIgnore: 'If you did not ask for this, ignore this email.',
+    accountFooter: 'You received this email because the account page on speedcubingturkiye.org was used.',
+    emailChangeSubject: 'Confirm your email address',
+    emailChangeLead: 'To change the email address of your Speedcubing Türkiye membership to this one, click the button. The link works for one hour.',
+    emailChangeButton: 'Change my address',
+    emailChangedSubject: 'Your email address changed',
+    emailChangedLead: 'The email address of your Speedcubing Türkiye membership was changed. If you did not do this, write to {email}.',
   },
 } as const
 
@@ -352,6 +372,38 @@ export function renderMembershipConfirmMail({ locale, confirmUrl }: { locale: Lo
   ].join('\n')
   const text = [s.membershipLead, `${s.membershipButton}: ${confirmUrl}`, s.membershipIgnore, '--', s.membershipFooter].join('\n\n')
   return { subject: s.membershipSubject, html: frame(locale, content, s.membershipFooter), text }
+}
+
+/** A Hesabım mail with a button (spec 2026-10-21): the lead, the button and the ignore line. */
+function accountButtonMail(locale: Locale, subject: string, lead: string, button: string, url: string): RenderedMail {
+  const s = T[locale]
+  const content = [
+    `<p style="margin:0 0 24px">${lead}</p>`,
+    `<p style="margin:0 0 24px"><a href="${escapeHtml(url)}" style="display:inline-block;background:${BRAND};color:#ffffff;font-weight:bold;padding:12px 20px;text-decoration:none">${button}</a></p>`,
+    `<p style="margin:0;font-size:14px;color:${INK2}">${s.accountIgnore}</p>`,
+  ].join('\n')
+  const text = [lead, `${button}: ${url}`, s.accountIgnore, '--', s.accountFooter].join('\n\n')
+  return { subject, html: frame(locale, content, s.accountFooter), text }
+}
+
+/** The one-hour link that opens Hesabım. */
+export function renderAccountLinkMail({ locale, url }: { locale: Locale; url: string }): RenderedMail {
+  const s = T[locale]
+  return accountButtonMail(locale, s.accountSubject, s.accountLead, s.accountButton, url)
+}
+
+/** To the new address: the one-hour link that makes it the membership's address. */
+export function renderEmailChangeMail({ locale, url }: { locale: Locale; url: string }): RenderedMail {
+  const s = T[locale]
+  return accountButtonMail(locale, s.emailChangeSubject, s.emailChangeLead, s.emailChangeButton, url)
+}
+
+/** To the old address once the change is done: no link, only where to write. */
+export function renderEmailChangedMail({ locale }: { locale: Locale }): RenderedMail {
+  const s = T[locale]
+  const lead = s.emailChangedLead.replace('{email}', site.contactEmail)
+  const text = [lead, '--', s.accountFooter].join('\n\n')
+  return { subject: s.emailChangedSubject, html: frame(locale, `<p style="margin:0">${escapeHtml(lead)}</p>`, s.accountFooter), text }
 }
 
 /** RFC 8058 one-click unsubscribe, on every mailing (not on the confirmation mail). */
