@@ -5,12 +5,14 @@
 // the script: @OnlyCurrentDoc keeps its access to this spreadsheet alone.
 /** @OnlyCurrentDoc */
 const SHEET = 'Üyeler'
-const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu']
+const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu', 'WCA doğrulandı', 'İl sıralaması', 'İl tarihi']
 const COL = Object.fromEntries(HEADERS.map((h, i) => [h, i]))
 const PENDING = 'Onay bekliyor'
 const MEMBER = 'Üye'
+const ABROAD = 'Yurt dışı'
 const DAY_MS = 24 * 60 * 60 * 1000
 const CONFIRM_DAYS = 7
+const LOCK_DAYS = 365
 // The newsletter tab (spec 2026-10-20 §B): a copy of the SES list, written again on each refresh
 const SITE = 'https://speedcubingturkiye.org'
 const NEWSLETTER = 'Bülten'
@@ -33,6 +35,10 @@ function doPost(e) {
     if (body.action === 'update') return reply(update(body))
     if (body.action === 'changeEmail') return reply(changeEmail(body))
     if (body.action === 'delete') return reply(remove(body))
+    if (body.action === 'linkWca') return reply(linkWca(body))
+    if (body.action === 'unlinkWca') return reply(unlinkWca(body))
+    if (body.action === 'ranking') return reply(ranking(body))
+    if (body.action === 'rankingMembers') return reply(rankingMembers())
     return reply({ result: 'error', reason: 'action' })
   })
 }
@@ -96,7 +102,7 @@ function apply(b) {
     if (all[i][COL['Durum']] !== PENDING) return { result: 'member' } // "Üye", or "Asıl Üye" typed by the Secretary
     if (stampMs(b.at) - stampMs(all[i][COL['Başvuru tarihi']]) < DAY_MS) return { result: 'recent' }
   }
-  const row = [b.at, PENDING, b.firstName, b.lastName, email, b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '', b.locale, '', b.token].map(text)
+  const row = [b.at, PENDING, b.firstName, b.lastName, email, b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '', b.locale, '', b.token, '', '', ''].map(text)
   if (i >= 0) sh.getRange(i + 2, 1, 1, HEADERS.length).setValues([row])
   else sh.appendRow(row)
   return { result: 'pending' }
@@ -149,18 +155,28 @@ function get(b) {
       wcaId: r[COL['WCA ID']],
       helps: r[COL['Yarışmalara yardım']] === 'Evet',
       locale: r[COL['Dil']] === 'en' ? 'en' : 'tr',
+      wcaVerified: marked(r, 'WCA doğrulandı'),
+      ranking: marked(r, 'İl sıralaması'),
+      cityLockedUntil: lockedUntil(r, Date.now()),
     },
   }
 }
 
-/** Ad to Yarışmalara yardım (C to J) in one write; the address stays as it is. */
+/** Ad to Yarışmalara yardım (C to J) in one write; the address stays as it is. A new city waits for the il ranking's
+ *  lock; a changed verified WCA ID loses its mark and the ranking; a move inside the ranking starts a new lock, and a
+ *  move abroad leaves the ranking. */
 function update(b) {
   const sh = sheet()
   const all = rows(sh)
   const i = memberIndex(all, b.email)
   if (i < 0) return { result: 'none' }
-  const values = [b.firstName, b.lastName, all[i][COL['E-posta']], b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '']
+  const r = all[i]
+  const moved = b.city !== r[COL['Şehir']]
+  if (moved && lockedUntil(r, stampMs(b.at))) return { result: 'locked' }
+  const values = [b.firstName, b.lastName, r[COL['E-posta']], b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '']
   sh.getRange(i + 2, COL['Ad'] + 1, 1, values.length).setValues([values.map(text)])
+  if (b.wcaId !== r[COL['WCA ID']] && marked(r, 'WCA doğrulandı')) mark(sh, i, { 'WCA doğrulandı': '', 'İl sıralaması': '' })
+  else if (moved && marked(r, 'İl sıralaması')) mark(sh, i, b.city === ABROAD ? { 'İl sıralaması': '' } : { 'İl tarihi': b.at })
   return { result: 'ok' }
 }
 
@@ -185,10 +201,78 @@ function remove(b) {
   return { result: 'ok' }
 }
 
+// WCA bağlama and il sıralaması (spec 2026-10-21, Parça 2). N and O hold the Istanbul stamps of the verification and
+// of the consent, P the stamp the city lock started. Any value counts as set, so the Secretary may type in them too.
+
+const marked = (r, h) => Boolean(r[COL[h]])
+
+/** The Istanbul date the city lock ends, or '' when none runs at `nowMs`; an unreadable İl tarihi locks nothing. */
+function lockedUntil(r, nowMs) {
+  const since = r[COL['İl tarihi']]
+  const end = since ? stampMs(since) + LOCK_DAYS * DAY_MS : 0
+  return nowMs < end ? new Date(end + 3 * 3600000).toISOString().slice(0, 10) : ''
+}
+
+/** Writes the given columns of member row i as text ('' clears). */
+function mark(sh, i, changes) {
+  Object.entries(changes).forEach(([h, v]) => sh.getRange(i + 2, COL[h] + 1).setValue(text(v)))
+}
+
+/** WCA bağlama: the WCA ID the WCA login returned, unless another member verified it first. */
+function linkWca(b) {
+  const sh = sheet()
+  const all = rows(sh)
+  const i = memberIndex(all, b.email)
+  if (i < 0) return { result: 'none' }
+  if (all.some((r, j) => j !== i && r[COL['WCA ID']] === b.wcaId && marked(r, 'WCA doğrulandı'))) return { result: 'taken' }
+  const changes = { 'WCA ID': b.wcaId, 'WCA doğrulandı': b.at }
+  if (b.wcaId !== all[i][COL['WCA ID']]) changes['İl sıralaması'] = '' // the consent named the old ID's results
+  mark(sh, i, changes)
+  return { result: 'ok' }
+}
+
+/** The link goes, the ranking with it; the city lock stays. */
+function unlinkWca(b) {
+  const sh = sheet()
+  const i = memberIndex(rows(sh), b.email)
+  if (i < 0) return { result: 'none' }
+  mark(sh, i, { 'WCA doğrulandı': '', 'İl sıralaması': '' })
+  return { result: 'ok' }
+}
+
+/** İl sıralaması in or out. In needs a verified WCA ID and a province; the city lock starts unless one runs. */
+function ranking(b) {
+  const sh = sheet()
+  const all = rows(sh)
+  const i = memberIndex(all, b.email)
+  if (i < 0) return { result: 'none' }
+  if (!b.join) {
+    mark(sh, i, { 'İl sıralaması': '' })
+    return { result: 'ok' }
+  }
+  const r = all[i]
+  if (!marked(r, 'WCA doğrulandı') || r[COL['Şehir']] === ABROAD) return { result: 'not_allowed' }
+  mark(sh, i, lockedUntil(r, stampMs(b.at)) ? { 'İl sıralaması': b.at } : { 'İl sıralaması': b.at, 'İl tarihi': b.at })
+  return { result: 'ok' }
+}
+
+/** The rankings pages' list: verified members in the il ranking, with their province. */
+function rankingMembers() {
+  const members = rows(sheet())
+    .filter((r) => r[COL['Durum']] !== PENDING && marked(r, 'WCA doğrulandı') && marked(r, 'İl sıralaması') && r[COL['WCA ID']] && r[COL['Şehir']] !== ABROAD)
+    .map((r) => ({ wcaId: r[COL['WCA ID']], il: r[COL['Şehir']] }))
+  return { result: 'ok', members }
+}
+
 function sheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet()
   const sh = ss.getSheetByName(SHEET) || ss.insertSheet(SHEET)
   if (sh.getLastRow() === 0) sh.appendRow(HEADERS)
+  // Columns added later (N to P, spec 2026-10-21) get their headers on the first call after an update
+  else if (sh.getRange(1, HEADERS.length).getDisplayValue() === '') {
+    const added = HEADERS.slice(COL['WCA doğrulandı'])
+    sh.getRange(1, COL['WCA doğrulandı'] + 1, 1, added.length).setValues([added])
+  }
   return sh
 }
 

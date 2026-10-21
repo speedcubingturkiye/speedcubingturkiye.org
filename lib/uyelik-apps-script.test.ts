@@ -1,10 +1,11 @@
 // lib/uyelik-apps-script.test.ts: the members sheet's Apps Script (scripts/uyelik-apps-script.gs), run against an
-// in-memory sheet. Only the Hesabım actions are covered here; the script has no other automated check.
+// in-memory sheet. Only the Hesabım, WCA and il sıralaması actions are covered here; the script has no other
+// automated check.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu']
+const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu', 'WCA doğrulandı', 'İl sıralaması', 'İl tarihi']
 const row = (status: string, email: string, more: Partial<Record<string, string>> = {}) =>
   HEADERS.map((h) => ({ 'Başvuru tarihi': '2026-10-20 10:00', Durum: status, Ad: 'Ayşe', Soyad: 'Yılmaz', 'E-posta': email, 'Doğum tarihi': '1990-05-04', Şehir: 'İstanbul', Dil: 'tr', ...more })[h] ?? '')
 
@@ -14,6 +15,7 @@ function load(cells: string[][]) {
   const shown = (v: string) => (v.startsWith("'") ? v.slice(1) : v)
   const range = (r: number, c: number, nr = 1, nc = 1) => ({
     getDisplayValues: () => cells.slice(r - 1, r - 1 + nr).map((line) => line.slice(c - 1, c - 1 + nc).map(shown)),
+    getDisplayValue: () => shown(cells[r - 1]?.[c - 1] ?? ''),
     setValues: (values: string[][]) => values.forEach((line, i) => line.forEach((v, j) => (cells[r - 1 + i][c - 1 + j] = v))),
     setValue: (v: string) => (cells[r - 1][c - 1] = v),
   })
@@ -38,7 +40,10 @@ describe('the members sheet script, Hesabım actions', () => {
     const post = load([HEADERS, row('Üye', 'ayse@example.com', { 'Veli onayı': 'Evet', 'WCA ID': '2019TEME01', Dil: 'en' }), row('Onay bekliyor', 'bekle@example.com')])
     expect(post('get', { email: 'AYSE@example.com' })).toEqual({
       result: 'ok',
-      member: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: true, city: 'İstanbul', wcaId: '2019TEME01', helps: false, locale: 'en' },
+      member: {
+        firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: true, city: 'İstanbul', wcaId: '2019TEME01', helps: false, locale: 'en',
+        wcaVerified: false, ranking: false, cityLockedUntil: '',
+      },
     })
     expect(post('get', { email: 'bekle@example.com' })).toEqual({ result: 'none' })
   })
@@ -55,7 +60,7 @@ describe('the members sheet script, Hesabım actions', () => {
     const post = load(cells)
     const fields = { firstName: 'Ayşe Nur', lastName: 'Yılmaz', birthDate: '2010-01-02', guardian: true, city: 'Ankara', wcaId: '2019TEME01', helps: true }
     expect(post('update', { email: 'ayse@example.com', ...fields }).result).toBe('ok')
-    expect(cells[1]).toEqual(['2026-10-20 10:00', 'Üye', "'Ayşe Nur", "'Yılmaz", "'ayse@example.com", "'2010-01-02", "'Evet", "'Ankara", "'2019TEME01", "'Evet", 'tr', '', ''])
+    expect(cells[1]).toEqual(['2026-10-20 10:00', 'Üye', "'Ayşe Nur", "'Yılmaz", "'ayse@example.com", "'2010-01-02", "'Evet", "'Ankara", "'2019TEME01", "'Evet", 'tr', '', '', '', '', ''])
     expect(post('update', { email: 'kim@example.com', ...fields }).result).toBe('none')
   })
 
@@ -73,5 +78,95 @@ describe('the members sheet script, Hesabım actions', () => {
     expect(post('delete', { email: 'ayse@example.com' }).result).toBe('ok')
     expect(cells.map((r) => r[1])).toEqual(['Durum', 'Onay bekliyor'])
     expect(post('delete', { email: 'ayse@example.com' }).result).toBe('none')
+  })
+})
+
+const STAMP = '2026-10-21 12:00'
+const cell = (cells: string[][], i: number, h: string) => cells[i][HEADERS.indexOf(h)]
+const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: false }
+const verified = { 'WCA ID': '2019TEME01', 'WCA doğrulandı': STAMP }
+
+describe('the members sheet script, WCA and il sıralaması (spec 2026-10-21, Parça 2)', () => {
+  it('adds the N to P headers to a sheet made before them', () => {
+    const cells = [HEADERS.slice(0, 13), row('Üye', 'ayse@example.com')]
+    load(cells)('get', { email: 'ayse@example.com' })
+    expect(cells[0]).toEqual(HEADERS)
+  })
+
+  it('get tells the WCA mark, the ranking and until when the city is locked', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-12-01T09:00:00Z'))
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { ...verified, 'İl sıralaması': STAMP, 'İl tarihi': STAMP })]
+    expect(load(cells)('get', { email: 'ayse@example.com' }).member).toMatchObject({ wcaVerified: true, ranking: true, cityLockedUntil: '2027-10-21' })
+    vi.useRealTimers()
+  })
+
+  it('linkWca verifies the ID of the WCA login unless another member verified it first; a new ID leaves the ranking', () => {
+    const cells = [
+      HEADERS,
+      row('Üye', 'ayse@example.com', { 'WCA ID': '2019TEME01', 'İl sıralaması': STAMP }),
+      row('Üye', 'ali@example.com', { 'WCA ID': '2020ALIO01', 'WCA doğrulandı': STAMP }),
+    ]
+    const post = load(cells)
+    expect(post('linkWca', { email: 'ayse@example.com', wcaId: '2020ALIO01', at: STAMP }).result).toBe('taken')
+    expect(post('linkWca', { email: 'ayse@example.com', wcaId: '2019TEME01', at: STAMP }).result).toBe('ok')
+    expect([cell(cells, 1, 'WCA doğrulandı'), cell(cells, 1, 'İl sıralaması')]).toEqual([`'${STAMP}`, STAMP])
+    expect(post('linkWca', { email: 'ayse@example.com', wcaId: '2021AYSE01', at: STAMP }).result).toBe('ok')
+    expect([cell(cells, 1, 'WCA ID'), cell(cells, 1, 'İl sıralaması')]).toEqual(["'2021AYSE01", ''])
+    expect(post('linkWca', { email: 'kim@example.com', wcaId: '2021AYSE01', at: STAMP }).result).toBe('none')
+  })
+
+  it('update clears the mark and the ranking when a verified WCA ID changes', () => {
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { ...verified, 'İl sıralaması': STAMP, 'İl tarihi': STAMP })]
+    expect(load(cells)('update', { email: 'ayse@example.com', ...FIELDS, wcaId: '2019TEME02', at: STAMP }).result).toBe('ok')
+    expect(cells[1].slice(13)).toEqual(['', '', STAMP])
+  })
+
+  it('unlinkWca clears the mark and the ranking and keeps the city lock', () => {
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { ...verified, 'İl sıralaması': STAMP, 'İl tarihi': STAMP })]
+    expect(load(cells)('unlinkWca', { email: 'ayse@example.com' }).result).toBe('ok')
+    expect(cells[1].slice(13)).toEqual(['', '', STAMP])
+  })
+
+  it('ranking takes a verified member with a province, starts the lock once, and lets them out', () => {
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { 'WCA ID': '2019TEME01' }), row('Üye', 'ali@example.com', { ...verified, Şehir: 'Yurt dışı' })]
+    const post = load(cells)
+    const join = (email: string, at = STAMP) => post('ranking', { email, join: true, at }).result
+    expect(join('ayse@example.com')).toBe('not_allowed') // not verified
+    expect(join('ali@example.com')).toBe('not_allowed') // abroad
+    cells[1][HEADERS.indexOf('WCA doğrulandı')] = STAMP
+    expect(join('ayse@example.com')).toBe('ok')
+    expect(cells[1].slice(13)).toEqual([STAMP, `'${STAMP}`, `'${STAMP}`])
+    expect(post('ranking', { email: 'ayse@example.com', join: false, at: STAMP }).result).toBe('ok')
+    expect(cell(cells, 1, 'İl sıralaması')).toBe('')
+    expect(join('ayse@example.com', '2027-01-01 09:00')).toBe('ok')
+    expect(cell(cells, 1, 'İl tarihi')).toBe(`'${STAMP}`) // a running lock is not renewed
+  })
+
+  it('update refuses a new city for 365 days from İl tarihi, in the ranking or not; a move inside the ranking after that starts a new lock', () => {
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { ...verified, 'İl tarihi': STAMP })]
+    const post = load(cells)
+    const move = (city: string, at: string) => post('update', { email: 'ayse@example.com', ...FIELDS, city, at }).result
+    expect(move('Ankara', '2027-10-21 11:59')).toBe('locked')
+    expect(cell(cells, 1, 'Şehir')).toBe('İstanbul')
+    expect(move('İstanbul', '2027-10-21 11:59')).toBe('ok') // the same city is no move
+    expect(move('Ankara', '2027-10-21 12:00')).toBe('ok')
+    expect(cell(cells, 1, 'İl tarihi')).toBe(STAMP) // out of the ranking: no new lock
+    cells[1][HEADERS.indexOf('İl sıralaması')] = STAMP
+    expect(move('İzmir', '2027-10-21 12:00')).toBe('ok')
+    expect(cell(cells, 1, 'İl tarihi')).toBe("'2027-10-21 12:00")
+    expect(move('Yurt dışı', '2029-01-01 09:00')).toBe('ok')
+    expect(cell(cells, 1, 'İl sıralaması')).toBe('') // abroad leaves the ranking
+  })
+
+  it('rankingMembers lists the verified members in the ranking with their province', () => {
+    const cells = [
+      HEADERS,
+      row('Üye', 'a@example.com', { 'WCA ID': '2019AAAA01', 'WCA doğrulandı': STAMP, 'İl sıralaması': STAMP }),
+      row('Üye', 'b@example.com', { 'WCA ID': '2019BBBB01', 'WCA doğrulandı': STAMP }),
+      row('Üye', 'c@example.com', { 'WCA ID': '2019CCCC01', 'İl sıralaması': STAMP }),
+      row('Onay bekliyor', 'd@example.com', { 'WCA ID': '2019DDDD01', 'WCA doğrulandı': STAMP, 'İl sıralaması': STAMP }),
+    ]
+    expect(load(cells)('rankingMembers', {})).toEqual({ result: 'ok', members: [{ wcaId: '2019AAAA01', il: 'İstanbul' }] })
   })
 })
