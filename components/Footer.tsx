@@ -32,6 +32,7 @@ export async function Footer() {
         ['/haberler', nav('news')],
         ['/medya', nav('media')],
         ['/uye-ol', nav('membership')],
+        ['/hesabim', nav('account')],
       ],
     },
     {

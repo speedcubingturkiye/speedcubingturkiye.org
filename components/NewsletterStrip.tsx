@@ -7,9 +7,10 @@ import { NewsletterForm } from '@/components/NewsletterForm'
 import type { Locale } from '@/i18n/routing'
 
 // The home page (its FollowBand carries the same form, spec §4.3), the two pages where a sign-up form would sit under
-// "you unsubscribed" or the thank-you, and Üye ol, whose form has its own newsletter box (spec 2026-10-20 §A).
-// /bulten/gecersiz keeps the strip: that page points the reader at it.
-const HIDDEN_ON = ['/', '/bulten/cikis', '/bulten/tesekkurler', '/uye-ol']
+// "you unsubscribed" or the thank-you, Üye ol, whose form has its own newsletter box (spec 2026-10-20 §A), and Hesabım,
+// which has its own newsletter section (spec 2026-10-21). /bulten/gecersiz keeps the strip: that page points the reader
+// at it.
+const HIDDEN_ON = ['/', '/bulten/cikis', '/bulten/tesekkurler', '/uye-ol', '/hesabim']
 
 /** Above the footer on every page except HIDDEN_ON. */
 export function NewsletterStrip({ locale }: { locale: Locale }) {
