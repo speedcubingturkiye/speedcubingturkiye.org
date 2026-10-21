@@ -35,13 +35,16 @@ export function sheetReady(): boolean {
   return config() !== null || process.env.NODE_ENV === 'development'
 }
 
-/** The script's `result`, or 'error' (logged) for anything else. */
-async function call(action: 'apply' | 'confirm', payload: object, devResult: string): Promise<string> {
+type Action = 'apply' | 'confirm' | 'link' | 'get' | 'update' | 'changeEmail' | 'delete'
+type Answer = { result: string; [key: string]: unknown }
+
+/** The script's whole answer, or `{ result: 'error' }` (logged) for anything without a string `result`. */
+async function post(action: Action, payload: object, dev: Answer): Promise<Answer> {
   const c = config()
   if (!c) {
-    if (process.env.NODE_ENV !== 'development') return 'error'
+    if (process.env.NODE_ENV !== 'development') return { result: 'error' }
     console.log('[membership:dev] sheet', action, JSON.stringify(payload))
-    return devResult
+    return dev
   }
   try {
     const res = await fetch(c.url, {
@@ -53,27 +56,95 @@ async function call(action: 'apply' | 'confirm', payload: object, devResult: str
     })
     if (!res.ok) {
       console.error(`membership sheet ${action}: HTTP ${res.status}`)
-      return 'error'
+      return { result: 'error' }
     }
     const data = (await res.json()) as { result?: unknown; reason?: unknown } | null
     if (typeof data?.result !== 'string') {
       console.error(`membership sheet ${action}: no result`)
-      return 'error'
+      return { result: 'error' }
     }
     if (data.result === 'error') console.error(`membership sheet ${action}: ${String(data.reason)}`)
-    return data.result
+    return data as Answer
   } catch (e) {
     console.error(`membership sheet ${action} failed:`, e instanceof Error ? e.name : String(e))
-    return 'error'
+    return { result: 'error' }
   }
 }
 
+/** The script's `result` when it is one of `allowed`, 'error' otherwise. */
+async function call<R extends string>(action: Action, payload: object, allowed: readonly R[], dev: R): Promise<R | 'error'> {
+  const { result } = await post(action, payload, { result: dev })
+  return (allowed as readonly string[]).includes(result) ? (result as R) : 'error'
+}
+
 export async function applyToSheet(row: SheetRow): Promise<ApplyResult> {
-  const result = await call('apply', row, 'pending')
-  return result === 'pending' || result === 'recent' || result === 'member' ? result : 'error'
+  return call('apply', row, ['pending', 'recent', 'member'], 'pending')
 }
 
 export async function confirmInSheet(token: string, at: string): Promise<ConfirmResult> {
-  const result = await call('confirm', { token, at }, 'ok')
-  return result === 'ok' || result === 'invalid' ? result : 'error'
+  return call('confirm', { token, at }, ['ok', 'invalid'], 'ok')
+}
+
+/** A member's details as Hesabım (spec 2026-10-21) shows and edits them */
+export type MemberRecord = {
+  firstName: string
+  lastName: string
+  email: string
+  birthDate: string
+  guardian: boolean
+  city: string
+  wcaId: string
+  helps: boolean
+  locale: Locale
+}
+/** What Hesabım's form may change; the address has its own confirmed flow */
+export type MemberFields = Omit<MemberRecord, 'email' | 'locale'>
+
+function isMember(m: unknown): m is MemberRecord {
+  if (typeof m !== 'object' || m === null) return false
+  const r = m as Record<string, unknown>
+  return (
+    ['firstName', 'lastName', 'email', 'birthDate', 'city', 'wcaId'].every((k) => typeof r[k] === 'string') &&
+    typeof r.guardian === 'boolean' &&
+    typeof r.helps === 'boolean' &&
+    (r.locale === 'tr' || r.locale === 'en')
+  )
+}
+
+// Development without the script: a sample member for whatever address asks, so Hesabım can be seen locally
+const devMember = (email: string): MemberRecord => ({
+  firstName: 'Deneme',
+  lastName: 'Üye',
+  email,
+  birthDate: '1990-01-01',
+  guardian: false,
+  city: 'Ankara',
+  wcaId: '',
+  helps: false,
+  locale: 'tr',
+})
+
+/** Hesabım's link: 'ok' when the address is a member and had no link in the last 10 minutes, 'none' otherwise. */
+export async function linkFromSheet(email: string): Promise<'ok' | 'none' | 'error'> {
+  return call('link', { email }, ['ok', 'none'], 'ok')
+}
+
+/** The member's details; null when the address is not (or no longer) a member. */
+export async function getMember(email: string): Promise<MemberRecord | null | 'error'> {
+  const answer = await post('get', { email }, { result: 'ok', member: devMember(email) })
+  if (answer.result === 'none') return null
+  return answer.result === 'ok' && isMember(answer.member) ? answer.member : 'error'
+}
+
+export async function updateMember(email: string, fields: MemberFields): Promise<'ok' | 'none' | 'error'> {
+  return call('update', { email, ...fields }, ['ok', 'none'], 'ok')
+}
+
+/** 'taken' when another row already has the new address. */
+export async function changeMemberEmail(email: string, newEmail: string): Promise<'ok' | 'none' | 'taken' | 'error'> {
+  return call('changeEmail', { email, newEmail }, ['ok', 'none', 'taken'], 'ok')
+}
+
+export async function deleteMember(email: string): Promise<'ok' | 'none' | 'error'> {
+  return call('delete', { email }, ['ok', 'none'], 'ok')
 }

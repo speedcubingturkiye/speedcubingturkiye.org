@@ -28,6 +28,11 @@ function doPost(e) {
   return withLock(() => {
     if (body.action === 'apply') return reply(apply(body))
     if (body.action === 'confirm') return reply(confirm(body))
+    if (body.action === 'link') return reply(link(body))
+    if (body.action === 'get') return reply(get(body))
+    if (body.action === 'update') return reply(update(body))
+    if (body.action === 'changeEmail') return reply(changeEmail(body))
+    if (body.action === 'delete') return reply(remove(body))
     return reply({ result: 'error', reason: 'action' })
   })
 }
@@ -106,6 +111,77 @@ function confirm(b) {
   if (stampMs(b.at) - stampMs(all[i][COL['Başvuru tarihi']]) > CONFIRM_DAYS * DAY_MS) return { result: 'invalid' }
   sh.getRange(i + 2, COL['Durum'] + 1).setValue(MEMBER)
   sh.getRange(i + 2, COL['Onay tarihi'] + 1).setValue(text(b.at))
+  return { result: 'ok' }
+}
+
+// Hesabım (spec 2026-10-21): the site posts the address from a link it mailed, so every action trusts it
+
+/** The member row of an address, or -1; an application still waiting for its link is not a member. */
+function memberIndex(all, email) {
+  const e = String(email).toLowerCase()
+  return all.findIndex((r) => r[COL['E-posta']].toLowerCase() === e && r[COL['Durum']] !== PENDING)
+}
+
+/** Whether to mail a Hesabım link: only to a member, and at most once in 10 minutes per address. */
+function link(b) {
+  if (memberIndex(rows(sheet()), b.email) < 0) return { result: 'none' }
+  const cache = CacheService.getScriptCache()
+  const key = `hesap:${String(b.email).toLowerCase()}`
+  if (cache.get(key)) return { result: 'none' }
+  cache.put(key, '1', 600)
+  return { result: 'ok' }
+}
+
+function get(b) {
+  const all = rows(sheet())
+  const i = memberIndex(all, b.email)
+  if (i < 0) return { result: 'none' }
+  const r = all[i]
+  return {
+    result: 'ok',
+    member: {
+      firstName: r[COL['Ad']],
+      lastName: r[COL['Soyad']],
+      email: r[COL['E-posta']],
+      birthDate: r[COL['Doğum tarihi']],
+      guardian: r[COL['Veli onayı']] === 'Evet',
+      city: r[COL['Şehir']],
+      wcaId: r[COL['WCA ID']],
+      helps: r[COL['Yarışmalara yardım']] === 'Evet',
+      locale: r[COL['Dil']] === 'en' ? 'en' : 'tr',
+    },
+  }
+}
+
+/** Ad to Yarışmalara yardım (C to J) in one write; the address stays as it is. */
+function update(b) {
+  const sh = sheet()
+  const all = rows(sh)
+  const i = memberIndex(all, b.email)
+  if (i < 0) return { result: 'none' }
+  const values = [b.firstName, b.lastName, all[i][COL['E-posta']], b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '']
+  sh.getRange(i + 2, COL['Ad'] + 1, 1, values.length).setValues([values.map(text)])
+  return { result: 'ok' }
+}
+
+/** 'taken' when any row, a pending application included, already has the new address. */
+function changeEmail(b) {
+  const sh = sheet()
+  const all = rows(sh)
+  const i = memberIndex(all, b.email)
+  if (i < 0) return { result: 'none' }
+  const next = String(b.newEmail).toLowerCase()
+  if (all.some((r) => r[COL['E-posta']].toLowerCase() === next)) return { result: 'taken' }
+  sh.getRange(i + 2, COL['E-posta'] + 1).setValue(text(next))
+  return { result: 'ok' }
+}
+
+/** Üyelikten ayrılma: the row goes at once. */
+function remove(b) {
+  const sh = sheet()
+  const i = memberIndex(rows(sh), b.email)
+  if (i < 0) return { result: 'none' }
+  sh.deleteRow(i + 2)
   return { result: 'ok' }
 }
 

@@ -1,8 +1,21 @@
 // lib/membership-sheet.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { applyToSheet, confirmInSheet, sheetReady, type SheetRow } from '@/lib/membership-sheet'
+import {
+  applyToSheet,
+  changeMemberEmail,
+  confirmInSheet,
+  deleteMember,
+  getMember,
+  linkFromSheet,
+  sheetReady,
+  updateMember,
+  type MemberFields,
+  type MemberRecord,
+  type SheetRow,
+} from '@/lib/membership-sheet'
 
 const fetchMock = vi.fn()
+const FIELDS: MemberFields = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: true }
 const ROW: SheetRow = {
   token: 't'.repeat(43), at: '2026-10-19 14:05', firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com',
   birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', helps: true, locale: 'tr',
@@ -64,6 +77,47 @@ describe('confirmInSheet', () => {
   })
 })
 
+describe('Hesabım calls', () => {
+  const MEMBER: MemberRecord = { ...FIELDS, email: 'ayse@example.com', locale: 'en' }
+  const sent = (i = 0) => JSON.parse(fetchMock.mock.calls[i][1].body)
+
+  it('link and delete post the address and map the result', async () => {
+    answer({ result: 'ok' })
+    expect(await linkFromSheet('ayse@example.com')).toBe('ok')
+    expect(sent()).toEqual({ secret: 's3cret', action: 'link', email: 'ayse@example.com' })
+    answer({ result: 'none' })
+    expect(await linkFromSheet('ayse@example.com')).toBe('none')
+    answer({ result: 'ok' })
+    expect(await deleteMember('ayse@example.com')).toBe('ok')
+    expect(sent(2)).toEqual({ secret: 's3cret', action: 'delete', email: 'ayse@example.com' })
+    answer({ result: 'pending' })
+    expect(await deleteMember('ayse@example.com')).toBe('error')
+  })
+
+  it('getMember reads the member, null for none, error for a malformed one', async () => {
+    answer({ result: 'ok', member: MEMBER })
+    expect(await getMember('ayse@example.com')).toEqual(MEMBER)
+    expect(sent()).toEqual({ secret: 's3cret', action: 'get', email: 'ayse@example.com' })
+    answer({ result: 'none' })
+    expect(await getMember('ayse@example.com')).toBeNull()
+    answer({ result: 'ok', member: { ...MEMBER, guardian: 'Evet' } })
+    expect(await getMember('ayse@example.com')).toBe('error')
+    answer({ result: 'ok' })
+    expect(await getMember('ayse@example.com')).toBe('error')
+  })
+
+  it('updateMember and changeMemberEmail post their fields and map the result', async () => {
+    answer({ result: 'ok' })
+    expect(await updateMember('ayse@example.com', FIELDS)).toBe('ok')
+    expect(sent()).toEqual({ secret: 's3cret', action: 'update', email: 'ayse@example.com', ...FIELDS })
+    answer({ result: 'taken' })
+    expect(await changeMemberEmail('ayse@example.com', 'yeni@example.com')).toBe('taken')
+    expect(sent(1)).toEqual({ secret: 's3cret', action: 'changeEmail', email: 'ayse@example.com', newEmail: 'yeni@example.com' })
+    answer({ result: 'none' })
+    expect(await changeMemberEmail('ayse@example.com', 'yeni@example.com')).toBe('none')
+  })
+})
+
 describe('without the variables', () => {
   it('is closed in production and calls nothing', async () => {
     vi.stubEnv('MEMBERSHIP_SCRIPT_URL', '')
@@ -79,6 +133,12 @@ describe('without the variables', () => {
     expect(sheetReady()).toBe(true)
     expect(await applyToSheet(ROW)).toBe('pending')
     expect(await confirmInSheet('k'.repeat(43), '2026-10-20 09:00')).toBe('ok')
+    // Hesabım shows a sample member, so the page can be seen without the script
+    expect(await linkFromSheet('a@b.com')).toBe('ok')
+    expect(await getMember('a@b.com')).toMatchObject({ email: 'a@b.com' })
+    expect(await updateMember('a@b.com', FIELDS)).toBe('ok')
+    expect(await changeMemberEmail('a@b.com', 'c@d.com')).toBe('ok')
+    expect(await deleteMember('a@b.com')).toBe('ok')
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })
