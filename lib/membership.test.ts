@@ -1,6 +1,6 @@
 // lib/membership.test.ts
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmMembership, istanbulStamp, requestMembership, wcaIdExists } from '@/lib/membership'
+import { confirmMembership, istanbulStamp, requestMembership } from '@/lib/membership'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
 import { prepareSubscription, requestSubscription } from '@/lib/newsletter'
@@ -13,7 +13,7 @@ vi.mock('@/lib/ses', () => ({ sendMail: vi.fn() }))
 
 const NOW = new Date(Date.UTC(2026, 9, 19, 11, 5)) // 14:05 in Istanbul
 // What goes to the sheet; the newsletter box never does
-const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', helps: false }
+const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: false }
 const APP: Application = { ...FIELDS, newsletter: false }
 
 beforeEach(() => {
@@ -32,7 +32,7 @@ describe('requestMembership', () => {
     vi.mocked(applyToSheet).mockResolvedValue('pending')
     expect(await requestMembership(APP, 'en', NOW)).toBe(true)
     const row = vi.mocked(applyToSheet).mock.calls[0][0]
-    expect(row).toMatchObject({ ...FIELDS, at: '2026-10-19 14:05', locale: 'en' })
+    expect(row).toMatchObject({ ...FIELDS, wcaId: '', at: '2026-10-19 14:05', locale: 'en' })
     expect(row).not.toHaveProperty('newsletter')
     expect(row.token).toMatch(/^[\w-]{43}$/)
     const mail = vi.mocked(sendMail).mock.calls[0][0]
@@ -92,25 +92,6 @@ describe('requestMembership', () => {
     vi.mocked(applyToSheet).mockResolvedValue('pending')
     vi.mocked(sendMail).mockResolvedValue(false)
     expect(await requestMembership(APP, 'tr', NOW)).toBe(false)
-  })
-})
-
-describe('wcaIdExists', () => {
-  it('is false only when the WCA answers that the ID does not exist', async () => {
-    const fetch = vi.fn()
-    vi.stubGlobal('fetch', fetch)
-    vi.spyOn(console, 'error').mockImplementation(() => {})
-    fetch.mockResolvedValueOnce(new Response('{}', { status: 200 }))
-    expect(await wcaIdExists('2019TEME01')).toBe(true)
-    expect(fetch.mock.calls[0][0]).toBe('https://www.worldcubeassociation.org/api/v0/persons/2019TEME01')
-    fetch.mockResolvedValueOnce(new Response('{}', { status: 404 }))
-    expect(await wcaIdExists('2019TEMA01')).toBe(false)
-    // an outage or a timeout lets the application through
-    fetch.mockResolvedValueOnce(new Response('', { status: 503 }))
-    expect(await wcaIdExists('2019TEME01')).toBe(true)
-    fetch.mockRejectedValueOnce(new DOMException('timed out', 'TimeoutError'))
-    expect(await wcaIdExists('2019TEME01')).toBe(true)
-    vi.unstubAllGlobals()
   })
 })
 

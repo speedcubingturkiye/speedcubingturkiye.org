@@ -296,7 +296,6 @@
       "invalid": "Lütfen alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
       "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
-      "wcaId": "Bu WCA ID bulunamadı. WCA profilindeki ID'ni 2019TEME01 biçiminde gir.",
       "expired": "Linkin süresi doldu.",
       "same_email": "Bu zaten şu anki adresin.",
       "confirm": "Ayrılmak için kutuyu işaretle.",
@@ -318,12 +317,6 @@
     "city": "Şehir",
     "cityPlaceholder": "Seç",
     "abroad": "Yurt dışı",
-    "competed": "Daha önce bir WCA yarışmasına katıldın mı?",
-    "yes": "Evet",
-    "no": "Hayır",
-    "wcaId": "WCA ID",
-    "wcaIdHint": "Örneğin 2019TEME01.",
-    "wcaIdVerified": "WCA hesabınla doğrulandı. Değiştirmek için önce WCA bağlantısını kaldır.",
     "guardian": "Bu formu göndererek veli veya vasimin onayı olduğunu beyan ederim.",
     "helps": "Yarışmalara yardım etmek istiyorum",
     "privacyNote": "Formdaki bilgiler üyeliğin ve duyurular için işlenir.",
@@ -336,7 +329,6 @@
       "invalid": "Lütfen tüm alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
       "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
-      "wcaId": "Bu WCA ID bulunamadı. WCA profilindeki ID'ni 2019TEME01 biçiminde gir.",
       "closed": "Üyelik formu şu an kapalı.",
       "send_failed": "Şu an kaydedemedik; birkaç dakika sonra tekrar dene."
     }

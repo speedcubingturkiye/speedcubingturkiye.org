@@ -5,7 +5,7 @@ import { ABROAD, ageOn, parseApplication, PROVINCE_CHOICES } from '@/lib/members
 const TODAY = '2026-10-19'
 const form = (over: Record<string, string> = {}) => {
   const f = new FormData()
-  const base: Record<string, string> = { firstName: 'Ayşe', lastName: 'Yılmaz', email: ' Ayse@Example.com ', birthDate: '1990-05-04', city: 'İstanbul', competed: 'no', wcaId: '' }
+  const base: Record<string, string> = { firstName: 'Ayşe', lastName: 'Yılmaz', email: ' Ayse@Example.com ', birthDate: '1990-05-04', city: 'İstanbul' }
   for (const [k, v] of Object.entries({ ...base, ...over })) f.set(k, v)
   return f
 }
@@ -32,11 +32,11 @@ describe('ageOn', () => {
 })
 
 describe('parseApplication', () => {
-  it('accepts an adult, lower-cases the email and upper-cases the WCA ID', () => {
-    const r = parseApplication(form({ competed: 'yes', wcaId: '2019teme01', helps: 'on', newsletter: 'on' }), TODAY)
+  it('accepts an adult and lower-cases the email', () => {
+    const r = parseApplication(form({ helps: 'on', newsletter: 'on' }), TODAY)
     expect(r).toEqual({
       ok: true,
-      data: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: true, newsletter: true },
+      data: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: true, newsletter: true },
     })
     expect(parseApplication(form(), TODAY)).toMatchObject({ ok: true, data: { helps: false, newsletter: false } })
   })
@@ -55,17 +55,14 @@ describe('parseApplication', () => {
       { birthDate: '2026-10-20' },
       { birthDate: '1899-12-31' },
       { city: 'Gotham' },
-      { competed: '' },
-      { competed: 'maybe' },
     ]
     for (const over of bad) expect(parseApplication(form(over), TODAY)).toEqual({ ok: false, error: 'invalid' })
   })
 
-  it('asks someone who has competed for their WCA ID, and drops one given by someone who has not', () => {
-    expect(parseApplication(form({ competed: 'yes' }), TODAY)).toEqual({ ok: false, error: 'wcaId' })
-    expect(parseApplication(form({ competed: 'yes', wcaId: '2019TEM01' }), TODAY)).toEqual({ ok: false, error: 'wcaId' })
-    const r = parseApplication(form({ competed: 'no', wcaId: '2019TEME01' }), TODAY)
-    expect(r.ok && r.data.wcaId).toBe('')
+  it('never reads a WCA ID: it comes only from a WCA login (spec 2026-10-21, WCA ile kaydol)', () => {
+    const r = parseApplication(form({ competed: 'yes', wcaId: '2019TEME01' }), TODAY)
+    expect(r).toMatchObject({ ok: true, data: { firstName: 'Ayşe' } })
+    expect(r.ok && 'wcaId' in r.data).toBe(false)
   })
 
   it('asks someone under 18 for the guardian box and records it', () => {

@@ -57,7 +57,7 @@ function DetailsSection({ token, member, today }: { token: string; member: Membe
     <Section id="hesap-bilgiler" title={t('details')}>
       <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
         <TokenField token={token} />
-        <MemberFields today={today} defaults={member} error={state.error} wcaLocked={member.wcaVerified} />
+        <MemberFields today={today} defaults={member} error={state.error} />
         {/* aria-disabled, not disabled: a disabled button drops keyboard focus to <body> while the action runs */}
         <button type="submit" aria-disabled={pending} className="btn btn-brand w-fit">
           {pending ? t('saving') : t('save')}

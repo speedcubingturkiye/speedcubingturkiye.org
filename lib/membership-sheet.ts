@@ -100,8 +100,8 @@ export type MemberDetails = {
 /** The details and the WCA side (Parça 2): `wcaVerified`, the WCA login confirmed the WCA ID; `ranking`, in the il
  *  ranking; `cityLockedUntil`, "YYYY-MM-DD" while the ranking's city lock runs, '' otherwise */
 export type MemberRecord = MemberDetails & { wcaVerified: boolean; ranking: boolean; cityLockedUntil: string }
-/** What Hesabım's form may change; the address has its own confirmed flow */
-export type MemberFields = Omit<MemberDetails, 'email' | 'locale'>
+/** What Hesabım's form may change; the address has its own confirmed flow, the WCA ID comes only from a WCA login */
+export type MemberFields = Omit<MemberDetails, 'email' | 'locale' | 'wcaId'>
 
 function isMember(m: unknown): m is MemberDetails {
   if (typeof m !== 'object' || m === null) return false

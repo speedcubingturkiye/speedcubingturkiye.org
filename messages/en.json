@@ -296,7 +296,6 @@
       "invalid": "Please fill in the fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
-      "wcaId": "We couldn't find this WCA ID. Enter the ID from your WCA profile, in the form 2019TEME01.",
       "expired": "Your link has expired.",
       "same_email": "This is already your current address.",
       "confirm": "Tick the box to leave.",
@@ -318,12 +317,6 @@
     "city": "City",
     "cityPlaceholder": "Choose",
     "abroad": "Outside Türkiye",
-    "competed": "Have you competed in a WCA competition before?",
-    "yes": "Yes",
-    "no": "No",
-    "wcaId": "WCA ID",
-    "wcaIdHint": "For example 2019TEME01.",
-    "wcaIdVerified": "Verified with your WCA account. To change it, unlink your WCA account first.",
     "guardian": "By submitting this form, I declare that I have the consent of my parent or guardian.",
     "helps": "I'd like to help at competitions",
     "privacyNote": "Your details are processed for your membership and the announcements.",
@@ -336,7 +329,6 @@
       "invalid": "Please fill in all fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
-      "wcaId": "We couldn't find this WCA ID. Enter the ID from your WCA profile, in the form 2019TEME01.",
       "closed": "The membership form is closed right now.",
       "send_failed": "We couldn't save your application right now; please try again in a few minutes."
     }

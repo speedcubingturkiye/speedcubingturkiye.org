@@ -19,7 +19,7 @@ import {
 } from '@/lib/membership-sheet'
 
 const fetchMock = vi.fn()
-const FIELDS: MemberFields = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: true }
+const FIELDS: MemberFields = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: true }
 const ROW: SheetRow = {
   token: 't'.repeat(43), at: '2026-10-19 14:05', firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com',
   birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', helps: true, locale: 'tr',
@@ -82,7 +82,7 @@ describe('confirmInSheet', () => {
 })
 
 describe('Hesabım calls', () => {
-  const MEMBER: MemberDetails = { ...FIELDS, email: 'ayse@example.com', locale: 'en' }
+  const MEMBER: MemberDetails = { ...FIELDS, wcaId: '2019TEME01', email: 'ayse@example.com', locale: 'en' }
   const UNVERIFIED = { wcaVerified: false, ranking: false, cityLockedUntil: '' }
   const sent = (i = 0) => JSON.parse(fetchMock.mock.calls[i][1].body)
 
