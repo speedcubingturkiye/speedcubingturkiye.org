@@ -238,6 +238,8 @@ Yerelde:
 
 Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları yönet > Düzenle > Yeni sürüm); adres değişmez.
 
+**Hesabım.** Üyeler `/hesabim` sayfasında bilgilerini düzenler, e-posta adresini değiştirir ve üyelikten ayrılır. Sayfa, e-postaya gelen 1 saatlik bir linkle açılır; çerez yok. Betiğin `link`, `get`, `update`, `changeEmail` ve `delete` işlemleri bu sayfa için. Aynı adrese 10 dakikada en fazla bir link gider. Yerelde betik değişkenleri yoksa sayfa örnek bir üyeyle açılır.
+
 **Bülten sekmesi.** Tablonun "Bülten" sekmesi SES'teki onaylı abonelerin kopyasıdır: E-posta, Dil, Onay tarihi, Sil.
 - **Yenileme:** "Bülten > Listeyi yenile" menüsüyle ve günde bir kez kendiliğinden yenilenir. Betik, "Sil" işaretli adresleri sitenin `/api/bulten/liste` adresine `MEMBERSHIP_SCRIPT_SECRET` ile gönderir. Site onları SES'ten siler (bir seferde en fazla 40) ve güncel listeyi döndürür; betik sekmeyi baştan yazar.
 - **Sekme bir kopya:** elle yapılan değişiklikler bir sonraki yenilemede silinir; işe yarayan yalnız "Sil" kutusu.
