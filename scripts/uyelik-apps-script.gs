@@ -93,19 +93,31 @@ function refreshNewsletter() {
   }, LockService.getDocumentLock())
 }
 
+/**
+ * An application. WCA ile kaydol (spec 2026-10-21) adds `wcaVerified` (the WCA ID came from a WCA login), `ranking` and
+ * `confirmed` (the WCA login proved the address): such an application starts a member row at once, or links the WCA ID
+ * to the member the address already is. A WCA ID another member verified belongs to that membership.
+ */
 function apply(b) {
   const sh = sheet()
   const all = rows(sh)
   const email = String(b.email).toLowerCase()
+  if (b.wcaVerified && verifiedElsewhere(all, email, b.wcaId)) return { result: 'taken' }
   const i = all.findIndex((r) => r[COL['E-posta']].toLowerCase() === email)
-  if (i >= 0) {
-    if (all[i][COL['Durum']] !== PENDING) return { result: 'member' } // "Üye", or "Asıl Üye" typed by the Secretary
-    if (stampMs(b.at) - stampMs(all[i][COL['Başvuru tarihi']]) < DAY_MS) return { result: 'recent' }
+  if (i >= 0 && all[i][COL['Durum']] !== PENDING) {
+    // "Üye", or "Asıl Üye" typed by the Secretary: the rest of the row stays
+    if (!b.confirmed || !b.wcaVerified) return { result: 'member' }
+    linkWca(b)
+    if (b.ranking) ranking({ email, join: true, at: b.at })
+    return { result: 'linked' }
   }
-  const row = [b.at, PENDING, b.firstName, b.lastName, email, b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '', b.locale, '', b.token, '', '', ''].map(text)
+  if (i >= 0 && !b.confirmed && stampMs(b.at) - stampMs(all[i][COL['Başvuru tarihi']]) < DAY_MS) return { result: 'recent' }
+  const joins = Boolean(b.ranking && b.wcaVerified && b.city !== ABROAD)
+  const when = (yes) => (yes ? b.at : '')
+  const row = [b.at, b.confirmed ? MEMBER : PENDING, b.firstName, b.lastName, email, b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '', b.locale, when(b.confirmed), b.token, when(b.wcaVerified), when(joins), when(joins)].map(text)
   if (i >= 0) sh.getRange(i + 2, 1, 1, HEADERS.length).setValues([row])
   else sh.appendRow(row)
-  return { result: 'pending' }
+  return { result: b.confirmed ? 'started' : 'pending' }
 }
 
 function confirm(b) {
@@ -173,10 +185,10 @@ function update(b) {
   const r = all[i]
   const moved = b.city !== r[COL['Şehir']]
   if (moved && lockedUntil(r, stampMs(b.at))) return { result: 'locked' }
-  const values = [b.firstName, b.lastName, r[COL['E-posta']], b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '']
+  // The address and the WCA ID stay: the WCA ID comes only from a WCA login
+  const values = [b.firstName, b.lastName, r[COL['E-posta']], b.birthDate, b.guardian ? 'Evet' : '', b.city, r[COL['WCA ID']], b.helps ? 'Evet' : '']
   sh.getRange(i + 2, COL['Ad'] + 1, 1, values.length).setValues([values.map(text)])
-  if (b.wcaId !== r[COL['WCA ID']] && marked(r, 'WCA doğrulandı')) mark(sh, i, { 'WCA doğrulandı': '', 'İl sıralaması': '' })
-  else if (moved && marked(r, 'İl sıralaması')) mark(sh, i, b.city === ABROAD ? { 'İl sıralaması': '' } : { 'İl tarihi': b.at })
+  if (moved && marked(r, 'İl sıralaması')) mark(sh, i, b.city === ABROAD ? { 'İl sıralaması': '' } : { 'İl tarihi': b.at })
   return { result: 'ok' }
 }
 
@@ -224,20 +236,25 @@ function linkWca(b) {
   const all = rows(sh)
   const i = memberIndex(all, b.email)
   if (i < 0) return { result: 'none' }
-  if (all.some((r, j) => j !== i && r[COL['WCA ID']] === b.wcaId && marked(r, 'WCA doğrulandı'))) return { result: 'taken' }
+  if (verifiedElsewhere(all, String(b.email).toLowerCase(), b.wcaId)) return { result: 'taken' }
   const changes = { 'WCA ID': b.wcaId, 'WCA doğrulandı': b.at }
   if (b.wcaId !== all[i][COL['WCA ID']]) changes['İl sıralaması'] = '' // the consent named the old ID's results
   mark(sh, i, changes)
   return { result: 'ok' }
 }
 
-/** The link goes, the ranking with it; the city lock stays. */
+/** The link goes with the WCA ID it brought, the ranking with it; the city lock stays. */
 function unlinkWca(b) {
   const sh = sheet()
   const i = memberIndex(rows(sh), b.email)
   if (i < 0) return { result: 'none' }
-  mark(sh, i, { 'WCA doğrulandı': '', 'İl sıralaması': '' })
+  mark(sh, i, { 'WCA ID': '', 'WCA doğrulandı': '', 'İl sıralaması': '' })
   return { result: 'ok' }
+}
+
+/** Another address's member row with this WCA ID verified; a row still waiting for its link does not count. */
+function verifiedElsewhere(all, email, wcaId) {
+  return all.some((r) => r[COL['E-posta']].toLowerCase() !== email && r[COL['Durum']] !== PENDING && r[COL['WCA ID']] === wcaId && marked(r, 'WCA doğrulandı'))
 }
 
 /** İl sıralaması in or out. In needs a verified WCA ID and a province; the city lock starts unless one runs. */

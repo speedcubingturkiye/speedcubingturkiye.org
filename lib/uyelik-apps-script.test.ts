@@ -55,12 +55,13 @@ describe('the members sheet script, Hesabım actions', () => {
     expect(post('link', { email: 'kim@example.com' }).result).toBe('none')
   })
 
-  it('update writes Ad to Yarışmalara yardım as text and leaves the address and the rest alone', () => {
+  it('update writes Ad to Yarışmalara yardım as text and leaves the address, the WCA ID and the rest alone', () => {
     const cells = [HEADERS, row('Üye', 'ayse@example.com')]
     const post = load(cells)
+    // A WCA ID sent along is ignored: it comes only from a WCA login (spec 2026-10-21, WCA ile kaydol)
     const fields = { firstName: 'Ayşe Nur', lastName: 'Yılmaz', birthDate: '2010-01-02', guardian: true, city: 'Ankara', wcaId: '2019TEME01', helps: true }
     expect(post('update', { email: 'ayse@example.com', ...fields }).result).toBe('ok')
-    expect(cells[1]).toEqual(['2026-10-20 10:00', 'Üye', "'Ayşe Nur", "'Yılmaz", "'ayse@example.com", "'2010-01-02", "'Evet", "'Ankara", "'2019TEME01", "'Evet", 'tr', '', '', '', '', ''])
+    expect(cells[1]).toEqual(['2026-10-20 10:00', 'Üye', "'Ayşe Nur", "'Yılmaz", "'ayse@example.com", "'2010-01-02", "'Evet", "'Ankara", '', "'Evet", 'tr', '', '', '', '', ''])
     expect(post('update', { email: 'kim@example.com', ...fields }).result).toBe('none')
   })
 
@@ -83,7 +84,7 @@ describe('the members sheet script, Hesabım actions', () => {
 
 const STAMP = '2026-10-21 12:00'
 const cell = (cells: string[][], i: number, h: string) => cells[i][HEADERS.indexOf(h)]
-const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '2019TEME01', helps: false }
+const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: false }
 const verified = { 'WCA ID': '2019TEME01', 'WCA doğrulandı': STAMP }
 
 describe('the members sheet script, WCA and il sıralaması (spec 2026-10-21, Parça 2)', () => {
@@ -116,15 +117,17 @@ describe('the members sheet script, WCA and il sıralaması (spec 2026-10-21, Pa
     expect(post('linkWca', { email: 'kim@example.com', wcaId: '2021AYSE01', at: STAMP }).result).toBe('none')
   })
 
-  it('update clears the mark and the ranking when a verified WCA ID changes', () => {
+  it('update never touches the WCA ID or its mark', () => {
     const cells = [HEADERS, row('Üye', 'ayse@example.com', { ...verified, 'İl sıralaması': STAMP, 'İl tarihi': STAMP })]
     expect(load(cells)('update', { email: 'ayse@example.com', ...FIELDS, wcaId: '2019TEME02', at: STAMP }).result).toBe('ok')
-    expect(cells[1].slice(13)).toEqual(['', '', STAMP])
+    expect(cell(cells, 1, 'WCA ID')).toBe("'2019TEME01")
+    expect(cells[1].slice(13)).toEqual([STAMP, STAMP, STAMP])
   })
 
-  it('unlinkWca clears the mark and the ranking and keeps the city lock', () => {
+  it('unlinkWca clears the WCA ID, its mark and the ranking and keeps the city lock', () => {
     const cells = [HEADERS, row('Üye', 'ayse@example.com', { ...verified, 'İl sıralaması': STAMP, 'İl tarihi': STAMP })]
     expect(load(cells)('unlinkWca', { email: 'ayse@example.com' }).result).toBe('ok')
+    expect(cell(cells, 1, 'WCA ID')).toBe('')
     expect(cells[1].slice(13)).toEqual(['', '', STAMP])
   })
 
@@ -168,5 +171,54 @@ describe('the members sheet script, WCA and il sıralaması (spec 2026-10-21, Pa
       row('Onay bekliyor', 'd@example.com', { 'WCA ID': '2019DDDD01', 'WCA doğrulandı': STAMP, 'İl sıralaması': STAMP }),
     ]
     expect(load(cells)('rankingMembers', {})).toEqual({ result: 'ok', members: [{ wcaId: '2019AAAA01', il: 'İstanbul' }] })
+  })
+})
+
+describe('the members sheet script, WCA ile kaydol (spec 2026-10-21)', () => {
+  const APPLY = { token: 't'.repeat(43), at: STAMP, firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'Ankara', helps: false, locale: 'tr' }
+  const wca = (more: object = {}) => ({ ...APPLY, email: 'ayse@example.com', wcaId: '2019TEME01', wcaVerified: true, ranking: true, confirmed: true, ...more })
+
+  it('a proved address starts a member row with the WCA mark and the ranking', () => {
+    const cells = [HEADERS]
+    expect(load(cells)('apply', wca()).result).toBe('started')
+    expect([cell(cells, 1, 'Durum'), cell(cells, 1, 'WCA ID'), cell(cells, 1, 'Onay tarihi')]).toEqual(["'Üye", "'2019TEME01", `'${STAMP}`])
+    expect(cells[1].slice(13)).toEqual([`'${STAMP}`, `'${STAMP}`, `'${STAMP}`])
+  })
+
+  it('a changed address waits for its link with the WCA mark ready; abroad never joins the ranking', () => {
+    const cells = [HEADERS]
+    expect(load(cells)('apply', wca({ confirmed: false, city: 'Yurt dışı' })).result).toBe('pending')
+    expect([cell(cells, 1, 'Durum'), cell(cells, 1, 'Onay tarihi')]).toEqual(["'Onay bekliyor", ''])
+    expect(cells[1].slice(13)).toEqual([`'${STAMP}`, '', ''])
+  })
+
+  it('a proved address that is already a member gets the WCA ID and the ranking, nothing else', () => {
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { Ad: 'Ayşe Nur' })]
+    expect(load(cells)('apply', wca({ firstName: 'Başka' })).result).toBe('linked')
+    expect([cell(cells, 1, 'Ad'), cell(cells, 1, 'WCA ID')]).toEqual(['Ayşe Nur', "'2019TEME01"])
+    expect(cells[1].slice(13)).toEqual([`'${STAMP}`, `'${STAMP}`, `'${STAMP}`])
+    expect(load(cells)('apply', wca({ wcaVerified: false, wcaId: '', ranking: false })).result).toBe('member') // no WCA ID to link
+    expect(load(cells)('apply', wca({ confirmed: false })).result).toBe('member') // the address is not proved
+  })
+
+  it('refuses a WCA ID another member verified, but not one a pending row holds', () => {
+    const cells = [HEADERS, row('Onay bekliyor', 'bekle@example.com', { 'WCA ID': '2019TEME01', 'WCA doğrulandı': STAMP })]
+    expect(load(cells)('apply', wca()).result).toBe('started')
+    const taken = [HEADERS, row('Üye', 'ali@example.com', { 'WCA ID': '2019TEME01', 'WCA doğrulandı': STAMP })]
+    expect(load(taken)('apply', wca()).result).toBe('taken')
+    expect(taken).toHaveLength(2)
+  })
+
+  it('a proved address overwrites its own pending application at once; a typed one keeps the 24-hour rule', () => {
+    const cells = [HEADERS, row('Onay bekliyor', 'ayse@example.com', { 'Başvuru tarihi': STAMP })]
+    expect(load(cells)('apply', wca({ confirmed: false, ranking: false })).result).toBe('recent')
+    expect(load(cells)('apply', wca()).result).toBe('started')
+    expect(cell(cells, 1, 'Durum')).toBe("'Üye")
+  })
+
+  it('a typed application stays as today: pending, no WCA marks', () => {
+    const cells = [HEADERS]
+    expect(load(cells)('apply', { ...APPLY, email: 'kim@example.com', wcaId: '' }).result).toBe('pending')
+    expect([cell(cells, 1, 'WCA ID'), ...cells[1].slice(13)]).toEqual(['', '', '', ''])
   })
 })
