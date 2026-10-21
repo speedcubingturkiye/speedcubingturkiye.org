@@ -3,7 +3,7 @@
 import { EMAIL_RE, type AccountState } from '@/app/actions/types'
 import { leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
 import { botCheck } from '@/lib/form-guard'
-import { wcaIdExists } from '@/lib/membership'
+import { istanbulStamp, wcaIdExists } from '@/lib/membership'
 import { parseApplication } from '@/lib/membership-rules'
 import { sheetReady, updateMember } from '@/lib/membership-sheet'
 import { requestSubscription } from '@/lib/newsletter'
@@ -37,7 +37,7 @@ export async function saveAccount(_prev: AccountState, formData: FormData): Prom
   if (!parsed.ok) return { ok: false, error: parsed.error }
   const { firstName, lastName, birthDate, guardian, city, wcaId, helps } = parsed.data
   if (wcaId && !(await wcaIdExists(wcaId))) return { ok: false, error: 'wcaId' }
-  const result = await updateMember(data.email, { firstName, lastName, birthDate, guardian, city, wcaId, helps })
+  const result = await updateMember(data.email, { firstName, lastName, birthDate, guardian, city, wcaId, helps }, istanbulStamp(new Date()))
   if (result === 'none') return { ok: false, error: 'expired' }
   return result === 'ok' ? { ok: true } : { ok: false, error: 'send_failed' }
 }

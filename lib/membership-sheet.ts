@@ -35,7 +35,7 @@ export function sheetReady(): boolean {
   return config() !== null || process.env.NODE_ENV === 'development'
 }
 
-type Action = 'apply' | 'confirm' | 'link' | 'get' | 'update' | 'changeEmail' | 'delete'
+type Action = 'apply' | 'confirm' | 'link' | 'get' | 'update' | 'changeEmail' | 'delete' | 'linkWca' | 'unlinkWca' | 'ranking' | 'rankingMembers'
 type Answer = { result: string; [key: string]: unknown }
 
 /** The script's whole answer, or `{ result: 'error' }` (logged) for anything without a string `result`. */
@@ -86,7 +86,7 @@ export async function confirmInSheet(token: string, at: string): Promise<Confirm
 }
 
 /** A member's details as Hesabım (spec 2026-10-21) shows and edits them */
-export type MemberRecord = {
+export type MemberDetails = {
   firstName: string
   lastName: string
   email: string
@@ -97,10 +97,13 @@ export type MemberRecord = {
   helps: boolean
   locale: Locale
 }
+/** The details and the WCA side (Parça 2): `wcaVerified`, the WCA login confirmed the WCA ID; `ranking`, in the il
+ *  ranking; `cityLockedUntil`, "YYYY-MM-DD" while the ranking's city lock runs, '' otherwise */
+export type MemberRecord = MemberDetails & { wcaVerified: boolean; ranking: boolean; cityLockedUntil: string }
 /** What Hesabım's form may change; the address has its own confirmed flow */
-export type MemberFields = Omit<MemberRecord, 'email' | 'locale'>
+export type MemberFields = Omit<MemberDetails, 'email' | 'locale'>
 
-function isMember(m: unknown): m is MemberRecord {
+function isMember(m: unknown): m is MemberDetails {
   if (typeof m !== 'object' || m === null) return false
   const r = m as Record<string, unknown>
   return (
@@ -112,7 +115,7 @@ function isMember(m: unknown): m is MemberRecord {
 }
 
 // Development without the script: a sample member for whatever address asks, so Hesabım can be seen locally
-const devMember = (email: string): MemberRecord => ({
+const devMember = (email: string): MemberDetails => ({
   firstName: 'Deneme',
   lastName: 'Üye',
   email,
@@ -129,15 +132,19 @@ export async function linkFromSheet(email: string): Promise<'ok' | 'none' | 'err
   return call('link', { email }, ['ok', 'none'], 'ok')
 }
 
-/** The member's details; null when the address is not (or no longer) a member. */
+/** The member's details; null when the address is not (or no longer) a member. A script older than Parça 2 sends no
+ *  WCA fields: that reads as unverified and out of the ranking. */
 export async function getMember(email: string): Promise<MemberRecord | null | 'error'> {
   const answer = await post('get', { email }, { result: 'ok', member: devMember(email) })
   if (answer.result === 'none') return null
-  return answer.result === 'ok' && isMember(answer.member) ? answer.member : 'error'
+  if (answer.result !== 'ok' || !isMember(answer.member)) return 'error'
+  const m = answer.member as MemberDetails & Partial<Record<'wcaVerified' | 'ranking' | 'cityLockedUntil', unknown>>
+  return { ...m, wcaVerified: m.wcaVerified === true, ranking: m.ranking === true, cityLockedUntil: typeof m.cityLockedUntil === 'string' ? m.cityLockedUntil : '' }
 }
 
-export async function updateMember(email: string, fields: MemberFields): Promise<'ok' | 'none' | 'error'> {
-  return call('update', { email, ...fields }, ['ok', 'none'], 'ok')
+/** 'locked': the city may not change yet (the il ranking's lock). `at`: the Istanbul stamp the lock is measured at. */
+export async function updateMember(email: string, fields: MemberFields, at: string): Promise<'ok' | 'none' | 'locked' | 'error'> {
+  return call('update', { email, ...fields, at }, ['ok', 'none', 'locked'], 'ok')
 }
 
 /** 'taken' when another row already has the new address. */
@@ -147,4 +154,28 @@ export async function changeMemberEmail(email: string, newEmail: string): Promis
 
 export async function deleteMember(email: string): Promise<'ok' | 'none' | 'error'> {
   return call('delete', { email }, ['ok', 'none'], 'ok')
+}
+
+/** WCA bağlama (spec 2026-10-21, Parça 2): 'taken' when another member verified this WCA ID first. */
+export async function linkMemberWca(email: string, wcaId: string, at: string): Promise<'ok' | 'none' | 'taken' | 'error'> {
+  return call('linkWca', { email, wcaId, at }, ['ok', 'none', 'taken'], 'ok')
+}
+
+export async function unlinkMemberWca(email: string): Promise<'ok' | 'none' | 'error'> {
+  return call('unlinkWca', { email }, ['ok', 'none'], 'ok')
+}
+
+/** İl sıralaması in or out; 'not_allowed' without a verified WCA ID, or with Yurt dışı. */
+export async function setMemberRanking(email: string, join: boolean, at: string): Promise<'ok' | 'none' | 'not_allowed' | 'error'> {
+  return call('ranking', { email, join, at }, ['ok', 'none', 'not_allowed'], 'ok')
+}
+
+export type RankingMember = { wcaId: string; il: string }
+const isRankingMember = (m: unknown): m is RankingMember =>
+  typeof m === 'object' && m !== null && typeof (m as RankingMember).wcaId === 'string' && typeof (m as RankingMember).il === 'string'
+
+/** The il ranking's members: verified and opted in, with their province. */
+export async function rankingMembers(): Promise<RankingMember[] | 'error'> {
+  const { result, members } = await post('rankingMembers', {}, { result: 'ok', members: [] })
+  return result === 'ok' && Array.isArray(members) && members.every(isRankingMember) ? members : 'error'
 }

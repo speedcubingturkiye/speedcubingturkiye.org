@@ -7,10 +7,14 @@ import {
   deleteMember,
   getMember,
   linkFromSheet,
+  linkMemberWca,
+  rankingMembers,
+  setMemberRanking,
   sheetReady,
+  unlinkMemberWca,
   updateMember,
+  type MemberDetails,
   type MemberFields,
-  type MemberRecord,
   type SheetRow,
 } from '@/lib/membership-sheet'
 
@@ -78,7 +82,8 @@ describe('confirmInSheet', () => {
 })
 
 describe('Hesabım calls', () => {
-  const MEMBER: MemberRecord = { ...FIELDS, email: 'ayse@example.com', locale: 'en' }
+  const MEMBER: MemberDetails = { ...FIELDS, email: 'ayse@example.com', locale: 'en' }
+  const UNVERIFIED = { wcaVerified: false, ranking: false, cityLockedUntil: '' }
   const sent = (i = 0) => JSON.parse(fetchMock.mock.calls[i][1].body)
 
   it('link and delete post the address and map the result', async () => {
@@ -96,7 +101,7 @@ describe('Hesabım calls', () => {
 
   it('getMember reads the member, null for none, error for a malformed one', async () => {
     answer({ result: 'ok', member: MEMBER })
-    expect(await getMember('ayse@example.com')).toEqual(MEMBER)
+    expect(await getMember('ayse@example.com')).toEqual({ ...MEMBER, ...UNVERIFIED })
     expect(sent()).toEqual({ secret: 's3cret', action: 'get', email: 'ayse@example.com' })
     answer({ result: 'none' })
     expect(await getMember('ayse@example.com')).toBeNull()
@@ -108,13 +113,47 @@ describe('Hesabım calls', () => {
 
   it('updateMember and changeMemberEmail post their fields and map the result', async () => {
     answer({ result: 'ok' })
-    expect(await updateMember('ayse@example.com', FIELDS)).toBe('ok')
-    expect(sent()).toEqual({ secret: 's3cret', action: 'update', email: 'ayse@example.com', ...FIELDS })
+    expect(await updateMember('ayse@example.com', FIELDS, '2026-10-21 15:00')).toBe('ok')
+    expect(sent()).toEqual({ secret: 's3cret', action: 'update', email: 'ayse@example.com', ...FIELDS, at: '2026-10-21 15:00' })
     answer({ result: 'taken' })
     expect(await changeMemberEmail('ayse@example.com', 'yeni@example.com')).toBe('taken')
     expect(sent(1)).toEqual({ secret: 's3cret', action: 'changeEmail', email: 'ayse@example.com', newEmail: 'yeni@example.com' })
     answer({ result: 'none' })
     expect(await changeMemberEmail('ayse@example.com', 'yeni@example.com')).toBe('none')
+  })
+
+  it('getMember fills in the WCA fields; an older script without them reads as unverified', async () => {
+    const wca = { wcaVerified: true, ranking: true, cityLockedUntil: '2027-10-21' }
+    answer({ result: 'ok', member: { ...MEMBER, ...wca } })
+    expect(await getMember('ayse@example.com')).toEqual({ ...MEMBER, ...wca })
+    answer({ result: 'ok', member: { ...MEMBER, wcaVerified: 'Evet', cityLockedUntil: 7 } })
+    expect(await getMember('ayse@example.com')).toEqual({ ...MEMBER, ...UNVERIFIED })
+  })
+
+  it('the WCA and ranking calls post their fields and map the result', async () => {
+    answer({ result: 'locked' })
+    expect(await updateMember('ayse@example.com', FIELDS, '2026-10-21 15:00')).toBe('locked')
+    answer({ result: 'taken' })
+    expect(await linkMemberWca('ayse@example.com', '2019TEME01', '2026-10-21 15:00')).toBe('taken')
+    expect(sent(1)).toEqual({ secret: 's3cret', action: 'linkWca', email: 'ayse@example.com', wcaId: '2019TEME01', at: '2026-10-21 15:00' })
+    answer({ result: 'ok' })
+    expect(await unlinkMemberWca('ayse@example.com')).toBe('ok')
+    expect(sent(2)).toEqual({ secret: 's3cret', action: 'unlinkWca', email: 'ayse@example.com' })
+    answer({ result: 'not_allowed' })
+    expect(await setMemberRanking('ayse@example.com', true, '2026-10-21 15:00')).toBe('not_allowed')
+    expect(sent(3)).toEqual({ secret: 's3cret', action: 'ranking', email: 'ayse@example.com', join: true, at: '2026-10-21 15:00' })
+    answer({ result: 'taken' })
+    expect(await setMemberRanking('ayse@example.com', false, '2026-10-21 15:00')).toBe('error')
+  })
+
+  it('rankingMembers returns the list, and error for a malformed one or the script before this update', async () => {
+    answer({ result: 'ok', members: [{ wcaId: '2019TEME01', il: 'Ankara' }] })
+    expect(await rankingMembers()).toEqual([{ wcaId: '2019TEME01', il: 'Ankara' }])
+    expect(sent()).toEqual({ secret: 's3cret', action: 'rankingMembers' })
+    answer({ result: 'ok', members: [{ wcaId: 1, il: 'Ankara' }] })
+    expect(await rankingMembers()).toBe('error')
+    answer({ result: 'error', reason: 'action' })
+    expect(await rankingMembers()).toBe('error')
   })
 })
 
@@ -136,9 +175,10 @@ describe('without the variables', () => {
     // Hesabım shows a sample member, so the page can be seen without the script
     expect(await linkFromSheet('a@b.com')).toBe('ok')
     expect(await getMember('a@b.com')).toMatchObject({ email: 'a@b.com' })
-    expect(await updateMember('a@b.com', FIELDS)).toBe('ok')
+    expect(await updateMember('a@b.com', FIELDS, '2026-10-21 15:00')).toBe('ok')
     expect(await changeMemberEmail('a@b.com', 'c@d.com')).toBe('ok')
     expect(await deleteMember('a@b.com')).toBe('ok')
+    expect(await rankingMembers()).toEqual([]) // the il ranking shows no one
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })
