@@ -1,13 +1,18 @@
-// lib/newsletter-token.ts: confirm and unsubscribe links (spec §8). AES-256-GCM: the address never appears in a URL,
+// lib/newsletter-token.ts: confirm and unsubscribe links (spec §8), and Hesabım's links (spec 2026-10-21). AES-256-GCM: the address never appears in a URL,
 // a server log or the browser history, and a token only opens the door it was made for.
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
 
-export type TokenPurpose = 'onay' | 'cikis'
-export type TokenData = { email: string; locale: Locale }
+export type TokenPurpose = 'onay' | 'cikis' | 'hesap' | 'eposta'
+/** `newEmail`: the address an `eposta` link changes the membership to */
+export type TokenData = { email: string; locale: Locale; newEmail?: string }
 
 /** A confirm link lives as long as an unconfirmed address stays on the list (spec §5). */
 export const CONFIRM_TTL_MS = 7 * 86_400_000
+/** Hesabım's links (spec 2026-10-21): the page itself and a new address's confirm link */
+export const ACCOUNT_TTL_MS = 3_600_000
+// An unsubscribe link never expires
+const TTL: Partial<Record<TokenPurpose, number>> = { onay: CONFIRM_TTL_MS, hesap: ACCOUNT_TTL_MS, eposta: ACCOUNT_TTL_MS }
 
 // The key for development and tests when NEWSLETTER_SECRET is unset. Production has no fallback: makeToken and
 // readToken both throw from key() unless the secret is at least 32 characters.
@@ -23,7 +28,7 @@ function key(): Buffer {
 export function makeToken(purpose: TokenPurpose, data: TokenData, now = Date.now()): string {
   const iv = randomBytes(12)
   const cipher = createCipheriv('aes-256-gcm', key(), iv)
-  const plain = JSON.stringify({ p: purpose, e: data.email, l: data.locale, t: Math.floor(now / 1000) })
+  const plain = JSON.stringify({ p: purpose, e: data.email, l: data.locale, t: Math.floor(now / 1000), ...(data.newEmail ? { n: data.newEmail } : {}) })
   const body = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()])
   return Buffer.concat([iv, body, cipher.getAuthTag()]).toString('base64url')
 }
@@ -40,9 +45,11 @@ export function readToken(purpose: TokenPurpose, token: string, now = Date.now()
     const decipher = createDecipheriv('aes-256-gcm', k, raw.subarray(0, 12))
     decipher.setAuthTag(raw.subarray(raw.length - 16))
     const plain = Buffer.concat([decipher.update(raw.subarray(12, raw.length - 16)), decipher.final()]).toString('utf8')
-    const v = JSON.parse(plain) as { p?: unknown; e?: unknown; l?: unknown; t?: unknown }
+    const v = JSON.parse(plain) as { p?: unknown; e?: unknown; l?: unknown; t?: unknown; n?: unknown }
     if (v.p !== purpose || typeof v.e !== 'string' || (v.l !== 'tr' && v.l !== 'en') || typeof v.t !== 'number') return null
-    if (purpose === 'onay' && now - v.t * 1000 > CONFIRM_TTL_MS) return null
+    const ttl = TTL[purpose]
+    if (ttl !== undefined && now - v.t * 1000 > ttl) return null
+    if (purpose === 'eposta') return typeof v.n === 'string' ? { email: v.e, locale: v.l, newEmail: v.n } : null
     return { email: v.e, locale: v.l }
   } catch {
     return null

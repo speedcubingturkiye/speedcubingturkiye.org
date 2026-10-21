@@ -1,6 +1,6 @@
 // lib/newsletter-token.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CONFIRM_TTL_MS, makeToken, readToken } from '@/lib/newsletter-token'
+import { ACCOUNT_TTL_MS, CONFIRM_TTL_MS, makeToken, readToken } from '@/lib/newsletter-token'
 
 const data = { email: 'kutay@example.com', locale: 'en' as const }
 
@@ -19,6 +19,18 @@ describe('newsletter tokens', () => {
       expect(token).not.toContain('kutay')
       expect(readToken(purpose, token)).toEqual(data)
     }
+  })
+
+  it('Hesabım links last an hour; the address change carries the new address', () => {
+    const now = Date.UTC(2026, 9, 21, 12)
+    const page = makeToken('hesap', data, now)
+    expect(readToken('hesap', page, now + ACCOUNT_TTL_MS - 1000)).toEqual(data)
+    expect(readToken('hesap', page, now + ACCOUNT_TTL_MS + 1000)).toBeNull()
+    expect(readToken('onay', page, now)).toBeNull()
+    const change = makeToken('eposta', { ...data, newEmail: 'yeni@example.com' }, now)
+    expect(readToken('eposta', change, now)).toEqual({ ...data, newEmail: 'yeni@example.com' })
+    expect(readToken('eposta', change, now + ACCOUNT_TTL_MS + 1000)).toBeNull()
+    expect(readToken('eposta', makeToken('eposta', data, now), now)).toBeNull() // no new address: not a change link
   })
 
   it('refuses a token made for the other purpose', () => {
