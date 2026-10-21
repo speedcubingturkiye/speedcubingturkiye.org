@@ -107,7 +107,8 @@ export async function finishWcaLink(cookie: string | undefined, params: URLSearc
   const stateOk = Boolean(state) && state === params.get('state')
   if (kind === 'k') {
     const locale: Locale = payload === 'en' ? 'en' : 'tr'
-    return stateOk ? finishWcaSignup(locale, params, now) : `${prefix(locale)}/uye-ol?durum=gecersiz`
+    // Not "gecersiz": on Üye ol that names the membership mail's confirm link
+    return stateOk ? finishWcaSignup(locale, params, now) : `${prefix(locale)}/uye-ol?durum=wca-hata`
   }
   const data = stateOk && kind === 'h' ? readToken('hesap', payload ?? '', now) : null
   if (!data) return '/hesabim?durum=gecersiz'

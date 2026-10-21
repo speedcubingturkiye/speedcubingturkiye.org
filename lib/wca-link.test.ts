@@ -138,7 +138,7 @@ describe('the sign-up login (WCA ile kaydol, spec 2026-10-21)', () => {
     expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state, error: 'access_denied' }), NOW)).toBe('/en/uye-ol')
     fetchMock.mockResolvedValueOnce(json({ error: 'server' }, 500))
     expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state, code: 'c' }), NOW)).toBe('/en/uye-ol?durum=wca-hata')
-    expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state: 'other', code: 'c' }), NOW)).toBe('/en/uye-ol?durum=gecersiz')
+    expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state: 'other', code: 'c' }), NOW)).toBe('/en/uye-ol?durum=wca-hata')
   })
 
   it('is null without the keys', () => {
