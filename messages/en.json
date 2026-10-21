@@ -162,7 +162,9 @@
     "provinceNote": "Only members who linked their WCA account and chose to take part appear in the province rankings. <join>Become a member</join> or join from <account>My account</account>.",
     "provinceNone": "No one from {province} in this list yet.",
     "provinceUnavailable": "The province list could not be loaded; try again in a few minutes.",
-    "nationalRank": "Türkiye"
+    "nationalRank": "Türkiye",
+    "event": "Event",
+    "filters": "Ranking options"
   },
   "news": {
     "title": "News",

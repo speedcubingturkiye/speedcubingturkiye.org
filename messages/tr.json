@@ -162,7 +162,9 @@
     "provinceNote": "İl sıralamasında yalnız WCA hesabını bağlayıp katılmayı seçen üyeler görünür. <join>Üye ol</join> ya da <account>Hesabım</account> sayfasından katıl.",
     "provinceNone": "{province} için bu listede henüz kimse yok.",
     "provinceUnavailable": "İl listesi şu an yüklenemedi; birkaç dakika sonra tekrar dene.",
-    "nationalRank": "Türkiye"
+    "nationalRank": "Türkiye",
+    "event": "Etkinlik",
+    "filters": "Sıralama seçenekleri"
   },
   "news": {
     "title": "Haberler",
