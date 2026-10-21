@@ -12,6 +12,8 @@ type Props = { params: Promise<{ event: string; type: string }>; searchParams: P
 // Rendered per request (?sayfa, ?boyut, ?ara). Only the 31 combinations from generateStaticParams exist (spec §5:
 // 17 events, both types where an average exists); anything else is a 404.
 export const dynamicParams = false
+// A province's list waits for the members sheet's script (lib/il-ranking.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
 
 export function generateStaticParams() {
   return EVENTS.flatMap((e) =>

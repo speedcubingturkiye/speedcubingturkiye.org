@@ -3,6 +3,9 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { finishWcaLink, FLOW_COOKIE, FLOW_COOKIE_OPTIONS } from '@/lib/wca-link'
 
+// The WCA's two calls, then the members sheet's script (lib/membership-sheet.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
+
 export async function GET(request: NextRequest) {
   const path = await finishWcaLink(request.cookies.get(FLOW_COOKIE)?.value, request.nextUrl.searchParams)
   const res = NextResponse.redirect(new URL(path, request.url), 303)

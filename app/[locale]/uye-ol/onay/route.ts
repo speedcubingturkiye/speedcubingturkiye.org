@@ -4,6 +4,9 @@ import type { NextRequest } from 'next/server'
 import { confirmMembership } from '@/lib/membership'
 import { clientIp, confirmSubscription } from '@/lib/newsletter'
 
+// It waits for the members sheet's script (lib/membership-sheet.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
+
 export async function GET(request: NextRequest, ctx: RouteContext<'/[locale]/uye-ol/onay'>) {
   const { locale } = await ctx.params
   const prefix = locale === 'en' ? '/en' : ''

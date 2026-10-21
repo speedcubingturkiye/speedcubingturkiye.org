@@ -28,7 +28,10 @@ export type SheetRow = {
 export type ApplyResult = 'pending' | 'recent' | 'member' | 'started' | 'linked' | 'taken' | 'error'
 export type ConfirmResult = 'ok' | 'invalid' | 'error'
 
-const TIMEOUT_MS = 10_000
+/** How long a call waits for the script: longer than the script may wait for its lock (20 s), with room for a cold
+ *  start. Giving up sooner reported calls the script went on to finish as failures (a WCA sign-up, 2026-10-21). The
+ *  pages and routes that call it allow 60 s (maxDuration). */
+export const SHEET_TIMEOUT_MS = 30_000
 
 function config(): { url: string; secret: string } | null {
   const url = process.env.MEMBERSHIP_SCRIPT_URL
@@ -57,7 +60,7 @@ async function post(action: Action, payload: object, dev: Answer): Promise<Answe
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ secret: c.secret, action, ...payload }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(SHEET_TIMEOUT_MS),
       cache: 'no-store',
     })
     if (!res.ok) {

@@ -9,6 +9,9 @@ import { getRankings } from '@/lib/wca/rankings'
 // Rendered per request: ?sayfa, ?boyut and ?ara pick what to show; the data is a file in the deployment.
 type Props = { searchParams: Promise<SearchParamsRecord> }
 
+// A province's list waits for the members sheet's script (lib/il-ranking.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const [locale, t, sp] = await Promise.all([getLocale(), getTranslations('rankings'), searchParams])
   const meta = pageMeta(locale, '/siralamalar', { title: t('title'), description: t('description') })

@@ -10,6 +10,9 @@ import { todayIstanbul } from '@/lib/wca/status'
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
+// Its forms wait for the members sheet's script (lib/membership-sheet.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const [t, sp] = await Promise.all([getTranslations('membership'), searchParams])
   const meta = pageMeta(await getLocale(), '/uye-ol', { title: t('title'), description: t('lead') })

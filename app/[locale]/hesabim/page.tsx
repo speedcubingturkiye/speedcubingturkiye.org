@@ -17,6 +17,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
+// The page and its forms wait for the members sheet's script (lib/membership-sheet.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
+
 // The outcome of an address change (hesabim/eposta/route.ts) and of a WCA link (api/wca/donus/route.ts)
 const NOTICES = {
   'eposta-degisti': 'emailChanged',

@@ -6,6 +6,9 @@ import { clientIp } from '@/lib/newsletter'
 
 const DURUM = { ok: 'eposta-degisti', taken: 'eposta-kullanimda', invalid: 'gecersiz', error: 'hata' } as const
 
+// It waits for the members sheet's script (lib/membership-sheet.ts, SHEET_TIMEOUT_MS)
+export const maxDuration = 60
+
 export async function GET(request: NextRequest, ctx: RouteContext<'/[locale]/hesabim/eposta'>) {
   const { locale } = await ctx.params
   const prefix = locale === 'en' ? '/en' : ''

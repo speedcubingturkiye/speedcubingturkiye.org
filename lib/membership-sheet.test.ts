@@ -1,6 +1,9 @@
 // lib/membership-sheet.test.ts
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  SHEET_TIMEOUT_MS,
   applyToSheet,
   changeMemberEmail,
   confirmInSheet,
@@ -162,6 +165,17 @@ describe('Hesabım calls', () => {
     expect(await rankingMembers()).toBe('error')
     answer({ result: 'error', reason: 'action' })
     expect(await rankingMembers()).toBe('error')
+  })
+})
+
+describe('the wait for the script', () => {
+  // A call the site gives up on while the script still writes is reported as a failure that did happen (2026-10-21:
+  // a WCA sign-up said "Şu an kaydedemedik" and its row was there). The script may wait for its lock first.
+  it('outlasts the lock the script may wait for, with room for a cold start', () => {
+    const script = readFileSync(join(import.meta.dirname, '..', 'scripts', 'uyelik-apps-script.gs'), 'utf8')
+    const lockWait = Number(script.match(/waitLock\((\d+)\)/)?.[1])
+    expect(lockWait).toBeGreaterThan(0)
+    expect(SHEET_TIMEOUT_MS).toBeGreaterThanOrEqual(lockWait + 10_000)
   })
 })
 
