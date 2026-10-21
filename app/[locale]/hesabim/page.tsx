@@ -7,6 +7,7 @@ import { pageMeta } from '@/lib/metadata'
 import { getMember } from '@/lib/membership-sheet'
 import { getSubscriber } from '@/lib/ses'
 import { todayIstanbul } from '@/lib/wca/status'
+import { wcaReady } from '@/lib/wca-link'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('account')
@@ -16,8 +17,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
-// The outcome of an address change (hesabim/eposta/route.ts)
-const NOTICES = { 'eposta-degisti': 'emailChanged', 'eposta-kullanimda': 'emailTaken', gecersiz: 'invalidLink', hata: 'loadFailed' } as const
+// The outcome of an address change (hesabim/eposta/route.ts) and of a WCA link (api/wca/donus/route.ts)
+const NOTICES = {
+  'eposta-degisti': 'emailChanged',
+  'eposta-kullanimda': 'emailTaken',
+  gecersiz: 'invalidLink',
+  hata: 'loadFailed',
+  'wca-baglandi': 'wcaLinked',
+  'wca-yok': 'wcaNoId',
+  'wca-kullanimda': 'wcaTaken',
+  'wca-hata': 'wcaFailed',
+} as const
+const GOOD_NEWS = new Set(['emailChanged', 'wcaLinked'])
 
 async function newsletterStatus(email: string): Promise<NewsletterStatus> {
   try {
@@ -43,17 +54,16 @@ export default async function AccountPage({ searchParams }: Props) {
         <h1>{t('title')}</h1>
         <p className="mt-3 text-lg text-fg-2">{t('lead')}</p>
       </header>
+      {/* Above both views: a WCA link comes back to the editor with its outcome */}
+      {notice ? (
+        <p role="status" className={`mb-6 font-semibold ${durum && GOOD_NEWS.has(durum) ? 'text-ok' : 'text-brand-ink'}`}>
+          {notice}
+        </p>
+      ) : null}
       {data && member && member !== 'error' ? (
-        <AccountEditor token={token} member={member} newsletter={await newsletterStatus(data.email)} today={todayIstanbul()} />
+        <AccountEditor token={token} member={member} newsletter={await newsletterStatus(data.email)} today={todayIstanbul()} wca={wcaReady()} />
       ) : (
-        <>
-          {notice ? (
-            <p role="status" className={`mb-6 font-semibold ${durum === 'emailChanged' ? 'text-ok' : 'text-brand-ink'}`}>
-              {notice}
-            </p>
-          ) : null}
-          <AccountLinkForm locale={locale} />
-        </>
+        <AccountLinkForm locale={locale} />
       )}
     </section>
   )

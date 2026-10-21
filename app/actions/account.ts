@@ -1,11 +1,11 @@
 'use server'
 
 import { EMAIL_RE, type AccountState } from '@/app/actions/types'
-import { leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
+import { joinRanking, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
 import { botCheck } from '@/lib/form-guard'
 import { istanbulStamp, wcaIdExists } from '@/lib/membership'
 import { parseApplication } from '@/lib/membership-rules'
-import { sheetReady, updateMember } from '@/lib/membership-sheet'
+import { setMemberRanking, sheetReady, unlinkMemberWca, updateMember } from '@/lib/membership-sheet'
 import { requestSubscription } from '@/lib/newsletter'
 import { removeSubscriber } from '@/lib/ses'
 import { todayIstanbul } from '@/lib/wca/status'
@@ -39,7 +39,33 @@ export async function saveAccount(_prev: AccountState, formData: FormData): Prom
   if (wcaId && !(await wcaIdExists(wcaId))) return { ok: false, error: 'wcaId' }
   const result = await updateMember(data.email, { firstName, lastName, birthDate, guardian, city, wcaId, helps }, istanbulStamp(new Date()))
   if (result === 'none') return { ok: false, error: 'expired' }
+  if (result === 'locked') return { ok: false, error: 'city_locked' }
   return result === 'ok' ? { ok: true } : { ok: false, error: 'send_failed' }
+}
+
+/** WCA hesabı (spec 2026-10-21, Parça 2): the link goes, the il ranking with it. Linking runs through /api/wca. */
+export async function unlinkWca(_prev: AccountState, formData: FormData): Promise<AccountState> {
+  const data = tokenOf(formData)
+  if (!data) return { ok: false, error: 'expired' }
+  const result = await unlinkMemberWca(data.email)
+  if (result === 'none') return { ok: false, error: 'expired' }
+  return result === 'ok' ? { ok: true } : { ok: false, error: 'send_failed' }
+}
+
+/** İl sıralaması: in with the explicit consent box (and the guardian box under 18), out at once. */
+export async function ranking(_prev: AccountState, formData: FormData): Promise<AccountState> {
+  const data = tokenOf(formData)
+  if (!data) return { ok: false, error: 'expired' }
+  const result =
+    formData.get('op') === 'leave'
+      ? await setMemberRanking(data.email, false, istanbulStamp(new Date()))
+      : formData.get('consent') !== 'on'
+        ? 'consent'
+        : await joinRanking(data.email, formData.get('guardian') === 'on')
+  if (result === 'ok') return { ok: true }
+  if (result === 'none') return { ok: false, error: 'expired' }
+  if (result === 'error') return { ok: false, error: 'send_failed' }
+  return { ok: false, error: result } // consent, guardian, not_allowed
 }
 
 /** E-posta adresi: a confirm link to the new address; the change happens when it is clicked. */

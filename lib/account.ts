@@ -3,10 +3,13 @@
 // lib/membership-sheet.ts, the mail bodies in lib/mail-render.ts, the links in lib/newsletter-token.ts.
 import type { Locale } from '@/i18n/routing'
 import { renderAccountLinkMail, renderEmailChangedMail, renderEmailChangeMail } from '@/lib/mail-render'
-import { changeMemberEmail, deleteMember, linkFromSheet } from '@/lib/membership-sheet'
+import { istanbulStamp } from '@/lib/membership'
+import { ageOn } from '@/lib/membership-rules'
+import { changeMemberEmail, deleteMember, getMember, linkFromSheet, setMemberRanking } from '@/lib/membership-sheet'
 import { moveSubscription } from '@/lib/newsletter'
 import { makeToken, readToken, type TokenData } from '@/lib/newsletter-token'
 import { removeSubscriber, sendMail } from '@/lib/ses'
+import { todayIstanbul } from '@/lib/wca/status'
 import { site } from '@/site.config'
 
 const prefix = (locale: Locale) => (locale === 'en' ? '/en' : '')
@@ -61,4 +64,14 @@ export async function leaveMembership(email: string, alsoNewsletter: boolean): P
     }
   }
   return result
+}
+
+/** İl sıralaması in (spec 2026-10-21, Parça 2). Someone under 18 ticks the guardian box too; the script checks the
+ *  verified WCA ID and the province. */
+export async function joinRanking(email: string, guardian: boolean, now = new Date()): Promise<'ok' | 'none' | 'guardian' | 'not_allowed' | 'error'> {
+  const member = await getMember(email)
+  if (member === null) return 'none'
+  if (member === 'error') return 'error'
+  if (ageOn(member.birthDate, todayIstanbul(now)) < 18 && !guardian) return 'guardian'
+  return setMemberRanking(email, true, istanbulStamp(now))
 }

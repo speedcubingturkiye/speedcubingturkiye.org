@@ -1,13 +1,19 @@
 // lib/account.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmEmailChange, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
-import { changeMemberEmail, deleteMember, linkFromSheet } from '@/lib/membership-sheet'
+import { confirmEmailChange, joinRanking, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
+import { changeMemberEmail, deleteMember, getMember, linkFromSheet, setMemberRanking } from '@/lib/membership-sheet'
 import { moveSubscription } from '@/lib/newsletter'
 import { makeToken } from '@/lib/newsletter-token'
 import { removeSubscriber, sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 
-vi.mock('@/lib/membership-sheet', () => ({ linkFromSheet: vi.fn(), changeMemberEmail: vi.fn(), deleteMember: vi.fn() }))
+vi.mock('@/lib/membership-sheet', () => ({
+  linkFromSheet: vi.fn(),
+  changeMemberEmail: vi.fn(),
+  deleteMember: vi.fn(),
+  getMember: vi.fn(),
+  setMemberRanking: vi.fn(),
+}))
 vi.mock('@/lib/ses', () => ({ sendMail: vi.fn(), removeSubscriber: vi.fn() }))
 vi.mock('@/lib/newsletter', () => ({ moveSubscription: vi.fn() }))
 
@@ -83,5 +89,31 @@ describe('leaveMembership', () => {
     vi.mocked(deleteMember).mockResolvedValue('none')
     expect(await leaveMembership('ayse@example.com', true)).toBe('none')
     expect(removeSubscriber).not.toHaveBeenCalled()
+  })
+})
+
+describe('joinRanking', () => {
+  const MEMBER = {
+    firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul',
+    wcaId: '2019TEME01', helps: false, locale: 'tr' as const, wcaVerified: true, ranking: false, cityLockedUntil: '',
+  }
+
+  it('asks someone under 18 for the guardian box and lets an adult in with the Istanbul stamp', async () => {
+    vi.mocked(getMember).mockResolvedValue({ ...MEMBER, birthDate: '2010-01-01' })
+    expect(await joinRanking('ayse@example.com', false, new Date(NOW))).toBe('guardian')
+    expect(setMemberRanking).not.toHaveBeenCalled()
+    vi.mocked(setMemberRanking).mockResolvedValue('ok')
+    expect(await joinRanking('ayse@example.com', true, new Date(NOW))).toBe('ok')
+    expect(setMemberRanking).toHaveBeenCalledWith('ayse@example.com', true, '2026-10-21 15:00')
+    vi.mocked(getMember).mockResolvedValue(MEMBER)
+    expect(await joinRanking('ayse@example.com', false, new Date(NOW))).toBe('ok')
+  })
+
+  it('passes on a membership that is gone and a sheet that failed', async () => {
+    vi.mocked(getMember).mockResolvedValue(null)
+    expect(await joinRanking('ayse@example.com', false, new Date(NOW))).toBe('none')
+    vi.mocked(getMember).mockResolvedValue('error')
+    expect(await joinRanking('ayse@example.com', false, new Date(NOW))).toBe('error')
+    expect(setMemberRanking).not.toHaveBeenCalled()
   })
 })

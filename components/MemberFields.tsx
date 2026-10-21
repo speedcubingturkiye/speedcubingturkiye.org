@@ -17,8 +17,21 @@ export const check = 'flex items-start gap-2 text-sm text-fg-2'
  * - Either also shows when the server asked for it (`error`, a form sent without JS), and the action checks again.
  * - `today` is the Istanbul date from the page, so the server and the browser draw the same fields.
  * - `defaults` fills them in for Hesabım. `afterNames` goes between the names and the date of birth (Üye ol's address).
+ * - `wcaLocked`: the WCA login verified the WCA ID (spec 2026-10-21, Parça 2), so it stays as it is until unlinked.
  */
-export function MemberFields({ today, defaults, error, afterNames }: { today: string; defaults?: Values; error?: string; afterNames?: ReactNode }) {
+export function MemberFields({
+  today,
+  defaults,
+  error,
+  afterNames,
+  wcaLocked = false,
+}: {
+  today: string
+  defaults?: Values
+  error?: string
+  afterNames?: ReactNode
+  wcaLocked?: boolean
+}) {
   const t = useTranslations('membership')
   const [birthDate, setBirthDate] = useState(defaults?.birthDate ?? '')
   const [competed, setCompeted] = useState(defaults ? (defaults.wcaId ? 'yes' : 'no') : '')
@@ -85,7 +98,15 @@ export function MemberFields({ today, defaults, error, afterNames }: { today: st
             <span>{t('yes')}</span>
           </label>
           <label className={check}>
-            <input type="radio" name="competed" value="no" defaultChecked={competed === 'no'} className="mt-1 accent-brand" onChange={() => setCompeted('no')} />
+            <input
+              type="radio"
+              name="competed"
+              value="no"
+              defaultChecked={competed === 'no'}
+              disabled={wcaLocked}
+              className="mt-1 accent-brand"
+              onChange={() => setCompeted('no')}
+            />
             <span>{t('no')}</span>
           </label>
         </div>
@@ -104,10 +125,11 @@ export function MemberFields({ today, defaults, error, afterNames }: { today: st
             autoComplete="off"
             spellCheck={false}
             defaultValue={defaults?.wcaId}
+            readOnly={wcaLocked}
             aria-describedby="wca-id-hint"
           />
           <span id="wca-id-hint" className="mt-1 block font-normal text-fg-2">
-            {t('wcaIdHint')}
+            {wcaLocked ? t('wcaIdVerified') : t('wcaIdHint')}
           </span>
         </label>
       ) : null}

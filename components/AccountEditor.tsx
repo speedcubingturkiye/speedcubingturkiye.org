@@ -1,13 +1,16 @@
 'use client'
 
 import { useEffect, type ReactNode, type RefObject } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
-import { changeEmail, leave, newsletter, saveAccount } from '@/app/actions/account'
+import type { Locale } from '@/i18n/routing'
+import { changeEmail, leave, newsletter, ranking, saveAccount, unlinkWca } from '@/app/actions/account'
 import { check, field, MemberFields } from '@/components/MemberFields'
 import { useFormSubmit } from '@/components/useFormStartTime'
 import type { AccountState } from '@/app/actions/types'
+import { ABROAD, ageOn } from '@/lib/membership-rules'
 import type { MemberRecord } from '@/lib/membership-sheet'
+import { formatDate } from '@/lib/wca/format'
 
 export type NewsletterStatus = 'confirmed' | 'pending' | 'none' | 'unknown'
 
@@ -54,13 +57,108 @@ function DetailsSection({ token, member, today }: { token: string; member: Membe
     <Section id="hesap-bilgiler" title={t('details')}>
       <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
         <TokenField token={token} />
-        <MemberFields today={today} defaults={member} error={state.error} />
+        <MemberFields today={today} defaults={member} error={state.error} wcaLocked={member.wcaVerified} />
         {/* aria-disabled, not disabled: a disabled button drops keyboard focus to <body> while the action runs */}
         <button type="submit" aria-disabled={pending} className="btn btn-brand w-fit">
           {pending ? t('saving') : t('save')}
         </button>
       </form>
       <Status state={state} pending={pending} ok={t('saved')} statusRef={statusRef} />
+    </Section>
+  )
+}
+
+/** İl sıralaması (spec 2026-10-21, Parça 2): in with explicit consent (and the guardian box under 18), out at once. */
+function RankingBox({ token, member, today }: { token: string; member: MemberRecord; today: string }) {
+  const t = useTranslations('account')
+  const locale = useLocale() as Locale
+  const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(ranking, initial, failed, done)
+  const minor = ageOn(member.birthDate, today) < 18
+  return (
+    <div className="grid gap-4">
+      <h3 className="text-lg">{t('rankingTitle')}</h3>
+      {member.city === ABROAD ? (
+        <p className="text-sm text-fg-2">{t('rankingAbroad')}</p>
+      ) : state.ok ? null : (
+        <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
+          <TokenField token={token} />
+          <input type="hidden" name="op" value={member.ranking ? 'leave' : 'join'} />
+          {member.ranking ? (
+            <p className="text-sm text-fg-2">{t('rankingIn', { city: member.city })}</p>
+          ) : (
+            <>
+              <p className="text-sm text-fg-2">{t('rankingIntro')}</p>
+              <label className={check}>
+                <input type="checkbox" name="consent" required className="mt-1 accent-brand" />
+                <span>
+                  {t('rankingConsent')}{' '}
+                  <Link href="/kvkk#il-siralamasi" className="underline">
+                    {t('rankingPrivacy')}
+                  </Link>
+                </span>
+              </label>
+              {minor ? (
+                <label className={check}>
+                  <input type="checkbox" name="guardian" required className="mt-1 accent-brand" />
+                  <span>{t('rankingGuardian')}</span>
+                </label>
+              ) : null}
+            </>
+          )}
+          <button type="submit" aria-disabled={pending} className={`btn w-fit ${member.ranking ? 'btn-outline' : 'btn-brand'}`}>
+            {member.ranking ? t('rankingLeave') : t('rankingJoin')}
+          </button>
+        </form>
+      )}
+      {member.cityLockedUntil ? (
+        <p className="text-sm text-fg-2">
+          {t.rich('cityLocked', {
+            date: formatDate(member.cityLockedUntil, locale),
+            contact: (chunks) => (
+              <Link href="/iletisim" className="underline">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+      ) : null}
+      <Status state={state} pending={pending} ok={member.ranking ? t('rankingLeft') : t('rankingJoined')} statusRef={statusRef} />
+    </div>
+  )
+}
+
+/** WCA hesabı: linking goes out to the WCA login through /api/wca; a linked account can be unlinked here. */
+function WcaSection({ token, member, today }: { token: string; member: MemberRecord; today: string }) {
+  const t = useTranslations('account')
+  const locale = useLocale()
+  const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(unlinkWca, initial, failed, done)
+  return (
+    <Section id="hesap-wca" title={t('wcaTitle')}>
+      {member.wcaVerified ? (
+        <>
+          {state.ok ? null : (
+            <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
+              <TokenField token={token} />
+              <p className="text-sm text-fg-2">{t('wcaLinkedAs', { wcaId: member.wcaId })}</p>
+              <button type="submit" aria-disabled={pending} className="btn btn-outline w-fit">
+                {t('wcaUnlink')}
+              </button>
+            </form>
+          )}
+          <Status state={state} pending={pending} ok={t('wcaUnlinked')} statusRef={statusRef} />
+          {state.ok ? null : <RankingBox token={token} member={member} today={today} />}
+        </>
+      ) : (
+        // A plain form to the route that starts the WCA login: no JS needed, and the token stays out of the address
+        <form action="/api/wca/baglan" method="post" className="grid gap-4">
+          <TokenField token={token} />
+          <input type="hidden" name="locale" value={locale} />
+          <p className="text-sm text-fg-2">{t('wcaIntro')}</p>
+          <button type="submit" className="btn btn-brand w-fit">
+            {t('wcaLink')}
+          </button>
+        </form>
+      )}
     </Section>
   )
 }
@@ -128,7 +226,20 @@ function NewsletterSection({ token, status }: { token: string; status: Newslette
  * the page sets no cookie. The token leaves the address bar on load; the page's Referrer-Policy keeps it out of links.
  * Leaving is held here, so the whole page gives way to the goodbye.
  */
-export function AccountEditor({ token, member, newsletter: status, today }: { token: string; member: MemberRecord; newsletter: NewsletterStatus; today: string }) {
+export function AccountEditor({
+  token,
+  member,
+  newsletter: status,
+  today,
+  wca,
+}: {
+  token: string
+  member: MemberRecord
+  newsletter: NewsletterStatus
+  today: string
+  /** whether the WCA link is set up (lib/wca-link.ts wcaReady) */
+  wca: boolean
+}) {
   const t = useTranslations('account')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(leave, initial, failed, done)
 
@@ -147,6 +258,7 @@ export function AccountEditor({ token, member, newsletter: status, today }: { to
   return (
     <div className="grid gap-10">
       <DetailsSection token={token} member={member} today={today} />
+      {wca ? <WcaSection token={token} member={member} today={today} /> : null}
       <AddressSection token={token} email={member.email} />
       <NewsletterSection token={token} status={status} />
       <Section id="hesap-ayril" title={t('leaveTitle')}>
