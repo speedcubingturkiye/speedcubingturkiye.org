@@ -102,7 +102,8 @@ export function ThemeToggle() {
   return (
     <HeaderMenu
       label={t('theme')}
-      buttonClassName="inline-flex h-9 w-9 items-center justify-center border border-line text-fg hover:border-fg aria-expanded:border-fg"
+      // No frame (2026-10-22, the user's call): the nav's colours, muted until hovered or open
+      buttonClassName="inline-flex h-9 w-9 items-center justify-center text-fg-2 hover:text-fg aria-expanded:text-fg"
       button={
         <>
           <span className="hidden [html[data-theme-pref=light]_&]:inline-flex">{ICONS.light}</span>

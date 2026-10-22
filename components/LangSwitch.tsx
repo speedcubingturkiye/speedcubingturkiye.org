@@ -78,7 +78,8 @@ function LangMenu({ pathname, query }: { pathname: string; query?: Record<string
     <HeaderMenu
       // The visible name is part of the accessible name (WCAG 2.5.3): "Dil: Türkçe"
       label={`${t('language')}: ${current.name}`}
-      buttonClassName="inline-flex h-9 min-w-9 items-center justify-center gap-1.5 border border-line px-2 text-fg hover:border-fg aria-expanded:border-fg"
+      // No frame (2026-10-22, the user's call): the nav's colours, muted until hovered or open
+      buttonClassName="inline-flex h-9 min-w-9 items-center justify-center gap-1.5 px-2 text-fg-2 hover:text-fg aria-expanded:text-fg"
       button={
         <>
           {/* The translate mark (Material Icons "translate", Apache 2.0) */}
