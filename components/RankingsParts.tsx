@@ -7,6 +7,7 @@ import { getPathname, Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { Pager } from '@/components/Pager'
 import { ProvinceSelect } from '@/components/ProvinceSelect'
+import { RankingsSearch } from '@/components/RankingsSearch'
 import { PROVINCE_CHOICES } from '@/lib/membership-rules'
 import { DEFAULT_SIZE, listQuery, MAX_QUERY, PAGE_SIZES, pageAfterResize, type ListParams } from '@/lib/rankings-view'
 import { provinceSlug } from '@/lib/wca/city'
@@ -30,6 +31,12 @@ const EVENT =
   'flex aspect-square w-full items-center justify-center border border-line bg-bg text-fg-2 hover:border-fg hover:text-fg aria-[current=page]:border-brand aria-[current=page]:bg-brand aria-[current=page]:text-white lg:size-11'
 // A field's label in the panel
 const LABEL = 't-label mb-2 block text-fg-2'
+
+/** A localized path with a query object, for a plain href. */
+const withQuery = (path: string, query: Record<string, string>) => {
+  const qs = new URLSearchParams(query).toString()
+  return qs ? `${path}?${qs}` : path
+}
 
 export async function RankingsHeader() {
   const t = await getTranslations('rankings')
@@ -139,7 +146,7 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
                 id="rankings-province"
                 value={il}
                 action={action}
-                keep={keepSize}
+                keep={{ ...keepSize, ...(query ? { ara: query } : {}) }}
                 allLabel={t('allProvinces')}
                 options={PROVINCE_CHOICES.map((p) => ({ value: provinceSlug(p), label: p }))}
               />
@@ -148,6 +155,7 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
               </svg>
             </span>
             {size !== DEFAULT_SIZE && <input type="hidden" name="boyut" value={size} />}
+            {query && <input type="hidden" name="ara" value={query} />}
             <noscript>
               <button type="submit" className="btn btn-outline">
                 {t('provinceShow')}
@@ -177,36 +185,16 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
           </div>
         ) : null}
 
-        {/* "Sıramı bul": a GET search (no JS; a search starts at page 1) */}
-        <form action={action} method="get" role="search">
-          <div className="flex items-baseline justify-between gap-4">
-            <label htmlFor="rankings-search" className={LABEL}>
-              {t('searchLabel')}
-            </label>
-            {query && (
-              <Link href={{ pathname, query: listQuery({ ...params, page: 1, query: '' }) }} className="text-sm font-semibold text-brand-ink underline">
-                {t('searchClear')}
-              </Link>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <input
-              id="rankings-search"
-              type="search"
-              name="ara"
-              defaultValue={query}
-              maxLength={MAX_QUERY}
-              placeholder={t('searchPlaceholder')}
-              autoComplete="off"
-              className="h-11 min-w-0 flex-1 border border-line bg-bg px-3 text-fg focus:border-fg"
-            />
-            {size !== DEFAULT_SIZE && <input type="hidden" name="boyut" value={size} />}
-            {il && <input type="hidden" name="il" value={il} />}
-            <button type="submit" className="btn btn-brand">
-              {t('searchButton')}
-            </button>
-          </div>
-        </form>
+        {/* "Sıramı bul": lists while typing (2026-10-22); a search keeps the province and the page size and starts at
+            page 1 */}
+        <RankingsSearch
+          action={action}
+          query={query}
+          keep={{ ...keepSize, ...(il ? { il } : {}) }}
+          clearHref={withQuery(action, listQuery({ ...params, page: 1, query: '' }))}
+          maxLength={MAX_QUERY}
+          labels={{ label: t('searchLabel'), placeholder: t('searchPlaceholder'), button: t('searchButton'), clear: t('searchClear') }}
+        />
       </div>
 
       {il ? (

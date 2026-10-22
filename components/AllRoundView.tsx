@@ -55,11 +55,18 @@ export async function AllRoundView({ mode, type = 'single', data, locale, search
           <h2>{mode === 'sum' ? t('sumTitle') : t.rich('kinchTitle', { en: (chunks) => <span lang="en">{chunks}</span> })}</h2>
           {subtitle ? <p className="mt-1 text-fg-2">{subtitle}</p> : null}
         </div>
-        {rows.length > 0 ? (
-          <p className="text-sm text-fg-2 tabular-nums">
-            {query ? t('searchCount', { query, from, to, total: rows.length }) : t('count', { from, to, total: rows.length })}
-          </p>
-        ) : null}
+        {/* Always there and polite: a screen reader hears the new count (or no match) as the search changes the list */}
+        <p aria-live="polite" className="text-sm text-fg-2 tabular-nums">
+          {rows.length > 0 ? (
+            query ? (
+              t('searchCount', { query, from, to, total: rows.length })
+            ) : (
+              t('count', { from, to, total: rows.length })
+            )
+          ) : query ? (
+            <span className="sr-only">{t('searchNone', { query })}</span>
+          ) : null}
+        </p>
       </div>
       <p className="mt-3 text-sm text-fg-2">
         {mode === 'sum'
