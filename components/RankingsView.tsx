@@ -42,9 +42,10 @@ type Props = {
 // (optical centre of the uppercase label: 1px of padding moves from the bottom to the top, the tracking is added left)
 const SEGMENT =
   't-label pt-[11px] pr-4 pb-[9px] pl-[calc(1rem+0.08em)] text-fg-2 hover:text-fg aria-[current=page]:bg-fg aria-[current=page]:text-bg'
-// An event in the grid: the icon alone (its name in aria-label and title), the current one in the brand red
+// An event in the grid: the icon alone (its name in aria-label and title), the current one in the brand red. Below lg
+// a square as wide as its column, from lg 44px.
 const EVENT =
-  'flex h-11 w-11 items-center justify-center border border-line bg-bg text-fg-2 hover:border-fg hover:text-fg aria-[current=page]:border-brand aria-[current=page]:bg-brand aria-[current=page]:text-white'
+  'flex aspect-square w-full items-center justify-center border border-line bg-bg text-fg-2 hover:border-fg hover:text-fg aria-[current=page]:border-brand aria-[current=page]:bg-brand aria-[current=page]:text-white lg:size-11'
 // A field's label in the panel
 const LABEL = 't-label mb-2 block text-fg-2'
 
@@ -82,12 +83,13 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
 
       <section aria-label={t('filters')} className="border border-line bg-bg-2 p-5">
         {/* Events: the grid wraps instead of scrolling; an event keeps the type where it has one (4BLD, 5BLD and MBLD
-            have no average) and the province */}
+            have no average) and the province. Below lg nine to a row, two rows as on the WCA's phone page (2026-10-22;
+            max-w-xs keeps a cell at 32px at most); from lg one row. */}
         <nav aria-labelledby="rankings-events">
           <span id="rankings-events" className={LABEL}>
             {t('event')}
           </span>
-          <ul className="flex flex-wrap gap-1.5">
+          <ul className="grid max-w-xs grid-cols-9 gap-1 lg:flex lg:max-w-none lg:flex-wrap lg:gap-1.5">
             {EVENTS.map((e) => (
               <li key={e.id}>
                 <Link
@@ -98,7 +100,7 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
                   aria-current={e.id === eventId ? 'page' : undefined}
                   className={EVENT}
                 >
-                  <span className={`cubing-icon event-${e.id} text-2xl leading-none`} aria-hidden="true" />
+                  <span className={`cubing-icon event-${e.id} text-lg leading-none lg:text-2xl`} aria-hidden="true" />
                 </Link>
               </li>
             ))}
