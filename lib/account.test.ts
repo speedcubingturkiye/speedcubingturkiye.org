@@ -1,7 +1,7 @@
 // lib/account.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { confirmEmailChange, joinRanking, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
-import { changeMemberEmail, deleteMember, getMember, linkFromSheet, setMemberRanking } from '@/lib/membership-sheet'
+import { changeMemberEmail, deleteMember, emailChangeGate, getMember, linkFromSheet, setMemberRanking } from '@/lib/membership-sheet'
 import { moveSubscription } from '@/lib/newsletter'
 import { makeToken } from '@/lib/newsletter-token'
 import { removeSubscriber, sendMail } from '@/lib/ses'
@@ -10,6 +10,7 @@ import { site } from '@/site.config'
 vi.mock('@/lib/membership-sheet', () => ({
   linkFromSheet: vi.fn(),
   changeMemberEmail: vi.fn(),
+  emailChangeGate: vi.fn(async () => 'ok'),
   deleteMember: vi.fn(),
   getMember: vi.fn(),
   setMemberRanking: vi.fn(),
@@ -50,8 +51,17 @@ describe('requestAccountLink', () => {
 })
 
 describe('the address change', () => {
+  it('mails a new mailbox no more than once in 10 minutes (the script says when to wait)', async () => {
+    vi.mocked(emailChangeGate).mockResolvedValueOnce('wait')
+    expect(await requestEmailChange('ayse@example.com', 'kurban@example.com', 'tr', NOW)).toBe('wait')
+    vi.mocked(emailChangeGate).mockResolvedValueOnce('none')
+    expect(await requestEmailChange('kim@example.com', 'kurban@example.com', 'tr', NOW)).toBe('none')
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
   it('mails the new address its link, then changes the row and tells the old address', async () => {
-    expect(await requestEmailChange('ayse@example.com', 'yeni@example.com', 'tr', NOW)).toBe(true)
+    expect(await requestEmailChange('ayse@example.com', 'yeni@example.com', 'tr', NOW)).toBe('sent')
+    expect(emailChangeGate).toHaveBeenCalledWith('ayse@example.com', 'yeni@example.com')
     const link = vi.mocked(sendMail).mock.calls[0][0]
     expect(link.to).toBe('yeni@example.com')
     vi.mocked(changeMemberEmail).mockResolvedValue('ok')
@@ -95,7 +105,7 @@ describe('leaveMembership', () => {
 describe('joinRanking', () => {
   const MEMBER = {
     firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul',
-    wcaId: '2019TEME01', helps: false, locale: 'tr' as const, wcaVerified: true, ranking: false, cityLockedUntil: '',
+    wcaId: '2019TEME01', helps: false, locale: 'tr' as const, wcaVerified: true, ranking: false, cityLockedUntil: '', memberNo: '2026-0001',
   }
 
   it('asks someone under 18 for the guardian box and lets an adult in with the Istanbul stamp', async () => {

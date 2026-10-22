@@ -11,6 +11,7 @@ import type { AllRoundData } from '@/lib/all-round'
 import { narrowRows } from '@/lib/il-ranking'
 import { allRoundListRows, listParam, type ListKind } from '@/lib/rankings-list'
 import { listQuery, pageCount, rowRange, type ListParams, type SearchParamsRecord } from '@/lib/rankings-view'
+import { ABROAD } from '@/lib/wca/city'
 import { WCA_BASE } from '@/lib/wca/client'
 import { formatDate } from '@/lib/wca/format'
 import { KINCH_HREF, sumOfRanksHref, type RankingType } from '@/lib/wca/rankings'
@@ -32,7 +33,8 @@ type Props = {
 export async function AllRoundView({ mode, type = 'single', data, locale, searchParams }: Props) {
   const t = await getTranslations('rankings')
   // ?il and "Sıramı bul" narrow the list as in the event lists: national values, numbered again within the province
-  const { rows, params, province, unavailable } = await narrowRows(data?.rows ?? [], searchParams)
+  const { rows, params, province: place, unavailable } = await narrowRows(data?.rows ?? [], searchParams)
+  const province = place === ABROAD ? t('abroad') : place
   const { page, size, query, il } = params
   const pathname = mode === 'sum' ? sumOfRanksHref(type) : KINCH_HREF
   const link = (change: Partial<ListParams>) => ({ pathname, query: listQuery({ ...params, ...change }) })

@@ -8,7 +8,7 @@ import { signUpWithWca } from '@/app/actions/membership'
 import { check, field, MemberFields } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
 import type { MembershipState } from '@/app/actions/types'
-import { ABROAD, ageOn } from '@/lib/membership-rules'
+import { ageOn } from '@/lib/membership-rules'
 
 const initial: MembershipState = { ok: false }
 const failed: MembershipState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
@@ -18,7 +18,8 @@ type Defaults = { firstName: string; lastName: string; email: string; birthDate:
 /**
  * WCA ile kaydol (spec 2026-10-21): the Üye ol form, filled from the WCA login. `token` is its 30-minute token, sent
  * back with the form; it leaves the address bar on load. The WCA ID shows as verified, and with one the il ranking box
- * offers itself, the guardian's box too under 18. The address the WCA verified starts the membership at once.
+ * offers itself (abroad too since 2026-10-22), the guardian's box too under 18. The address the WCA verified starts the
+ * membership at once; the date of birth the WCA gave stays as it came.
  */
 export function WcaSignupForm({ token, locale, today, wcaId, defaults }: { token: string; locale: Locale; today: string; wcaId?: string; defaults: Defaults }) {
   const t = useTranslations('membership')
@@ -27,20 +28,18 @@ export function WcaSignupForm({ token, locale, today, wcaId, defaults }: { token
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(signUpWithWca, initial, failed, (s) => s.ok)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
   const [birthDate, setBirthDate] = useState(defaults.birthDate)
-  const [city, setCity] = useState('')
   const [ranking, setRanking] = useState(false)
-  const offerRanking = Boolean(wcaId) && city !== ABROAD
+  const offerRanking = Boolean(wcaId)
   const minor = /^\d{4}-\d{2}-\d{2}$/.test(birthDate) && ageOn(birthDate, today) < 18
 
   useEffect(() => {
     window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
-  // The date of birth and the city live in MemberFields; the ranking boxes follow them through the form's change events
+  // The date of birth lives in MemberFields; the guardian's ranking box follows it through the form's change events
   function onChange(e: FormEvent<HTMLFormElement>) {
     const el = e.target as HTMLInputElement
     if (el.name === 'birthDate') setBirthDate(el.value)
-    if (el.name === 'city') setCity(el.value)
   }
 
   const done = { started: t('started'), linked: state.ranking ? t('linkedRanking') : t('linked'), member: t('alreadyMember') }
@@ -64,6 +63,7 @@ export function WcaSignupForm({ token, locale, today, wcaId, defaults }: { token
             today={today}
             error={state.error}
             defaults={{ firstName: defaults.firstName, lastName: defaults.lastName, birthDate: defaults.birthDate, guardian: false, city: '', helps: false }}
+            birthDateLocked={defaults.birthDate !== ''}
             afterNames={
               <label className="block text-sm font-semibold">
                 {t('email')}

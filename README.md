@@ -208,7 +208,7 @@ Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de `SAFEGUARD
 | `MAIL_FROM` | Haber ve duyuru maillerinin gönderen adresi (`news@speedcubingturkiye.org`). Onay mailleri ve iletişim formu bildirimi `noreply@speedcubingturkiye.org` adresinden gider (`site.config.ts`). |
 | `MEMBERSHIP_SCRIPT_URL` | Üyelik tablosundaki Apps Script web uygulamasının adresi (`…/exec`). Yoksa Üye ol formu "şu an kapalı" der. |
 | `MEMBERSHIP_SCRIPT_SECRET` | Betiğin Script Properties'teki `SECRET` değeriyle aynı, uzun rastgele bir değer. |
-| `WCA_CLIENT_ID`, `WCA_CLIENT_SECRET` | WCA OAuth uygulamasının anahtarları (WCA'da `/oauth/applications`). Yönlendirme adresi `https://speedcubingturkiye.org/api/wca/donus`. Kapsamlar `public email dob`; WCA'daki uygulamada da tanımlı olmalı. Yoksa Hesabım'da WCA bölümü ve Üye ol'da "WCA ile kaydol" görünmez. |
+| `WCA_CLIENT_ID`, `WCA_CLIENT_SECRET` | WCA OAuth uygulamasının anahtarları (WCA'da `/oauth/applications`). Yönlendirme adresi `https://speedcubingturkiye.org/api/wca/donus`. Kapsamlar `public email dob`; WCA'daki uygulamada da tanımlı olmalı. Yoksa Hesabım'da WCA bölümü ve "WCA ile giriş yap", Üye ol'da "WCA ile kaydol" görünmez. |
 | `CRON_SECRET` | `/api/cron/wca-check` rotasının anahtarı |
 | `GITHUB_TOKEN`, `GITHUB_REPO` | Cron'un haber commit'lemesi için yalnız bu repoya yazabilen fine-grained token ve `owner/repo` |
 | `NEXT_PUBLIC_KEYSTATIC_REPO` | Panelin commit attığı repo (`owner/repo`) |
@@ -221,7 +221,7 @@ Yerelde:
 - `next dev` abonelere hiçbir zaman toplu mail atmaz. Cron hep kuru çalışır (commit, mail ve silme yok), elle bülten rotası 503 döner.
 - `.env.local` dosyasında SES anahtarları varsa form, onay ve çıkış gerçek listeye yazar.
 - `MEMBERSHIP_SCRIPT_URL` ve `MEMBERSHIP_SCRIPT_SECRET` yoksa Üye ol formu tabloya yazmaz; satır konsola yazılır ve başvuru başarılı sayılır.
-- WCA anahtarları yoksa Hesabım'daki "WCA hesabını bağla" ve Üye ol'daki "WCA ile kaydol" düğmeleri hata mesajıyla geri döner; il listesi boştur.
+- WCA anahtarları yoksa Hesabım'daki "WCA hesabını bağla" ve "WCA ile giriş yap", Üye ol'daki "WCA ile kaydol" düğmeleri hata mesajıyla geri döner; il listesi boştur.
 
 </details>
 
@@ -240,15 +240,21 @@ Yerelde:
 
 Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları yönet > Düzenle > Yeni sürüm); adres değişmez.
 
-**Hesabım.** Üyeler `/hesabim` sayfasında bilgilerini düzenler, e-posta adresini değiştirir ve üyelikten ayrılır. Sayfa, e-postaya gelen 1 saatlik bir linkle açılır; çerez yok. Betiğin `link`, `get`, `update`, `changeEmail` ve `delete` işlemleri bu sayfa için. Aynı adrese 10 dakikada en fazla bir link gider. Yerelde betik değişkenleri yoksa sayfa örnek bir üyeyle açılır.
+**Hesabım.** Üyeler `/hesabim` sayfasında bilgilerini düzenler, e-posta adresini değiştirir ve üyelikten ayrılır. Sayfa, e-postaya gelen 1 saatlik bir linkle ya da WCA ile girişle açılır; çerez yok. Betiğin `link`, `get`, `update`, `emailGate`, `changeEmail` ve `delete` işlemleri bu sayfa için. Aynı adrese 10 dakikada en fazla bir link, yeni bir adrese 10 dakikada en fazla bir değiştirme linki gider. Yerelde betik değişkenleri yoksa sayfa örnek bir üyeyle açılır.
 
-**WCA ve il sıralaması.** Hesabım'dan WCA hesabını bağlayan üyenin WCA ID'si WCA girişiyle doğrulanır; WCA'dan yalnız WCA ID alınır. Bağlarken `/api/wca` yolunda 10 dakikalık bir çerez kurulur. Doğrulanmış üye il sıralamasına katılabilir; sıralama sayfaları `?il=` ile o ilin üyelerini gösterir.
-- **WCA ile kaydol:** Üye ol'daki düğme WCA'dan ad, e-posta, doğum tarihi ve WCA ID'yi alır (kapsam `public email dob`) ve formu doldurur. E-posta değiştirilmezse üyelik onay maili olmadan başlar ve kısa bir "Üyeliğin başladı" maili gider; bülten kutusu da onay maili olmadan aboneliği başlatır. Zaten üye olan adreste WCA ID üyeliğe bağlanır. E-posta değiştirilirse bugünkü onay maili gider.
+**Onay sayfaları.** Maillerdeki onay linkleri (`/uye-ol/onay`, `/bulten/onay`, `/hesabim/eposta`) bir sayfa açar; onay oradaki düğmeyle olur. Posta tarayıcıları (Safe Links gibi) linki açsa da hiçbir şey onaylanmaz. Üyelik linkindeki kod imzalıdır; imzasız eski linkler 5 Kasım 2026'ya kadar çalışır.
+
+**E-posta adresleri.** Formlar adresi tek biçimde tutar: küçük harf, "+" eki yok, Gmail'de noktasız (`lib/email.ts`, betikte `canon`). `kutay.temel@gmail.com` ile `kutaytemel@gmail.com` aynı üyeliktir.
+
+**WCA ve il sıralaması.** Hesabım'dan WCA hesabını bağlayan üyenin WCA ID'si WCA girişiyle doğrulanır; WCA'dan yalnız WCA ID alınır. Dönen hesap Hesabım'da 10 dakikalık bir tokenla bekler ve üye "Bağla"ya basınca bağlanır. Bağlarken `/api/wca` yolunda 10 dakikalık bir çerez kurulur. WCA girişini başlatan rotalar yalnız sitenin kendi sayfalarından gelen formları kabul eder. Doğrulanmış üye il sıralamasına katılabilir; sıralama sayfaları `?il=` ile o ilin üyelerini, `?il=yurt-disi` ile şehri Yurt dışı olanları gösterir.
+- **WCA ile giriş:** Hesabım'daki "WCA ile giriş yap" düğmesi WCA ID'si doğrulanmış üyeyi bulur ve Hesabım'ı 1 saatlik linkle açar. Doğrulanmamış WCA hesabına mail linkini önerir.
+- **WCA ile kaydol:** Üye ol'daki düğme WCA'dan ad, e-posta, doğum tarihi ve WCA ID'yi alır (kapsam `public email dob`) ve formu doldurur. Doğum tarihi WCA'dan geldiği gibi kalır. E-posta, tek biçimiyle WCA'daki adresle aynıysa üyelik onay maili olmadan başlar ve kısa bir "Üyeliğin başladı" maili gider; bülten kutusu da onay maili olmadan aboneliği başlatır. Zaten üye olan adreste WCA ID üyeliğe bağlanır. E-posta değiştirilirse bugünkü onay maili gider.
 - **WCA ID:** artık elle girilmez; yalnız WCA girişiyle gelir. Eski elle girilmiş ID'ler tabloda doğrulanmamış kalır (I dolu, N boş).
-- **Sütunlar:** Betik N, O ve P sütunlarını (WCA doğrulandı, İl sıralaması, İl tarihi) kendisi kurar ve yazar; Q ve sağı not için serbest. N ve O'da tarih varsa "evet" demektir.
+- **Sütunlar:** Betik N, O, P ve Q sütunlarını (WCA doğrulandı, İl sıralaması, İl tarihi, Üye no) kendisi kurar ve yazar; R ve sağı not için serbest. N ve O'da tarih varsa "evet" demektir.
+- **Üye no:** Betik her işlemde numarası olmayan üyelere onay sırasıyla `YYYY-NNNN` verir. Sayaç Script Properties'te `uyeNo:YYYY` adıyla durur; bir numara ikinci kez verilmez.
 - **Şehir kuralı:** P, şehir kuralının başlangıcıdır. Sıralamaya katılan üyenin şehri bir yıl değişmez, sıralamadan çıksa da. Taşınan üye için P'yi silmek şehrini açar.
-- **Betik:** `linkWca`, `unlinkWca`, `ranking` ve `rankingMembers` işlemleri bunun için.
-- **Liste:** Sıralama sayfaları listeyi saatte bir okur; liste repoya yazılmaz.
+- **Betik:** `linkWca`, `unlinkWca`, `byWca`, `ranking` ve `rankingMembers` işlemleri bunun için.
+- **Liste:** Sıralama sayfaları listeyi saatte bir okur; liste repoya yazılmaz. Tablo cevap vermezse bir dakika sonra yeniden sorulur.
 
 **Bülten sekmesi.** Tablonun "Bülten" sekmesi SES'teki onaylı abonelerin kopyasıdır: E-posta, Dil, Onay tarihi, Sil.
 - **Yenileme:** "Bülten > Listeyi yenile" menüsüyle ve günde bir kez kendiliğinden yenilenir. Betik, "Sil" işaretli adresleri sitenin `/api/bulten/liste` adresine `MEMBERSHIP_SCRIPT_SECRET` ile gönderir. Site onları SES'ten siler (bir seferde en fazla 40) ve güncel listeyi döndürür; betik sekmeyi baştan yazar.
@@ -329,6 +335,7 @@ Diğer statik dosyalar:
 
 - `main`'e her push Vercel'de production deploy'u, her pull request bir preview başlatır. Ayrı bir CI yok, kapı görevini build görür: içerik kontrolü ve TypeScript.
 - Alan adları Vercel'de. Asıl adres `speedcubingturkiye.org`. `www` ve `speedcubingturkiye.com` ona 308 ile yönlenir.
+- Güvenlik başlıkları `next.config.ts`'te: `X-Frame-Options: DENY` ve CSP `frame-ancestors 'none'` (başka site sayfaları çerçeveleyemez), `nosniff`, `Referrer-Policy`. `X-Powered-By` gönderilmez. HSTS'yi Vercel ekler.
 - GitHub Actions'ta iki iş var: günlük sıralama verisi ve onaylanan bültenlerin gönderimi.
 - Cron (`vercel.json`) her gün 12:00'de (Türkiye saati) `/api/cron/wca-check` rotasını çağırır. Yeni WCA yarışmalarını haber olarak commit'ler, abonelere duyurur ve 7 günü geçmiş onaysız adresleri siler. Hobby planda cron günde bir kez çalışabiliyor.
 

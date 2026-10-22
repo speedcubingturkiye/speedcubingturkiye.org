@@ -1,5 +1,5 @@
 // lib/rankings-view.ts: paging, "Sıramı bul" and the il choice for the rankings pages (full rankings spec §7)
-import { PROVINCE_BY_SLUG } from '@/lib/wca/city'
+import { PLACE_BY_SLUG } from '@/lib/wca/city'
 import type { RankingRow } from '@/lib/wca/types'
 
 export const PAGE_SIZES = [25, 50, 100, 500] as const
@@ -8,7 +8,7 @@ export const DEFAULT_SIZE: PageSize = 100
 export const MAX_QUERY = 50
 
 export type SearchParamsRecord = Record<string, string | string[] | undefined>
-/** `il`: a province slug for the il ranking (spec 2026-10-21, Parça 2), '' for all of Türkiye */
+/** `il`: a province slug for the il ranking (spec 2026-10-21, Parça 2) or 'yurt-disi', '' for all of Türkiye */
 export type ListParams = { page: number; size: PageSize; query: string; il: string }
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
@@ -30,7 +30,7 @@ export function parseListParams(sp: SearchParamsRecord, total: number): ListPara
   const size = PAGE_SIZES.find((s) => s === asked) ?? DEFAULT_SIZE
   const query = (first(sp.ara) ?? '').trim().slice(0, MAX_QUERY)
   const il = first(sp.il) ?? ''
-  return { page: parsePage(sp, total, size), size, query, il: PROVINCE_BY_SLUG.has(il) ? il : '' }
+  return { page: parsePage(sp, total, size), size, query, il: PLACE_BY_SLUG.has(il) ? il : '' }
 }
 
 /** 1-based first and last row on a page; 0 and 0 for an empty ranking. */

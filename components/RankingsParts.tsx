@@ -4,11 +4,10 @@
 import { getTranslations } from 'next-intl/server'
 import { getPathname, Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
+import { ProvinceOptions } from '@/components/ProvinceOptions'
 import { ProvinceSelect } from '@/components/ProvinceSelect'
 import { RankingsSearch } from '@/components/RankingsSearch'
-import { PROVINCE_CHOICES } from '@/lib/membership-rules'
 import { DEFAULT_SIZE, listQuery, type ListParams } from '@/lib/rankings-view'
-import { provinceSlug } from '@/lib/wca/city'
 import { KINCH_HREF, rankingsHref, sumOfRanksHref, type RankingType } from '@/lib/wca/rankings'
 import { EVENTS, eventNameLang } from '@/lib/wca/records'
 
@@ -146,8 +145,9 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
                 action={action}
                 keep={keepSize}
                 allLabel={t('allProvinces')}
-                options={PROVINCE_CHOICES.map((p) => ({ value: provinceSlug(p), label: p }))}
-              />
+              >
+                <ProvinceOptions slugs popular={t('popularProvinces')} all={t('allProvincesGroup')} abroad={t('abroad')} />
+              </ProvinceSelect>
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-fg">
                 <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="1.75" />
               </svg>

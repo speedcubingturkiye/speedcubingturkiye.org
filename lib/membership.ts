@@ -6,8 +6,9 @@ import { randomBytes } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
 import { renderMembershipConfirmMail, renderMembershipStartedMail } from '@/lib/mail-render'
 import type { Application } from '@/lib/membership-rules'
-import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
+import { applyToSheet, confirmInSheet, type ConfirmResult } from '@/lib/membership-sheet'
 import { prepareSubscription, requestSubscription, subscribeVerified } from '@/lib/newsletter'
+import { codeOf, signCode } from '@/lib/newsletter-token'
 import { sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 
@@ -27,7 +28,18 @@ const TOKEN_RE = /^[\w-]{43}$/
 /** Istanbul time as the sheet keeps it: "YYYY-MM-DD HH:mm". */
 export const istanbulStamp = (now: Date) => STAMP.format(now)
 
-export const confirmUrl = (token: string, locale: Locale) => `${site.url}${locale === 'en' ? '/en' : ''}/uye-ol/onay?t=${token}`
+// The code with the site's signature (2026-10-22): a made-up code never reaches the sheet
+export const confirmUrl = (token: string, locale: Locale) => `${site.url}${locale === 'en' ? '/en' : ''}/uye-ol/onay?t=${signCode(token)}`
+
+/** Links mailed before the codes were signed work until this moment (a confirm link lives 7 days); then this and the
+ *  unsigned branch in confirmCode go. */
+const UNSIGNED_UNTIL = Date.parse('2026-11-05T00:00:00+03:00')
+
+/** The code a confirm link carries, or null: signed, or until UNSIGNED_UNTIL the bare code of an older mail. */
+export function confirmCode(param: string, now = Date.now()): string | null {
+  const code = codeOf(param) ?? (now < UNSIGNED_UNTIL ? param : null)
+  return code !== null && TOKEN_RE.test(code) ? code : null
+}
 
 /** true in every case the form should call a success, so it never tells whether an address is a member; false only
  *  when the sheet or the mail failed. */
@@ -98,8 +110,10 @@ export async function requestWcaMembership(application: Application, wca: WcaSig
   return (await sendConfirm(fields.email, token, newsletter, locale, now)) ? 'sent' : 'error'
 }
 
-/** The confirm link: true when the address is now, or already was, a member. */
-export async function confirmMembership(token: string, now = new Date()): Promise<boolean> {
-  if (!TOKEN_RE.test(token)) return false
-  return (await confirmInSheet(token, istanbulStamp(now))) === 'ok'
+/** The confirm page's button (2026-10-22: the mailed link opens a page, so a mail scanner that opens it confirms
+ *  nothing). 'ok' when the address is now, or already was, a member; 'wca_taken' when the membership began without a
+ *  WCA ID another member verified meanwhile. A code without the site's signature never reaches the sheet. */
+export async function confirmMembership(param: string, now = new Date()): Promise<ConfirmResult> {
+  const code = confirmCode(param, now.getTime())
+  return code ? confirmInSheet(code, istanbulStamp(now)) : 'invalid'
 }

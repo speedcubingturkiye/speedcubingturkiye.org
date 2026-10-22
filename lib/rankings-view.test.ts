@@ -31,8 +31,9 @@ describe('parseListParams', () => {
     expect(parseListParams({ sayfa: '5' }, 0).page).toBe(1)
     expect(parseListParams({ ara: 'x'.repeat(80) }, 10).query).toHaveLength(50)
   })
-  it('?il keeps a known province slug only', () => {
+  it('?il keeps a known province slug only, and yurt-disi', () => {
     expect(parseListParams({ il: 'sanliurfa' }, 10).il).toBe('sanliurfa')
+    expect(parseListParams({ il: 'yurt-disi' }, 10).il).toBe('yurt-disi')
     expect(parseListParams({ il: ['hakkari', 'van'] }, 10).il).toBe('hakkari')
     expect(parseListParams({ il: 'atlantis' }, 10).il).toBe('')
     expect(parseListParams({ il: 'Istanbul' }, 10).il).toBe('')

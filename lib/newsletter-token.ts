@@ -1,13 +1,15 @@
 // lib/newsletter-token.ts: confirm and unsubscribe links (spec §8), Hesabım's links and the WCA sign-up form (spec
 // 2026-10-21). AES-256-GCM: the address never appears in a URL, a server log or the browser history, and a token only
 // opens the door it was made for.
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
 
-export type TokenPurpose = 'onay' | 'cikis' | 'hesap' | 'eposta' | 'kaydol'
+export type TokenPurpose = 'onay' | 'cikis' | 'hesap' | 'eposta' | 'kaydol' | 'wcabag'
 /** `newEmail`: the address an `eposta` link changes the membership to; `issuedAt` (epoch ms): when that link was asked
  *  for, the double opt-in record of the newsletter that follows the change. `wcaId`, `name`, `dob`: what a WCA login
- *  gave a `kaydol` sign-up (spec 2026-10-21, WCA ile kaydol); its `email` is '' when the WCA gave none. */
+ *  gave a `kaydol` sign-up (spec 2026-10-21, WCA ile kaydol); its `email` is '' when the WCA gave none. A `wcabag`
+ *  (2026-10-22) is a WCA account waiting on Hesabım for the member's "Bağla": `email` the member, `wcaId` and `name`
+ *  the WCA's. */
 export type TokenData = { email: string; locale: Locale; newEmail?: string; issuedAt?: number; wcaId?: string; name?: string; dob?: string }
 
 /** A confirm link lives as long as an unconfirmed address stays on the list (spec §5). */
@@ -16,8 +18,16 @@ export const CONFIRM_TTL_MS = 7 * 86_400_000
 export const ACCOUNT_TTL_MS = 3_600_000
 /** The Üye ol page's WCA sign-up form, filled from the WCA login */
 export const SIGNUP_TTL_MS = 30 * 60_000
+/** A WCA account waiting for "Bağla" on Hesabım (2026-10-22) */
+export const LINK_TTL_MS = 10 * 60_000
 // An unsubscribe link never expires
-const TTL: Partial<Record<TokenPurpose, number>> = { onay: CONFIRM_TTL_MS, hesap: ACCOUNT_TTL_MS, eposta: ACCOUNT_TTL_MS, kaydol: SIGNUP_TTL_MS }
+const TTL: Partial<Record<TokenPurpose, number>> = {
+  onay: CONFIRM_TTL_MS,
+  hesap: ACCOUNT_TTL_MS,
+  eposta: ACCOUNT_TTL_MS,
+  kaydol: SIGNUP_TTL_MS,
+  wcabag: LINK_TTL_MS,
+}
 
 // The key for development and tests when NEWSLETTER_SECRET is unset. Production has no fallback: makeToken and
 // readToken both throw from key() unless the secret is at least 32 characters.
@@ -68,8 +78,26 @@ export function readToken(purpose: TokenPurpose, token: string, now = Date.now()
       const str = (x: unknown) => (typeof x === 'string' ? x : '')
       return { email: v.e, locale: v.l, ...(typeof v.w === 'string' ? { wcaId: v.w } : {}), name: str(v.m), dob: str(v.d) }
     }
+    if (purpose === 'wcabag') return typeof v.w === 'string' ? { email: v.e, locale: v.l, wcaId: v.w, name: typeof v.m === 'string' ? v.m : '' } : null
     return { email: v.e, locale: v.l }
   } catch {
     return null
   }
 }
+
+/** The membership confirm link's code (2026-10-22): the sheet keeps a random code, the link carries it with the site's
+ *  signature, so a made-up code is turned away before it reaches the sheet (whose script takes one lock per call). */
+export function signCode(code: string): string {
+  return `${code}.${codeSignature(code)}`
+}
+
+/** The code of a signed confirm link, or null when the signature does not match. */
+export function codeOf(signed: string): string | null {
+  const [code, signature, extra] = signed.split('.')
+  if (!code || !signature || extra !== undefined) return null
+  const expected = Buffer.from(codeSignature(code))
+  const given = Buffer.from(signature)
+  return given.length === expected.length && timingSafeEqual(given, expected) ? code : null
+}
+
+const codeSignature = (code: string) => createHmac('sha256', key()).update(`uye-onay:${code}`).digest('base64url').slice(0, 22)

@@ -20,9 +20,10 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return sp.w ? { ...meta, robots: { index: false }, referrer: 'no-referrer' } : meta
 }
 
-// Its own page, reached from the header's Üye ol button (not a Bilgi tab). Per request: the confirm link
-// (uye-ol/onay/route.ts) lands here with ?durum=onaylandi or ?durum=gecersiz; the WCA login's return (api/wca/donus)
-// with ?w=<token> for the sign-up form, or ?durum=wca-hata.
+// Its own page, reached from the header's Üye ol button (not a Bilgi tab). Per request: the confirm page's button
+// (uye-ol/onay, app/actions/confirm.ts) lands here with ?durum=onaylandi, onaylandi-wca (begun without the WCA ID another
+// member has) or gecersiz; the WCA login's return (api/wca/donus) with ?w=<token> for the sign-up form, or
+// ?durum=wca-hata.
 export default async function MembershipPage({ searchParams }: Props) {
   const [locale, t, account, sp] = await Promise.all([getLocale(), getTranslations('membership'), getTranslations('account'), searchParams])
   const durum = typeof sp.durum === 'string' ? sp.durum : ''
@@ -44,9 +45,9 @@ export default async function MembershipPage({ searchParams }: Props) {
           </Link>
         </p>
       </header>
-      {durum === 'onaylandi' ? (
+      {durum === 'onaylandi' || durum === 'onaylandi-wca' ? (
         <p role="status" className="text-lg font-semibold text-ok">
-          {t('confirmed')}
+          {t(durum === 'onaylandi' ? 'confirmed' : 'confirmedWca')}
         </p>
       ) : wca ? (
         <WcaSignupForm

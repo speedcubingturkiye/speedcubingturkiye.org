@@ -161,9 +161,12 @@
     "rankSource": "Ranking data: the WCA results export, updated daily.",
     "province": "Province",
     "allProvinces": "All of Türkiye",
+    "popularProvinces": "Popular",
+    "allProvincesGroup": "All provinces",
+    "abroad": "Abroad",
     "provinceShow": "Show",
     "provinceNote": "Only members who linked their WCA account and chose to take part appear in the province rankings. <join>Become a member</join> or join from <account>My account</account>.",
-    "provinceNone": "No one from {province} in this list yet.",
+    "provinceNone": "{province}: no one in this list yet.",
     "provinceUnavailable": "The province list could not be loaded; try again in a few minutes.",
     "nationalRank": "Türkiye",
     "event": "Event",
@@ -253,10 +256,14 @@
   "account": {
     "title": "My account",
     "lead": "See and edit your membership details",
+    "memberNo": "Member no. {no}",
     "email": "Email",
     "sendLink": "Send link",
     "sending": "Sending…",
     "linkSent": "If you're a member, we've sent a link to your email; it works for one hour.",
+    "wcaLogin": "Sign in with the WCA",
+    "wcaLoginNote": "If you've linked your WCA account in My account, sign in with the WCA; if not, ask for a link by email.",
+    "mailTitle": "Sign in by email",
     "expired": "Your link has expired. Ask for a new one.",
     "noMember": "There is no membership with this address.",
     "loadFailed": "We couldn't load your details right now; please try again in a few minutes.",
@@ -290,7 +297,7 @@
     "already": "Already a member?",
     "requestNew": "Ask for a new link",
     "wcaTitle": "WCA account",
-    "wcaIntro": "Link your WCA account to verify your WCA ID and join the province rankings. We take only your WCA ID from the WCA.",
+    "wcaIntro": "Link your WCA account to verify your WCA ID, join the province rankings and sign in to My account with the WCA. We keep only your WCA ID from the WCA.",
     "wcaLink": "Link my WCA account",
     "wcaLinkedAs": "Your WCA account is linked: {wcaId}.",
     "wcaUnlink": "Unlink",
@@ -298,7 +305,12 @@
     "wcaLinked": "Your WCA account is linked.",
     "wcaNoId": "This WCA account has no WCA ID. You get one after your first competition.",
     "wcaTaken": "This WCA ID is already verified on another membership.",
-    "wcaFailed": "Your WCA account could not be linked; try again in a few minutes.",
+    "wcaFailed": "We couldn't finish with the WCA right now; try again in a few minutes.",
+    "wcaNoMember": "No membership has verified this WCA account. Ask for a link by email; link your WCA account in My account to sign in with the WCA next time.",
+    "wcaConfirmText": "Your WCA account: {name} ({wcaId}). Press Link to link it to your membership.",
+    "wcaConfirm": "Link",
+    "wcaCancel": "Cancel",
+    "wcaLinking": "Linking…",
     "rankingTitle": "Province rankings",
     "rankingIntro": "Appear in your province's list on the rankings pages. Once you join, your city stays fixed for a year.",
     "rankingConsent": "I give my explicit consent to my name, province and WCA results being published in the site's province rankings.",
@@ -306,10 +318,10 @@
     "rankingGuardian": "My parent or guardian gives this consent too.",
     "rankingJoin": "Join the rankings",
     "rankingIn": "You are in the {city} rankings.",
+    "rankingInAbroad": "You're in the list for members abroad.",
     "rankingLeave": "Leave the rankings",
     "rankingJoined": "You joined the province rankings; you will appear within an hour.",
     "rankingLeft": "You left the province rankings; you will drop out within an hour.",
-    "rankingAbroad": "Your city is set to abroad, so you cannot join the province rankings.",
     "cityLocked": "Your city stays fixed until {date}. Moved? <contact>Write to us</contact>.",
     "error": {
       "invalid": "Please fill in the fields correctly.",
@@ -321,8 +333,9 @@
       "consent": "Tick the consent box to continue.",
       "closed": "My account is closed right now.",
       "city_locked": "Your city is fixed for the province rankings; the date is under WCA account.",
-      "not_allowed": "Link your WCA account first; your city cannot be abroad.",
-      "send_failed": "That didn't work right now; please try again in a few minutes."
+      "not_allowed": "Link your WCA account first.",
+      "send_failed": "That didn't work right now; please try again in a few minutes.",
+      "too_soon": "A confirm link went to this address a moment ago. Try again in 10 minutes."
     }
   },
   "membership": {
@@ -333,9 +346,12 @@
     "lastName": "Surname",
     "email": "Email",
     "birthDate": "Date of birth",
+    "birthDateWca": "Your date of birth comes from the WCA; if it's wrong, have it corrected there.",
     "city": "City",
     "cityPlaceholder": "Choose",
     "abroad": "Outside Türkiye",
+    "popularProvinces": "Popular",
+    "allProvincesGroup": "All provinces",
     "guardian": "By submitting this form, I declare that I have the consent of my parent or guardian.",
     "helps": "I'd like to help at competitions",
     "privacyNote": "Your details are processed for your membership and the announcements.",
@@ -362,9 +378,9 @@
       "closed": "The membership form is closed right now.",
       "send_failed": "We couldn't save your application right now; please try again in a few minutes.",
       "wca_expired": "Your WCA details expired; sign up with WCA again.",
-      "wca_taken": "This WCA account is already verified on another membership; reach it from My account.",
-      "not_allowed": "For the province rankings your city cannot be abroad."
-    }
+      "wca_taken": "This WCA account is already verified on another membership; reach it from My account."
+    },
+    "confirmedWca": "Your membership is confirmed. Your WCA account was not linked to it because another membership already has it; if you think this is a mistake, write to us."
   },
   "footer": {
     "competitions": "Competitions",
@@ -399,5 +415,18 @@
     "boardUpdated": "List updated: {date}",
     "boardEmpty": "The board list will appear here soon.",
     "wcaDisclaimer": "This is not the official website of the World Cube Association. Registration, results and rankings live on the WCA."
+  },
+  "confirm": {
+    "membershipTitle": "Confirm your membership",
+    "membershipText": "Press the button to start your Speedcubing Türkiye membership.",
+    "membershipNewsletter": "Your newsletter subscription is confirmed with the same button.",
+    "membershipButton": "Confirm my membership",
+    "newsletterTitle": "Confirm your newsletter subscription",
+    "newsletterText": "The Speedcubing Türkiye newsletter will come to {email}. Press the button to confirm.",
+    "newsletterButton": "Confirm my subscription",
+    "emailTitle": "Change your email address",
+    "emailText": "Your membership will move to {email}. Press the button to confirm.",
+    "emailButton": "Change my address",
+    "pending": "Confirming…"
   }
 }

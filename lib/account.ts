@@ -5,7 +5,7 @@ import type { Locale } from '@/i18n/routing'
 import { renderAccountLinkMail, renderEmailChangedMail, renderEmailChangeMail } from '@/lib/mail-render'
 import { istanbulStamp } from '@/lib/membership'
 import { ageOn } from '@/lib/membership-rules'
-import { changeMemberEmail, deleteMember, getMember, linkFromSheet, setMemberRanking } from '@/lib/membership-sheet'
+import { changeMemberEmail, deleteMember, emailChangeGate, getMember, linkFromSheet, setMemberRanking } from '@/lib/membership-sheet'
 import { moveSubscription } from '@/lib/newsletter'
 import { makeToken, readToken, type TokenData } from '@/lib/newsletter-token'
 import { removeSubscriber, sendMail } from '@/lib/ses'
@@ -29,10 +29,18 @@ export async function requestAccountLink(email: string, locale: Locale, now = Da
 /** The page's link: the member's address and language, or null for an expired or foreign link. */
 export const readAccountToken = (token: string, now = Date.now()): TokenData | null => readToken('hesap', token, now)
 
-/** Mails the new address the link that makes it the membership's address. */
-export async function requestEmailChange(email: string, newEmail: string, locale: Locale, now = Date.now()): Promise<boolean> {
+/** Mails the new address the link that makes it the membership's address: at most once in 10 minutes per new mailbox
+ *  (the script's emailGate, 2026-10-22), so a member cannot flood someone else's inbox with it. */
+export async function requestEmailChange(
+  email: string,
+  newEmail: string,
+  locale: Locale,
+  now = Date.now(),
+): Promise<'sent' | 'wait' | 'none' | 'error'> {
+  const gate = await emailChangeGate(email, newEmail)
+  if (gate !== 'ok') return gate
   const url = emailChangeUrl(makeToken('eposta', { email, newEmail, locale }, now), locale)
-  return sendMail({ to: newEmail, replyTo: site.contactEmail, ...renderEmailChangeMail({ locale, url }) })
+  return (await sendMail({ to: newEmail, replyTo: site.contactEmail, ...renderEmailChangeMail({ locale, url }) })) ? 'sent' : 'error'
 }
 
 /** The new address's link (`ip`: who opened it). On 'ok' a confirmed newsletter subscription follows to the new address,
@@ -67,7 +75,7 @@ export async function leaveMembership(email: string, alsoNewsletter: boolean): P
 }
 
 /** İl sıralaması in (spec 2026-10-21, Parça 2). Someone under 18 ticks the guardian box too; the script checks the
- *  verified WCA ID and the province. */
+ *  verified WCA ID (abroad joins too since 2026-10-22). */
 export async function joinRanking(email: string, guardian: boolean, now = new Date()): Promise<'ok' | 'none' | 'guardian' | 'not_allowed' | 'error'> {
   const member = await getMember(email)
   if (member === null) return 'none'

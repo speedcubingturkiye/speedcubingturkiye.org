@@ -1,13 +1,15 @@
-// lib/wca-link.ts: the WCA login (spec 2026-10-21), for two flows:
-// - WCA bağlama (Parça 2): Hesabım sends the member through it (scope `public`) and keeps only the WCA ID it returns.
+// lib/wca-link.ts: the WCA login (spec 2026-10-21), for three flows:
+// - WCA bağlama (Parça 2): Hesabım sends the member through it (scope `public`) and keeps only the WCA ID it returns,
+//   linked once the member presses "Bağla" on Hesabım (2026-10-22).
 // - WCA ile kaydol: Üye ol asks for the profile, the email and the date of birth (`public email dob`) to fill the form.
+// - WCA ile giriş (2026-10-22): Hesabım's door without a mail, for a member whose WCA ID is verified (scope `public`).
 // The WCA has no PKCE (its Doorkeeper grants table has no code_challenge), so a random state in a 10-minute cookie ties
-// the return to the browser that left. The cookie also names the flow: `<state>.h.<Hesabım token>` or `<state>.k.<locale>`.
+// the return to the browser that left. The cookie also names the flow: `<state>.h.<Hesabım token>`, `<state>.k.<locale>`
+// or `<state>.g.<locale>`. The routes that start a flow take only the site's own pages' forms (fromThisSite).
 import { randomBytes } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
-import { istanbulStamp } from '@/lib/membership'
+import { memberByWca } from '@/lib/membership-sheet'
 import { WCA_ID_RE } from '@/lib/membership-rules'
-import { linkMemberWca } from '@/lib/membership-sheet'
 import { makeToken, readToken, type TokenData } from '@/lib/newsletter-token'
 import { WCA_BASE, WCA_UA } from '@/lib/wca/client'
 import { site } from '@/site.config'
@@ -32,6 +34,17 @@ function client(): { id: string; secret: string } | null {
 export const wcaReady = () => client() !== null || process.env.NODE_ENV === 'development'
 
 const prefix = (locale: Locale) => (locale === 'en' ? '/en' : '')
+
+/**
+ * Whether a POST comes from the site's own pages (2026-10-22): the browser's Sec-Fetch-Site says same-origin or, from a
+ * browser too old to send it, the Origin is the site's. A form elsewhere posting here is turned away, so no other page
+ * can send a visitor through a WCA login that links their WCA account to someone else's membership.
+ */
+export function fromThisSite(headers: Headers): boolean {
+  const fetchSite = headers.get('sec-fetch-site')
+  if (fetchSite) return fetchSite === 'same-origin'
+  return headers.get('origin') === new URL(site.url).origin
+}
 
 /** Hesabım again, with a fresh one-hour token and the outcome for its notice */
 export const backToAccount = (data: TokenData, durum: string, now = Date.now()) =>
@@ -59,6 +72,14 @@ export function startWcaSignup(locale: Locale): { url: string; cookie: string } 
   if (!c) return null
   const { url, state } = authorize(c.id, SIGNUP_SCOPE)
   return { url, cookie: `${state}.k.${locale}` }
+}
+
+/** WCA ile giriş (2026-10-22), the way out: the WCA login for the WCA ID alone. null without the keys. */
+export function startWcaLogin(locale: Locale): { url: string; cookie: string } | null {
+  const c = client()
+  if (!c) return null
+  const { url, state } = authorize(c.id, 'public')
+  return { url, cookie: `${state}.g.${locale}` }
 }
 
 /** What the WCA gives for the account that logged in. `wcaId` is null for an account that never competed; `email` (the
@@ -101,12 +122,14 @@ export async function wcaProfile(code: string): Promise<WcaProfile | 'error'> {
 }
 
 /** The return from the WCA: where to send the visitor. A missing cookie, another state or (for Hesabım) a page link that
- *  ran out sends them back without touching anything; the membership is touched only after all of them check out. */
+ *  ran out sends them back without touching anything. Nothing is linked here: the WCA account waits on Hesabım, in a
+ *  10-minute token, for the member's "Bağla" (2026-10-22), so a login a stranger started cannot link quietly. */
 export async function finishWcaLink(cookie: string | undefined, params: URLSearchParams, now = Date.now()): Promise<string> {
   const [state, kind, payload] = (cookie ?? '').split('.')
   const stateOk = Boolean(state) && state === params.get('state')
-  if (kind === 'k') {
+  if (kind === 'k' || kind === 'g') {
     const locale: Locale = payload === 'en' ? 'en' : 'tr'
+    if (kind === 'g') return stateOk ? finishWcaLogin(locale, params, now) : `${prefix(locale)}/hesabim?durum=wca-hata`
     // Not "gecersiz": on Üye ol that names the membership mail's confirm link
     return stateOk ? finishWcaSignup(locale, params, now) : `${prefix(locale)}/uye-ol?durum=wca-hata`
   }
@@ -117,9 +140,21 @@ export async function finishWcaLink(cookie: string | undefined, params: URLSearc
   const profile = await wcaProfile(code)
   if (profile === 'error') return backToAccount(data, 'wca-hata', now)
   if (profile.wcaId === null) return backToAccount(data, 'wca-yok', now)
-  const result = await linkMemberWca(data.email, profile.wcaId, istanbulStamp(new Date(now)))
-  if (result === 'none') return `${prefix(data.locale)}/hesabim?durum=gecersiz` // left meanwhile
-  return backToAccount(data, { ok: 'wca-baglandi', taken: 'wca-kullanimda', error: 'wca-hata' }[result], now)
+  const pending = makeToken('wcabag', { email: data.email, locale: data.locale, wcaId: profile.wcaId, name: profile.name }, now)
+  return `${backToAccount(data, '', now)}&wca=${pending}`
+}
+
+/** WCA ile giriş's return (2026-10-22): Hesabım with a fresh one-hour token for the member whose verified WCA ID this is;
+ *  a WCA account no membership has verified is told to use the mail link. */
+async function finishWcaLogin(locale: Locale, params: URLSearchParams, now: number): Promise<string> {
+  const page = `${prefix(locale)}/hesabim`
+  const code = params.get('code')
+  if (!code) return page // the visitor said no on the WCA's page
+  const profile = await wcaProfile(code)
+  if (profile === 'error') return `${page}?durum=wca-hata`
+  const member = profile.wcaId ? await memberByWca(profile.wcaId) : null
+  if (member === 'error') return `${page}?durum=wca-hata`
+  return member ? backToAccount({ email: member.email, locale }, '', now) : `${page}?durum=wca-uye-yok`
 }
 
 /** WCA ile kaydol's return: Üye ol again, with what the WCA gave in a 30-minute token. */

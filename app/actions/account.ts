@@ -1,20 +1,24 @@
 'use server'
 
-import { EMAIL_RE, type AccountState } from '@/app/actions/types'
+import { redirect } from 'next/navigation'
+import type { AccountState } from '@/app/actions/types'
 import { joinRanking, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
+import { canonicalEmail, readEmail } from '@/lib/email'
 import { botCheck } from '@/lib/form-guard'
 import { istanbulStamp } from '@/lib/membership'
 import { parseApplication } from '@/lib/membership-rules'
-import { setMemberRanking, sheetReady, unlinkMemberWca, updateMember } from '@/lib/membership-sheet'
+import { linkMemberWca, setMemberRanking, sheetReady, unlinkMemberWca, updateMember } from '@/lib/membership-sheet'
 import { requestSubscription } from '@/lib/newsletter'
+import { readToken } from '@/lib/newsletter-token'
 import { removeSubscriber } from '@/lib/ses'
+import { backToAccount } from '@/lib/wca-link'
 import { todayIstanbul } from '@/lib/wca/status'
 
 // Hesabım's forms (spec 2026-10-21). Each one but the link request carries the page's one-hour token in `t`; a token
 // that ran out answers 'expired', and the page offers a new link.
 const tokenOf = (formData: FormData) => readAccountToken(String(formData.get('t') ?? ''))
-const addressOf = (formData: FormData, key: string) => String(formData.get(key) ?? '').trim().toLowerCase()
-const isAddress = (email: string) => EMAIL_RE.test(email) && email.length <= 254
+// A typed address in its one form per mailbox (2026-10-22), or null
+const addressOf = (formData: FormData, key: string) => readEmail(String(formData.get(key) ?? ''))
 
 /** The link request: the same answer for members and strangers alike. */
 export async function requestLink(_prev: AccountState, formData: FormData): Promise<AccountState> {
@@ -23,7 +27,7 @@ export async function requestLink(_prev: AccountState, formData: FormData): Prom
   if (guard === 'too_fast') return { ok: false, error: 'too_fast' }
   if (!sheetReady()) return { ok: false, error: 'closed' }
   const email = addressOf(formData, 'email')
-  if (!isAddress(email)) return { ok: false, error: 'invalid' }
+  if (!email) return { ok: false, error: 'invalid' }
   const locale = formData.get('locale') === 'en' ? 'en' : 'tr'
   return (await requestAccountLink(email, locale)) ? { ok: true } : { ok: false, error: 'send_failed' }
 }
@@ -42,7 +46,19 @@ export async function saveAccount(_prev: AccountState, formData: FormData): Prom
   return result === 'ok' ? { ok: true } : { ok: false, error: 'send_failed' }
 }
 
-/** WCA hesabı (spec 2026-10-21, Parça 2): the link goes, the il ranking with it. Linking runs through /api/wca. */
+/** WCA hesabı (2026-10-22): "Bağla" links the WCA account the login brought back, waiting in a 10-minute token (`w`),
+ *  to the page's membership; a WCA login someone else started never links without this press. */
+export async function confirmWcaLink(formData: FormData): Promise<void> {
+  const data = tokenOf(formData)
+  if (!data) redirect(`${formData.get('locale') === 'en' ? '/en' : ''}/hesabim?durum=gecersiz`)
+  const pending = readToken('wcabag', String(formData.get('w') ?? ''))
+  if (!pending?.wcaId || pending.email !== data.email) redirect(backToAccount(data, 'gecersiz'))
+  const result = await linkMemberWca(data.email, pending.wcaId, istanbulStamp(new Date()))
+  if (result === 'none') redirect(`${data.locale === 'en' ? '/en' : ''}/hesabim?durum=gecersiz`)
+  redirect(backToAccount(data, result === 'ok' ? 'wca-baglandi' : result === 'taken' ? 'wca-kullanimda' : 'wca-hata'))
+}
+
+/** WCA hesabı (spec 2026-10-21, Parça 2): the link goes, the il ranking with it. Linking starts at /api/wca/baglan. */
 export async function unlinkWca(_prev: AccountState, formData: FormData): Promise<AccountState> {
   const data = tokenOf(formData)
   if (!data) return { ok: false, error: 'expired' }
@@ -72,9 +88,12 @@ export async function changeEmail(_prev: AccountState, formData: FormData): Prom
   const data = tokenOf(formData)
   if (!data) return { ok: false, error: 'expired' }
   const newEmail = addressOf(formData, 'newEmail')
-  if (!isAddress(newEmail)) return { ok: false, error: 'invalid' }
-  if (newEmail === data.email.toLowerCase()) return { ok: false, error: 'same_email' }
-  return (await requestEmailChange(data.email, newEmail, data.locale)) ? { ok: true } : { ok: false, error: 'send_failed' }
+  if (!newEmail) return { ok: false, error: 'invalid' }
+  if (newEmail === canonicalEmail(data.email)) return { ok: false, error: 'same_email' }
+  const result = await requestEmailChange(data.email, newEmail, data.locale)
+  if (result === 'sent') return { ok: true }
+  // 'wait': that mailbox had a link in the last 10 minutes (2026-10-22)
+  return { ok: false, error: result === 'wait' ? 'too_soon' : result === 'none' ? 'expired' : 'send_failed' }
 }
 
 /** Bülten: a sign-up takes the newsletter form's own double opt-in; leaving is at once. */

@@ -94,7 +94,7 @@ describe('confirmInSheet', () => {
 
 describe('Hesabım calls', () => {
   const MEMBER: MemberDetails = { ...FIELDS, wcaId: '2019TEME01', email: 'ayse@example.com', locale: 'en' }
-  const UNVERIFIED = { wcaVerified: false, ranking: false, cityLockedUntil: '' }
+  const UNVERIFIED = { wcaVerified: false, ranking: false, cityLockedUntil: '', memberNo: '' }
   const sent = (i = 0) => JSON.parse(fetchMock.mock.calls[i][1].body)
 
   it('link and delete post the address and map the result', async () => {
@@ -133,8 +133,8 @@ describe('Hesabım calls', () => {
     expect(await changeMemberEmail('ayse@example.com', 'yeni@example.com')).toBe('none')
   })
 
-  it('getMember fills in the WCA fields; an older script without them reads as unverified', async () => {
-    const wca = { wcaVerified: true, ranking: true, cityLockedUntil: '2027-10-21' }
+  it('getMember fills in the WCA fields and the Üye no; an older script without them reads as unverified, unnumbered', async () => {
+    const wca = { wcaVerified: true, ranking: true, cityLockedUntil: '2027-10-21', memberNo: '2026-0001' }
     answer({ result: 'ok', member: { ...MEMBER, ...wca } })
     expect(await getMember('ayse@example.com')).toEqual({ ...MEMBER, ...wca })
     answer({ result: 'ok', member: { ...MEMBER, wcaVerified: 'Evet', cityLockedUntil: 7 } })

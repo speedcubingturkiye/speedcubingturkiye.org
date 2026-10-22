@@ -1,10 +1,10 @@
 // lib/wca-link.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { linkMemberWca } from '@/lib/membership-sheet'
+import { memberByWca } from '@/lib/membership-sheet'
 import { readToken } from '@/lib/newsletter-token'
-import { finishWcaLink, REDIRECT_URI, splitName, startWcaLink, startWcaSignup } from '@/lib/wca-link'
+import { finishWcaLink, fromThisSite, REDIRECT_URI, splitName, startWcaLink, startWcaLogin, startWcaSignup } from '@/lib/wca-link'
 
-vi.mock('@/lib/membership-sheet', () => ({ linkMemberWca: vi.fn() }))
+vi.mock('@/lib/membership-sheet', () => ({ memberByWca: vi.fn() }))
 
 const fetchMock = vi.fn()
 const NOW = Date.UTC(2026, 9, 21, 12)
@@ -34,7 +34,12 @@ function started() {
 }
 const outcome = (path: string) => {
   const u = new URL(path, 'https://example.test')
-  return { path: u.pathname, durum: u.searchParams.get('durum'), data: readToken('hesap', u.searchParams.get('t') ?? '', NOW) }
+  return {
+    path: u.pathname,
+    durum: u.searchParams.get('durum'),
+    data: readToken('hesap', u.searchParams.get('t') ?? '', NOW),
+    wca: readToken('wcabag', u.searchParams.get('wca') ?? '', NOW),
+  }
 }
 
 describe('startWcaLink', () => {
@@ -55,12 +60,15 @@ describe('startWcaLink', () => {
 })
 
 describe('finishWcaLink', () => {
-  it('links the WCA ID the login returns and opens Hesabım again with a fresh token', async () => {
+  it('opens Hesabım again with a fresh token and the WCA account waiting for the member\'s "Bağla" (2026-10-22)', async () => {
     const { flow, back } = started()
     wcaAnswers({ id: 1, wca_id: '2019TEME01', name: 'Ayşe' })
-    vi.mocked(linkMemberWca).mockResolvedValue('ok')
-    expect(outcome(await finishWcaLink(flow.cookie, back({ code: 'c0de' }), NOW))).toEqual({ path: '/en/hesabim', durum: 'wca-baglandi', data: DATA })
-    expect(linkMemberWca).toHaveBeenCalledWith('ayse@example.com', '2019TEME01', '2026-10-21 15:00')
+    expect(outcome(await finishWcaLink(flow.cookie, back({ code: 'c0de' }), NOW))).toEqual({
+      path: '/en/hesabim',
+      durum: null,
+      data: DATA,
+      wca: { ...DATA, wcaId: '2019TEME01', name: 'Ayşe' },
+    })
     const [tokenUrl, init] = fetchMock.mock.calls[0]
     expect(tokenUrl).toBe('https://www.worldcubeassociation.org/oauth/token')
     expect(Object.fromEntries(new URLSearchParams(init.body))).toEqual({
@@ -74,13 +82,10 @@ describe('finishWcaLink', () => {
     expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe('Bearer tok')
   })
 
-  it('tells an account without a WCA ID, an ID another member verified, and a WCA that did not answer', async () => {
+  it('tells an account without a WCA ID and a WCA that did not answer', async () => {
     const { flow, back } = started()
     wcaAnswers({ id: 1, wca_id: null })
     expect(outcome(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).durum).toBe('wca-yok')
-    wcaAnswers({ wca_id: '2019TEME01' })
-    vi.mocked(linkMemberWca).mockResolvedValue('taken')
-    expect(outcome(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).durum).toBe('wca-kullanimda')
     fetchMock.mockResolvedValueOnce(json({ error: 'invalid_grant' }, 400))
     expect(outcome(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).durum).toBe('wca-hata')
   })
@@ -93,12 +98,9 @@ describe('finishWcaLink', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('goes back without a word when the member said no on the WCA page, and to the link form when the membership is gone', async () => {
+  it('goes back without a word when the member said no on the WCA page', async () => {
     const { flow, back } = started()
-    expect(outcome(await finishWcaLink(flow.cookie, back({ error: 'access_denied' }), NOW))).toEqual({ path: '/en/hesabim', durum: null, data: DATA })
-    wcaAnswers({ wca_id: '2019TEME01' })
-    vi.mocked(linkMemberWca).mockResolvedValue('none')
-    expect(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).toBe('/en/hesabim?durum=gecersiz')
+    expect(outcome(await finishWcaLink(flow.cookie, back({ error: 'access_denied' }), NOW))).toEqual({ path: '/en/hesabim', durum: null, data: DATA, wca: null })
   })
 })
 
@@ -120,7 +122,6 @@ describe('the sign-up login (WCA ile kaydol, spec 2026-10-21)', () => {
     const w = u.searchParams.get('w') ?? ''
     expect(readToken('kaydol', w, NOW + 29 * 60_000)).toEqual({ email: 'Ayse@Example.com', locale: 'en', wcaId: '2019TEME01', name: 'Ayşe Nur Yılmaz', dob: '2010-04-05' })
     expect(readToken('kaydol', w, NOW + 31 * 60_000)).toBeNull()
-    expect(linkMemberWca).not.toHaveBeenCalled()
   })
 
   it('a WCA account without a WCA ID or an email still comes back, empty where the WCA gave nothing', async () => {
@@ -144,6 +145,53 @@ describe('the sign-up login (WCA ile kaydol, spec 2026-10-21)', () => {
   it('is null without the keys', () => {
     vi.stubEnv('WCA_CLIENT_ID', '')
     expect(startWcaSignup('tr')).toBeNull()
+  })
+})
+
+describe('WCA ile giriş (2026-10-22)', () => {
+  const login = (locale: 'tr' | 'en') => {
+    const flow = startWcaLogin(locale)!
+    const state = new URL(flow.url).searchParams.get('state')!
+    return { flow, state, back: (q: Record<string, string>) => new URLSearchParams({ state, ...q }) }
+  }
+
+  it('asks the WCA for the public profile alone; the cookie names the flow and the language', () => {
+    const { flow, state } = login('en')
+    expect(new URL(flow.url).searchParams.get('scope')).toBe('public')
+    expect(flow.cookie).toBe(`${state}.g.en`)
+  })
+
+  it('opens Hesabım with a fresh token for the member whose verified WCA ID came back', async () => {
+    const { flow, back } = login('en')
+    wcaAnswers({ wca_id: '2019TEME01', name: 'Ayşe' })
+    vi.mocked(memberByWca).mockResolvedValue({ email: 'ayse@example.com', locale: 'tr' })
+    expect(outcome(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW))).toEqual({ path: '/en/hesabim', durum: null, data: DATA, wca: null })
+    expect(memberByWca).toHaveBeenCalledWith('2019TEME01')
+  })
+
+  it('sends a WCA account no membership verified, or one without a WCA ID, to the mail link; a failure and another state say so', async () => {
+    const { flow, back } = login('tr')
+    wcaAnswers({ wca_id: '2019TEME01' })
+    vi.mocked(memberByWca).mockResolvedValue(null)
+    expect(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).toBe('/hesabim?durum=wca-uye-yok')
+    wcaAnswers({ wca_id: null })
+    expect(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).toBe('/hesabim?durum=wca-uye-yok')
+    wcaAnswers({ wca_id: '2019TEME01' })
+    vi.mocked(memberByWca).mockResolvedValue('error')
+    expect(await finishWcaLink(flow.cookie, back({ code: 'c' }), NOW)).toBe('/hesabim?durum=wca-hata')
+    expect(await finishWcaLink(flow.cookie, new URLSearchParams({ state: 'other', code: 'c' }), NOW)).toBe('/hesabim?durum=wca-hata')
+    expect(await finishWcaLink(flow.cookie, back({ error: 'access_denied' }), NOW)).toBe('/hesabim')
+  })
+})
+
+describe('fromThisSite', () => {
+  it('takes the site\'s own pages only: Sec-Fetch-Site, else the Origin', () => {
+    expect(fromThisSite(new Headers({ 'sec-fetch-site': 'same-origin' }))).toBe(true)
+    expect(fromThisSite(new Headers({ 'sec-fetch-site': 'cross-site', origin: 'https://speedcubingturkiye.org' }))).toBe(false)
+    expect(fromThisSite(new Headers({ 'sec-fetch-site': 'same-site' }))).toBe(false)
+    expect(fromThisSite(new Headers({ origin: 'https://speedcubingturkiye.org' }))).toBe(true)
+    expect(fromThisSite(new Headers({ origin: 'https://evil.example' }))).toBe(false)
+    expect(fromThisSite(new Headers())).toBe(false)
   })
 })
 

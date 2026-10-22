@@ -25,13 +25,21 @@ function key(s: string): string {
   return foldCase(s).replace(/ı/g, 'i')
 }
 
+/** The members abroad: the Üye ol form's last city choice, stored in Turkish whatever the page's language, and since
+ *  2026-10-22 a list of its own in the il ranking. */
+export const ABROAD = 'Yurt dışı'
+
 /** A province by its slug, the accent- and case-free key ('sanliurfa' → 'Şanlıurfa') */
 export const PROVINCE_BY_SLUG = new Map(PROVINCES.map((p) => [key(p), p]))
 
-/** The il ranking's `?il=` value (spec 2026-10-21, Parça 2): 'İstanbul' → 'istanbul', 'Hakkâri' → 'hakkari'. */
+/** The il ranking's `?il=` value (spec 2026-10-21, Parça 2): 'İstanbul' → 'istanbul', 'Hakkâri' → 'hakkari',
+ *  'Yurt dışı' → 'yurt-disi'. */
 export function provinceSlug(name: string): string {
-  return key(name)
+  return key(name).replace(/\s+/g, '-')
 }
+
+/** The il ranking's places by slug: the 81 provinces and Yurt dışı (2026-10-22) */
+export const PLACE_BY_SLUG = new Map([...PROVINCE_BY_SLUG, [provinceSlug(ABROAD), ABROAD]])
 
 /** Turkish spelling for every comma-separated part that is a province; other parts are kept as they are. */
 export function displayCity(raw: string): string {

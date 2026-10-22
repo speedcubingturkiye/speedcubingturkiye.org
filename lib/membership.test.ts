@@ -1,9 +1,10 @@
 // lib/membership.test.ts
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { confirmMembership, istanbulStamp, requestMembership, requestWcaMembership } from '@/lib/membership'
+import { confirmCode, confirmMembership, istanbulStamp, requestMembership, requestWcaMembership } from '@/lib/membership'
 import type { Application } from '@/lib/membership-rules'
 import { applyToSheet, confirmInSheet } from '@/lib/membership-sheet'
 import { prepareSubscription, requestSubscription, subscribeVerified } from '@/lib/newsletter'
+import { signCode } from '@/lib/newsletter-token'
 import { sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 
@@ -38,7 +39,8 @@ describe('requestMembership', () => {
     const mail = vi.mocked(sendMail).mock.calls[0][0]
     expect(mail.to).toBe('ayse@example.com')
     expect(mail.subject).toBe('Confirm your membership')
-    expect(mail.text).toContain(`${site.url}/en/uye-ol/onay?t=${row.token}`)
+    // The code with the site's signature (2026-10-22)
+    expect(mail.text).toContain(`${site.url}/en/uye-ol/onay?t=${signCode(row.token)}`)
   })
 
   it('sends nothing to a member or for a link that went out less than a day ago, and still reports success', async () => {
@@ -55,7 +57,7 @@ describe('requestMembership', () => {
     expect(await requestMembership({ ...APP, newsletter: true }, 'tr', NOW)).toBe(true)
     expect(prepareSubscription).toHaveBeenCalledWith('ayse@example.com', 'tr', NOW.getTime())
     expect(vi.mocked(applyToSheet).mock.calls[0][0]).not.toHaveProperty('newsletter')
-    expect(vi.mocked(sendMail).mock.calls[0][0].text).toMatch(/\/uye-ol\/onay\?t=[\w-]{43}&b=NEWS/)
+    expect(vi.mocked(sendMail).mock.calls[0][0].text).toMatch(/\/uye-ol\/onay\?t=[\w-]{43}\.[\w-]{22}&b=NEWS/)
   })
 
   it('with the newsletter box but no newsletter token (a subscriber, or SES failed): the plain link', async () => {
@@ -96,18 +98,30 @@ describe('requestMembership', () => {
 })
 
 describe('confirmMembership', () => {
-  it('confirms a well-formed token through the sheet', async () => {
+  const code = 'k'.repeat(43)
+
+  it('confirms a signed code through the sheet and passes its answer on', async () => {
     vi.mocked(confirmInSheet).mockResolvedValue('ok')
-    expect(await confirmMembership('k'.repeat(43), NOW)).toBe(true)
-    expect(confirmInSheet).toHaveBeenCalledWith('k'.repeat(43), '2026-10-19 14:05')
+    expect(await confirmMembership(signCode(code), NOW)).toBe('ok')
+    expect(confirmInSheet).toHaveBeenCalledWith(code, '2026-10-19 14:05')
+    vi.mocked(confirmInSheet).mockResolvedValue('wca_taken')
+    expect(await confirmMembership(signCode(code), NOW)).toBe('wca_taken')
     vi.mocked(confirmInSheet).mockResolvedValue('invalid')
-    expect(await confirmMembership('k'.repeat(43), NOW)).toBe(false)
+    expect(await confirmMembership(signCode(code), NOW)).toBe('invalid')
   })
 
-  it('rejects a malformed token without calling the sheet', async () => {
-    expect(await confirmMembership('short', NOW)).toBe(false)
-    expect(await confirmMembership('', NOW)).toBe(false)
+  it('turns away a made-up or malformed code without calling the sheet', async () => {
+    expect(await confirmMembership(`${code}.${'x'.repeat(22)}`, NOW)).toBe('invalid')
+    expect(await confirmMembership('short', NOW)).toBe('invalid')
+    expect(await confirmMembership('', NOW)).toBe('invalid')
     expect(confirmInSheet).not.toHaveBeenCalled()
+  })
+
+  it('takes the bare code of a mail sent before the signatures, until 2026-11-05', async () => {
+    vi.mocked(confirmInSheet).mockResolvedValue('ok')
+    expect(confirmCode(code, Date.parse('2026-11-04T23:59:00+03:00'))).toBe(code)
+    expect(confirmCode(code, Date.parse('2026-11-05T00:00:00+03:00'))).toBeNull()
+    expect(confirmCode(signCode(code), Date.parse('2027-01-01T00:00:00+03:00'))).toBe(code)
   })
 })
 

@@ -10,6 +10,7 @@ import { RankingsPager, RankingsTable } from '@/components/RankingsTable'
 import { narrowRows } from '@/lib/il-ranking'
 import { eventListRows, listParam, type ListKind } from '@/lib/rankings-list'
 import { listQuery, pageCount, rowRange, type ListParams, type SearchParamsRecord } from '@/lib/rankings-view'
+import { ABROAD } from '@/lib/wca/city'
 import { WCA_BASE } from '@/lib/wca/client'
 import { formatDate } from '@/lib/wca/format'
 import { rankingsHref, type Rankings, type RankingType } from '@/lib/wca/rankings'
@@ -31,7 +32,8 @@ export async function RankingsView({ eventId, type, rankings, locale, searchPara
   const all = rankings?.rows ?? []
   // ?il narrows the list to one province's members, numbered again within it (spec 2026-10-21, Parça 2); "Sıramı bul"
   // filters what is left (everyone keeps their rank) and the page is clamped to the filtered list.
-  const { rows, params, province, unavailable } = await narrowRows(all, searchParams)
+  const { rows, params, province: place, unavailable } = await narrowRows(all, searchParams)
+  const province = place === ABROAD ? t('abroad') : place
   const { page, size, query, il } = params
   const pathname = rankingsHref(eventId, type)
   // Links keep the current page, size and search unless told otherwise; the defaults stay out of the URL.

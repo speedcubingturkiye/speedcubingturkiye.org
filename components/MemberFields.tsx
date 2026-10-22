@@ -2,7 +2,8 @@
 
 import { useState, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
-import { ABROAD, ageOn, PROVINCE_CHOICES } from '@/lib/membership-rules'
+import { ProvinceOptions } from '@/components/ProvinceOptions'
+import { ageOn } from '@/lib/membership-rules'
 import type { MemberFields as Values } from '@/lib/membership-sheet'
 
 export const control = 'w-full border border-line bg-bg px-3 py-2 text-fg focus:border-fg'
@@ -17,8 +18,22 @@ export const check = 'flex items-start gap-2 text-sm text-fg-2'
  *   (`error`, a form sent without JS); the action checks again.
  * - `today` is the Istanbul date from the page, so the server and the browser draw the same fields.
  * - `defaults` fills them in. `afterNames` goes between the names and the date of birth (Üye ol's address).
+ * - `birthDateLocked`: WCA ile kaydol's date of birth is the WCA's, not to be changed here (2026-10-22); the action
+ *   takes it from the WCA token whatever the form sends.
  */
-export function MemberFields({ today, defaults, error, afterNames }: { today: string; defaults?: Values; error?: string; afterNames?: ReactNode }) {
+export function MemberFields({
+  today,
+  defaults,
+  error,
+  afterNames,
+  birthDateLocked = false,
+}: {
+  today: string
+  defaults?: Values
+  error?: string
+  afterNames?: ReactNode
+  birthDateLocked?: boolean
+}) {
   const t = useTranslations('membership')
   const [birthDate, setBirthDate] = useState(defaults?.birthDate ?? '')
   const minor = (/^\d{4}-\d{2}-\d{2}$/.test(birthDate) && ageOn(birthDate, today) < 18) || error === 'guardian'
@@ -50,8 +65,15 @@ export function MemberFields({ today, defaults, error, afterNames }: { today: st
           autoComplete="bday"
           defaultValue={defaults?.birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
+          readOnly={birthDateLocked}
+          aria-describedby={birthDateLocked ? 'birth-date-wca' : undefined}
         />
       </label>
+      {birthDateLocked ? (
+        <p id="birth-date-wca" className="-mt-2 text-sm text-fg-2">
+          {t('birthDateWca')}
+        </p>
+      ) : null}
 
       <label className="block text-sm font-semibold">
         {t('city')}
@@ -62,12 +84,7 @@ export function MemberFields({ today, defaults, error, afterNames }: { today: st
             <option value="" disabled>
               {t('cityPlaceholder')}
             </option>
-            {PROVINCE_CHOICES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-            <option value={ABROAD}>{t('abroad')}</option>
+            <ProvinceOptions popular={t('popularProvinces')} all={t('allProvincesGroup')} abroad={t('abroad')} />
           </select>
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-fg">
             <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" strokeWidth="1.75" />

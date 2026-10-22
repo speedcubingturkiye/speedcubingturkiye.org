@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSearchQuery } from '@/components/RankingsSearch'
 
@@ -12,13 +13,14 @@ type Props = {
   /** the query a new province keeps (the page size) */
   keep: Record<string, string>
   allLabel: string
-  options: { value: string; label: string }[]
+  /** the places (ProvinceOptions) */
+  children: ReactNode
 }
 
 /** The rankings panel's province choice (2026-10-21): picking one applies it at once, without a button. "Tüm Türkiye"
  *  leaves ?il out of the address. Without JS its form's own button does the same. The search box's query, as it
  *  stands, goes along (2026-10-22). */
-export function ProvinceSelect({ id, value, action, keep, allLabel, options }: Props) {
+export function ProvinceSelect({ id, value, action, keep, allLabel, children }: Props) {
   const router = useRouter()
   const ara = useSearchQuery()
   return (
@@ -33,11 +35,7 @@ export function ProvinceSelect({ id, value, action, keep, allLabel, options }: P
       className="h-11 w-full appearance-none border border-line bg-bg px-3 pr-10 text-fg focus:border-fg"
     >
       <option value="">{allLabel}</option>
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
+      {children}
     </select>
   )
 }

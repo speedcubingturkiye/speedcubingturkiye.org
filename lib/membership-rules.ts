@@ -1,12 +1,13 @@
 // lib/membership-rules.ts: the Üye ol form's rules (04.2026.01 madde 1-2, spec 2026-10-19 §2), shared by the form and
 // the server action, so nothing here may import server-only code.
-import { EMAIL_RE } from '@/app/actions/types'
-import { PROVINCES } from '@/lib/wca/city'
+import { readEmail } from '@/lib/email'
+import { ABROAD, PROVINCES } from '@/lib/wca/city'
 
-/** The city list's last choice; the sheet stores it in Turkish whatever the page's language. */
-export const ABROAD = 'Yurt dışı'
+export { ABROAD }
 /** The 81 provinces in Turkish alphabetical order (Kırıkkale before Kilis, Şanlıurfa after Sivas), for the form's list */
 export const PROVINCE_CHOICES = [...PROVINCES].sort(new Intl.Collator('tr').compare)
+/** The five most chosen, first in both city lists (2026-10-22) */
+export const POPULAR_PROVINCES = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya']
 export const WCA_ID_RE = /^\d{4}[A-Z]{4}\d{2}$/
 // A letter first, so a name can never start a spreadsheet formula (=, +, -, @)
 const NAME_RE = /^\p{L}[\p{L}\p{M} .'’-]*$/u
@@ -50,12 +51,13 @@ export function parseApplication(
   const text = (key: string) => String(formData.get(key) ?? '').trim()
   const firstName = text('firstName')
   const lastName = text('lastName')
-  const email = text('email').toLowerCase()
+  // One form per mailbox (2026-10-22): kutay.temel@gmail.com and kutaytemel@gmail.com are one membership
+  const email = readEmail(text('email')) ?? ''
   const birthDate = text('birthDate')
   const city = text('city')
   const valid =
     [firstName, lastName].every((name) => name.length <= 60 && NAME_RE.test(name)) &&
-    EMAIL_RE.test(email) && email.length <= 254 &&
+    email !== '' &&
     isDate(birthDate) && birthDate >= '1900-01-01' && birthDate <= today &&
     (PROVINCES.includes(city) || city === ABROAD)
   if (!valid) return { ok: false, error: 'invalid' }

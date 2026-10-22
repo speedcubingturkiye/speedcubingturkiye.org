@@ -161,6 +161,9 @@
     "rankSource": "Sıralama verisi: WCA sonuç dışa aktarımı, her gün güncellenir.",
     "province": "İl",
     "allProvinces": "Tüm Türkiye",
+    "popularProvinces": "Sık seçilenler",
+    "allProvincesGroup": "Tüm iller",
+    "abroad": "Yurt dışı",
     "provinceShow": "Göster",
     "provinceNote": "İl sıralamasında yalnız WCA hesabını bağlayıp katılmayı seçen üyeler görünür. <join>Üye ol</join> ya da <account>Hesabım</account> sayfasından katıl.",
     "provinceNone": "{province} için bu listede henüz kimse yok.",
@@ -253,10 +256,14 @@
   "account": {
     "title": "Hesabım",
     "lead": "Üyelik bilgilerini gör ve düzenle",
+    "memberNo": "Üye no: {no}",
     "email": "E-posta",
     "sendLink": "Link gönder",
     "sending": "Gönderiliyor…",
     "linkSent": "Üyeysen e-postana bir link gönderdik; link 1 saat geçerli.",
+    "wcaLogin": "WCA ile giriş yap",
+    "wcaLoginNote": "WCA hesabını Hesabım'da bağladıysan WCA ile girebilirsin; bağlamadıysan e-postana link iste.",
+    "mailTitle": "E-postayla giriş",
     "expired": "Linkin süresi doldu. Yeni bir link iste.",
     "noMember": "Bu adresle bir üyelik yok.",
     "loadFailed": "Bilgilerin şu an yüklenemedi; birkaç dakika sonra tekrar dene.",
@@ -290,7 +297,7 @@
     "already": "Zaten üye misin?",
     "requestNew": "Yeni link iste",
     "wcaTitle": "WCA hesabı",
-    "wcaIntro": "WCA hesabını bağlarsan WCA ID'n doğrulanır ve il sıralamasına katılabilirsin. WCA'dan yalnız WCA ID'ni alırız.",
+    "wcaIntro": "WCA hesabını bağlarsan WCA ID'n doğrulanır, il sıralamasına katılabilir ve Hesabım'a WCA ile girebilirsin. WCA'dan yalnız WCA ID'ni saklarız.",
     "wcaLink": "WCA hesabını bağla",
     "wcaLinkedAs": "WCA hesabın bağlı: {wcaId}.",
     "wcaUnlink": "Bağlantıyı kaldır",
@@ -298,7 +305,12 @@
     "wcaLinked": "WCA hesabın bağlandı.",
     "wcaNoId": "Bu WCA hesabında WCA ID yok. WCA ID ilk yarışmandan sonra verilir.",
     "wcaTaken": "Bu WCA ID başka bir üyelikte doğrulanmış.",
-    "wcaFailed": "WCA hesabın şu an bağlanamadı; birkaç dakika sonra tekrar dene.",
+    "wcaFailed": "WCA ile işlem şu an tamamlanamadı; birkaç dakika sonra tekrar dene.",
+    "wcaNoMember": "Bu WCA hesabı bir üyelikte doğrulanmamış. E-postana link iste; WCA hesabını Hesabım'da bağlarsan bir dahaki sefere WCA ile girebilirsin.",
+    "wcaConfirmText": "WCA hesabın: {name} ({wcaId}). Üyeliğine bağlamak için Bağla'ya bas.",
+    "wcaConfirm": "Bağla",
+    "wcaCancel": "Vazgeç",
+    "wcaLinking": "Bağlanıyor…",
     "rankingTitle": "İl sıralaması",
     "rankingIntro": "Sıralama sayfalarında ilinin listesinde görün. Katılınca şehrin bir yıl değişmez.",
     "rankingConsent": "Adımın, ilimin ve WCA sonuçlarımın sitenin il sıralamasında yayımlanmasına açık rıza veriyorum.",
@@ -306,10 +318,10 @@
     "rankingGuardian": "Velim veya vasim de bu rızayı veriyor.",
     "rankingJoin": "Sıralamaya katıl",
     "rankingIn": "{city} sıralamasındasın.",
+    "rankingInAbroad": "Yurt dışı listesindesin.",
     "rankingLeave": "Sıralamadan çık",
     "rankingJoined": "İl sıralamasına katıldın; en geç bir saat içinde listede görünürsün.",
     "rankingLeft": "İl sıralamasından çıktın; en geç bir saat içinde listeden düşersin.",
-    "rankingAbroad": "Şehrin Yurt dışı olduğu için il sıralamasına katılamazsın.",
     "cityLocked": "Şehrin {date} tarihine kadar değişmez. Taşındıysan <contact>bize yaz</contact>.",
     "error": {
       "invalid": "Lütfen alanları doğru doldur.",
@@ -322,7 +334,8 @@
       "closed": "Hesabım şu an kapalı.",
       "send_failed": "Şu an olmadı; birkaç dakika sonra tekrar dene.",
       "city_locked": "Şehrin il sıralaması için sabit; tarihi WCA hesabı bölümünde.",
-      "not_allowed": "Önce WCA hesabını bağla; şehrin Yurt dışı olmamalı."
+      "not_allowed": "Önce WCA hesabını bağla.",
+      "too_soon": "Bu adrese az önce bir onay bağlantısı gönderildi. 10 dakika sonra tekrar dene."
     }
   },
   "membership": {
@@ -333,9 +346,12 @@
     "lastName": "Soyad",
     "email": "E-posta",
     "birthDate": "Doğum tarihi",
+    "birthDateWca": "Doğum tarihin WCA'dan gelir; yanlışsa WCA'da düzelttir.",
     "city": "Şehir",
     "cityPlaceholder": "Seç",
     "abroad": "Yurt dışı",
+    "popularProvinces": "Sık seçilenler",
+    "allProvincesGroup": "Tüm iller",
     "guardian": "Bu formu göndererek veli veya vasimin onayı olduğunu beyan ederim.",
     "helps": "Yarışmalara yardım etmek istiyorum",
     "privacyNote": "Formdaki bilgiler üyeliğin ve duyurular için işlenir.",
@@ -362,9 +378,9 @@
       "closed": "Üyelik formu şu an kapalı.",
       "send_failed": "Şu an kaydedemedik; birkaç dakika sonra tekrar dene.",
       "wca_expired": "WCA bilgisinin süresi doldu; WCA ile tekrar kaydol.",
-      "wca_taken": "Bu WCA hesabı başka bir üyelikte doğrulanmış; o üyeliğe Hesabım'dan ulaşabilirsin.",
-      "not_allowed": "İl sıralaması için şehrin Yurt dışı olmamalı."
-    }
+      "wca_taken": "Bu WCA hesabı başka bir üyelikte doğrulanmış; o üyeliğe Hesabım'dan ulaşabilirsin."
+    },
+    "confirmedWca": "Üyeliğin onaylandı. WCA hesabın başka bir üyelikte kayıtlı olduğu için bu üyeliğe bağlanmadı; bir yanlışlık olduğunu düşünüyorsan bize yaz."
   },
   "footer": {
     "competitions": "Yarışmalar",
@@ -399,5 +415,18 @@
     "boardUpdated": "Liste güncelleme tarihi: {date}",
     "boardEmpty": "Yönetim listesi yakında burada.",
     "wcaDisclaimer": "Bu site World Cube Association'ın resmi sitesi değildir. Kayıt, sonuç ve sıralamalar WCA'da tutulur."
+  },
+  "confirm": {
+    "membershipTitle": "Üyeliğini onayla",
+    "membershipText": "Speedcubing Türkiye üyeliğini başlatmak için düğmeye bas.",
+    "membershipNewsletter": "Bülten aboneliğin de aynı düğmeyle onaylanır.",
+    "membershipButton": "Üyeliğimi onayla",
+    "newsletterTitle": "Bülten aboneliğini onayla",
+    "newsletterText": "Speedcubing Türkiye bülteni {email} adresine gelecek. Onaylamak için düğmeye bas.",
+    "newsletterButton": "Aboneliği onayla",
+    "emailTitle": "E-posta adresini değiştir",
+    "emailText": "Üyeliğin {email} adresine taşınacak. Onaylamak için düğmeye bas.",
+    "emailButton": "Adresimi değiştir",
+    "pending": "Onaylanıyor…"
   }
 }

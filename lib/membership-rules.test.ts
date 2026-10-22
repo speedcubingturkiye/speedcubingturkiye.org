@@ -1,6 +1,6 @@
 // lib/membership-rules.test.ts
 import { describe, expect, it } from 'vitest'
-import { ABROAD, ageOn, parseApplication, PROVINCE_CHOICES } from '@/lib/membership-rules'
+import { ABROAD, ageOn, parseApplication, POPULAR_PROVINCES, PROVINCE_CHOICES } from '@/lib/membership-rules'
 
 const TODAY = '2026-10-19'
 const form = (over: Record<string, string> = {}) => {
@@ -17,6 +17,10 @@ describe('PROVINCE_CHOICES', () => {
     expect(PROVINCE_CHOICES.indexOf('Kırıkkale')).toBeLessThan(PROVINCE_CHOICES.indexOf('Kilis'))
     expect(PROVINCE_CHOICES.indexOf('Sivas')).toBeLessThan(PROVINCE_CHOICES.indexOf('Şanlıurfa'))
     expect(PROVINCE_CHOICES.at(-1)).toBe('Zonguldak')
+  })
+
+  it('the five most chosen, first in the lists, are provinces as spelled there', () => {
+    expect(POPULAR_PROVINCES.every((p) => PROVINCE_CHOICES.includes(p))).toBe(true)
   })
 })
 

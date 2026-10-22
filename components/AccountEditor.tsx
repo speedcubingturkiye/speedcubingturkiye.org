@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, type ReactNode, type RefObject } from 'react'
+import { useEffect, useState, type ReactNode, type RefObject } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { changeEmail, leave, newsletter, ranking, saveAccount, unlinkWca } from '@/app/actions/account'
+import { changeEmail, confirmWcaLink, leave, newsletter, ranking, saveAccount, unlinkWca } from '@/app/actions/account'
+import { ConfirmButton } from '@/components/ConfirmForm'
 import { check, field, MemberFields } from '@/components/MemberFields'
 import { useFormSubmit } from '@/components/useFormStartTime'
 import type { AccountState } from '@/app/actions/types'
@@ -13,6 +14,8 @@ import type { MemberRecord } from '@/lib/membership-sheet'
 import { formatDate } from '@/lib/wca/format'
 
 export type NewsletterStatus = 'confirmed' | 'pending' | 'none' | 'unknown'
+/** A WCA account back from the WCA login, waiting for "Bağla" (2026-10-22): its 10-minute token and what to show */
+type PendingWca = { token: string; wcaId: string; name: string }
 
 const initial: AccountState = { ok: false }
 const failed: AccountState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
@@ -77,14 +80,13 @@ function RankingBox({ token, member, today }: { token: string; member: MemberRec
   return (
     <div className="grid gap-4">
       <h3 className="text-lg">{t('rankingTitle')}</h3>
-      {member.city === ABROAD ? (
-        <p className="text-sm text-fg-2">{t('rankingAbroad')}</p>
-      ) : state.ok ? null : (
+      {state.ok ? null : (
         <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
           <TokenField token={token} />
           <input type="hidden" name="op" value={member.ranking ? 'leave' : 'join'} />
           {member.ranking ? (
-            <p className="text-sm text-fg-2">{t('rankingIn', { city: member.city })}</p>
+            // Abroad is a list of its own since 2026-10-22
+            <p className="text-sm text-fg-2">{member.city === ABROAD ? t('rankingInAbroad') : t('rankingIn', { city: member.city })}</p>
           ) : (
             <>
               <p className="text-sm text-fg-2">{t('rankingIntro')}</p>
@@ -127,11 +129,13 @@ function RankingBox({ token, member, today }: { token: string; member: MemberRec
   )
 }
 
-/** WCA hesabı: linking goes out to the WCA login through /api/wca; a linked account can be unlinked here. */
-function WcaSection({ token, member, today }: { token: string; member: MemberRecord; today: string }) {
+/** WCA hesabı: linking goes out to the WCA login through /api/wca/baglan and comes back as `pendingWca`, linked only
+ *  with "Bağla" (2026-10-22); a linked account can be unlinked here. */
+function WcaSection({ token, member, today, pendingWca }: { token: string; member: MemberRecord; today: string; pendingWca: PendingWca | null }) {
   const t = useTranslations('account')
   const locale = useLocale()
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(unlinkWca, initial, failed, done)
+  const [dismissed, setDismissed] = useState(false)
   return (
     <Section id="hesap-wca" title={t('wcaTitle')}>
       {member.wcaVerified ? (
@@ -148,6 +152,19 @@ function WcaSection({ token, member, today }: { token: string; member: MemberRec
           <Status state={state} pending={pending} ok={t('wcaUnlinked')} statusRef={statusRef} />
           {state.ok ? null : <RankingBox token={token} member={member} today={today} />}
         </>
+      ) : pendingWca && !dismissed ? (
+        <form action={confirmWcaLink} className="grid gap-4">
+          <TokenField token={token} />
+          <input type="hidden" name="w" value={pendingWca.token} />
+          <input type="hidden" name="locale" value={locale} />
+          <p className="text-sm text-fg-2">{t('wcaConfirmText', { wcaId: pendingWca.wcaId, name: pendingWca.name })}</p>
+          <div className="flex flex-wrap gap-3">
+            <ConfirmButton label={t('wcaConfirm')} pendingLabel={t('wcaLinking')} />
+            <button type="button" onClick={() => setDismissed(true)} className="btn btn-outline">
+              {t('wcaCancel')}
+            </button>
+          </div>
+        </form>
       ) : (
         // A plain form to the route that starts the WCA login: no JS needed, and the token stays out of the address
         <form action="/api/wca/baglan" method="post" className="grid gap-4">
@@ -232,6 +249,7 @@ export function AccountEditor({
   newsletter: status,
   today,
   wca,
+  pendingWca,
 }: {
   token: string
   member: MemberRecord
@@ -239,6 +257,7 @@ export function AccountEditor({
   today: string
   /** whether the WCA link is set up (lib/wca-link.ts wcaReady) */
   wca: boolean
+  pendingWca: PendingWca | null
 }) {
   const t = useTranslations('account')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(leave, initial, failed, done)
@@ -258,7 +277,7 @@ export function AccountEditor({
   return (
     <div className="grid gap-10">
       <DetailsSection token={token} member={member} today={today} />
-      {wca ? <WcaSection token={token} member={member} today={today} /> : null}
+      {wca ? <WcaSection token={token} member={member} today={today} pendingWca={pendingWca} /> : null}
       <AddressSection token={token} email={member.email} />
       <NewsletterSection token={token} status={status} />
       <Section id="hesap-ayril" title={t('leaveTitle')}>

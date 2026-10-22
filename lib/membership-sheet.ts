@@ -26,7 +26,8 @@ export type SheetRow = {
  *  member: the address is already a member. WCA ile kaydol adds started (a proved address became a member at once),
  *  linked (the WCA ID joined the member the address already is) and taken (another member verified this WCA ID). */
 export type ApplyResult = 'pending' | 'recent' | 'member' | 'started' | 'linked' | 'taken' | 'error'
-export type ConfirmResult = 'ok' | 'invalid' | 'error'
+/** wca_taken: the membership began, without the WCA ID another member verified meanwhile (2026-10-22). */
+export type ConfirmResult = 'ok' | 'wca_taken' | 'invalid' | 'error'
 
 /** How long a call waits for the script: longer than the script may wait for its lock (20 s), with room for a cold
  *  start. Giving up sooner reported calls the script went on to finish as failures (a WCA sign-up, 2026-10-21). The
@@ -44,7 +45,20 @@ export function sheetReady(): boolean {
   return config() !== null || process.env.NODE_ENV === 'development'
 }
 
-type Action = 'apply' | 'confirm' | 'link' | 'get' | 'update' | 'changeEmail' | 'delete' | 'linkWca' | 'unlinkWca' | 'ranking' | 'rankingMembers'
+type Action =
+  | 'apply'
+  | 'confirm'
+  | 'link'
+  | 'get'
+  | 'update'
+  | 'changeEmail'
+  | 'emailGate'
+  | 'delete'
+  | 'linkWca'
+  | 'unlinkWca'
+  | 'byWca'
+  | 'ranking'
+  | 'rankingMembers'
 type Answer = { result: string; [key: string]: unknown }
 
 /** The script's whole answer, or `{ result: 'error' }` (logged) for anything without a string `result`. */
@@ -92,7 +106,9 @@ export async function applyToSheet(row: SheetRow): Promise<ApplyResult> {
 }
 
 export async function confirmInSheet(token: string, at: string): Promise<ConfirmResult> {
-  return call('confirm', { token, at }, ['ok', 'invalid'], 'ok')
+  const answer = await post('confirm', { token, at }, { result: 'ok' })
+  if (answer.result === 'ok') return answer.wca === 'taken' ? 'wca_taken' : 'ok'
+  return answer.result === 'invalid' ? 'invalid' : 'error'
 }
 
 /** A member's details as Hesabım (spec 2026-10-21) shows and edits them */
@@ -108,8 +124,9 @@ export type MemberDetails = {
   locale: Locale
 }
 /** The details and the WCA side (Parça 2): `wcaVerified`, the WCA login confirmed the WCA ID; `ranking`, in the il
- *  ranking; `cityLockedUntil`, "YYYY-MM-DD" while the ranking's city lock runs, '' otherwise */
-export type MemberRecord = MemberDetails & { wcaVerified: boolean; ranking: boolean; cityLockedUntil: string }
+ *  ranking; `cityLockedUntil`, "YYYY-MM-DD" while the ranking's city lock runs, '' otherwise; `memberNo`, the Üye no
+ *  (2026-10-22, "YYYY-NNNN"; '' from a script older than it) */
+export type MemberRecord = MemberDetails & { wcaVerified: boolean; ranking: boolean; cityLockedUntil: string; memberNo: string }
 /** What Hesabım's form may change; the address has its own confirmed flow, the WCA ID comes only from a WCA login */
 export type MemberFields = Omit<MemberDetails, 'email' | 'locale' | 'wcaId'>
 
@@ -145,11 +162,12 @@ export async function linkFromSheet(email: string): Promise<'ok' | 'none' | 'err
 /** The member's details; null when the address is not (or no longer) a member. A script older than Parça 2 sends no
  *  WCA fields: that reads as unverified and out of the ranking. */
 export async function getMember(email: string): Promise<MemberRecord | null | 'error'> {
-  const answer = await post('get', { email }, { result: 'ok', member: devMember(email) })
+  const answer = await post('get', { email }, { result: 'ok', member: { ...devMember(email), memberNo: '2026-0001' } })
   if (answer.result === 'none') return null
   if (answer.result !== 'ok' || !isMember(answer.member)) return 'error'
-  const m = answer.member as MemberDetails & Partial<Record<'wcaVerified' | 'ranking' | 'cityLockedUntil', unknown>>
-  return { ...m, wcaVerified: m.wcaVerified === true, ranking: m.ranking === true, cityLockedUntil: typeof m.cityLockedUntil === 'string' ? m.cityLockedUntil : '' }
+  const m = answer.member as MemberDetails & Partial<Record<'wcaVerified' | 'ranking' | 'cityLockedUntil' | 'memberNo', unknown>>
+  const text = (v: unknown) => (typeof v === 'string' ? v : '')
+  return { ...m, wcaVerified: m.wcaVerified === true, ranking: m.ranking === true, cityLockedUntil: text(m.cityLockedUntil), memberNo: text(m.memberNo) }
 }
 
 /** 'locked': the city may not change yet (the il ranking's lock). `at`: the Istanbul stamp the lock is measured at. */
@@ -160,6 +178,12 @@ export async function updateMember(email: string, fields: MemberFields, at: stri
 /** 'taken' when another row already has the new address. */
 export async function changeMemberEmail(email: string, newEmail: string): Promise<'ok' | 'none' | 'taken' | 'error'> {
   return call('changeEmail', { email, newEmail }, ['ok', 'none', 'taken'], 'ok')
+}
+
+/** Whether E-posta değiştirme may mail `newEmail` (2026-10-22): 'wait' when that mailbox had one in the last 10 minutes,
+ *  so a member cannot flood someone else's inbox; 'none' when `email` is no member. */
+export async function emailChangeGate(email: string, newEmail: string): Promise<'ok' | 'wait' | 'none' | 'error'> {
+  return call('emailGate', { email, newEmail }, ['ok', 'wait', 'none'], 'ok')
 }
 
 export async function deleteMember(email: string): Promise<'ok' | 'none' | 'error'> {
@@ -175,7 +199,16 @@ export async function unlinkMemberWca(email: string): Promise<'ok' | 'none' | 'e
   return call('unlinkWca', { email }, ['ok', 'none'], 'ok')
 }
 
-/** İl sıralaması in or out; 'not_allowed' without a verified WCA ID, or with Yurt dışı. */
+/** WCA ile giriş (2026-10-22): the member whose verified WCA ID this is, or null. In development without the script, no
+ *  one: the login then says the WCA account is not linked. */
+export async function memberByWca(wcaId: string): Promise<{ email: string; locale: Locale } | null | 'error'> {
+  const answer = await post('byWca', { wcaId }, { result: 'none' })
+  if (answer.result === 'none') return null
+  if (answer.result !== 'ok' || typeof answer.email !== 'string') return 'error'
+  return { email: answer.email, locale: answer.locale === 'en' ? 'en' : 'tr' }
+}
+
+/** İl sıralaması in or out; 'not_allowed' without a verified WCA ID. */
 export async function setMemberRanking(email: string, join: boolean, at: string): Promise<'ok' | 'none' | 'not_allowed' | 'error'> {
   return call('ranking', { email, join, at }, ['ok', 'none', 'not_allowed'], 'ok')
 }

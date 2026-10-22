@@ -22,18 +22,21 @@ describe('provinceRows', () => {
 })
 
 describe('provinceMembers', () => {
-  it('asks the sheet at most hourly, keys provinces by slug, and gives null while the sheet fails', async () => {
+  it('asks the sheet at most hourly, keys provinces by slug (abroad as yurt-disi), and after a failure waits a minute', async () => {
     vi.mocked(rankingMembers).mockResolvedValueOnce('error')
     expect(await provinceMembers(0)).toBeNull()
-    const list = new Map([['2019AAAA01', 'sanliurfa'], ['2019BBBB01', 'hakkari']])
+    expect(await provinceMembers(59_999)).toBeNull()
+    expect(rankingMembers).toHaveBeenCalledTimes(1)
+    const list = new Map([['2019AAAA01', 'sanliurfa'], ['2019BBBB01', 'hakkari'], ['2019CCCC01', 'yurt-disi']])
     vi.mocked(rankingMembers).mockResolvedValueOnce([
       { wcaId: '2019AAAA01', il: 'Şanlıurfa' },
       { wcaId: '2019BBBB01', il: 'Hakkâri' },
+      { wcaId: '2019CCCC01', il: 'Yurt dışı' },
     ])
-    expect(await provinceMembers(1_000)).toEqual(list)
-    expect(await provinceMembers(1_000 + 3_599_999)).toEqual(list)
+    expect(await provinceMembers(60_000)).toEqual(list)
+    expect(await provinceMembers(60_000 + 3_599_999)).toEqual(list)
     expect(rankingMembers).toHaveBeenCalledTimes(2)
     vi.mocked(rankingMembers).mockResolvedValueOnce([])
-    expect(await provinceMembers(1_000 + 3_600_000)).toEqual(new Map())
+    expect(await provinceMembers(60_000 + 3_600_000)).toEqual(new Map())
   })
 })
