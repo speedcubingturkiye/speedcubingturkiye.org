@@ -9,8 +9,6 @@
     "readMore": "Devamını oku",
     "seeAll": "Tümünü gör",
     "back": "Geri",
-    "themeDark": "Koyu temaya geç",
-    "themeLight": "Açık temaya geç",
     "wcaProfile": "WCA profili",
     "external": "dış bağlantı",
     "dataUnavailable": "Veri şu an alınamıyor.",
@@ -29,7 +27,12 @@
     "pages": "Sayfalar",
     "prev": "Önceki",
     "next": "Sonraki",
-    "pageN": "Sayfa {n}"
+    "pageN": "Sayfa {n}",
+    "language": "Dil",
+    "theme": "Tema",
+    "themeSystem": "Sistem",
+    "themeLight": "Açık",
+    "themeDark": "Koyu"
   },
   "nav": {
     "competitions": "Yarışmalar",

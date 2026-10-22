@@ -9,8 +9,6 @@
     "readMore": "Read more",
     "seeAll": "See all",
     "back": "Back",
-    "themeDark": "Switch to dark theme",
-    "themeLight": "Switch to light theme",
     "wcaProfile": "WCA profile",
     "external": "external link",
     "dataUnavailable": "Data is temporarily unavailable.",
@@ -29,7 +27,12 @@
     "pages": "Pages",
     "prev": "Previous",
     "next": "Next",
-    "pageN": "Page {n}"
+    "pageN": "Page {n}",
+    "language": "Language",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "nav": {
     "competitions": "Competitions",

@@ -20,7 +20,7 @@
 - Haberler ve RSS. Türkiye'de yeni bir yarışma açılınca duyurusu otomatik yazılır.
 - Çift onaylı e-posta bülteni.
 - Organizasyon sayfaları: tek sayfada belgeler (tüzük, yönetmelikler, politikalar, ilanlar), gönüllülük, güvenli ortam.
-- Türkçe ve İngilizce, açık ve koyu tema. Metinler tarayıcıdan, görsel editörle düzenlenir.
+- Türkçe ve İngilizce (ilk açılışta tarayıcının diline göre), sistem, açık ve koyu tema. Metinler tarayıcıdan, görsel editörle düzenlenir.
 
 ## Nasıl çalışır
 

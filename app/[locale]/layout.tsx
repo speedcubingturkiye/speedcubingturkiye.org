@@ -12,6 +12,7 @@ import { InlineScript } from '@/components/InlineScript'
 import { NewsletterStrip } from '@/components/NewsletterStrip'
 import { SiteAnalytics } from '@/components/SiteAnalytics'
 import { SkipLink } from '@/components/SkipLink'
+import { LOCALE_SCRIPT, THEME_SCRIPT } from '@/lib/head-scripts'
 import '@cubing/icons/css'
 import '@/app/globals.css'
 
@@ -22,11 +23,6 @@ const archivo = Archivo({
   variable: '--font-archivo',
   display: 'swap',
 })
-
-// Runs before anything paints: stored preference, else the OS setting (spec §3.4). localStorage only, no cookie.
-// It only runs when the browser parses server HTML; ThemeToggle applies the same rule when React renders <html>.
-const THEME_SCRIPT =
-  'try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){}'
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
@@ -49,8 +45,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // data-scroll-behavior: Next turns the CSS smooth scrolling off during route changes, so a new page starts at the
     // top at once; in-page anchors still scroll smoothly (node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md)
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth" className={`${archivo.variable} antialiased`}>
-      {/* spec §3.4: in <head>, before anything paints (node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md, "Themes") */}
+      {/* spec §3.4: in <head>, before anything paints (node_modules/next/dist/docs/01-app/02-guides/preventing-flash-before-hydration.md, "Themes").
+          The language first: when it sends the visitor to the other language, nothing else needs to run
+          (lib/head-scripts.ts; localStorage only, no cookie). They only run when the browser parses server HTML;
+          ThemeToggle applies the theme's rule when React renders <html>. */}
       <head>
+        <InlineScript html={LOCALE_SCRIPT} />
         <InlineScript html={THEME_SCRIPT} />
       </head>
       <body className="bg-bg font-sans text-fg">
