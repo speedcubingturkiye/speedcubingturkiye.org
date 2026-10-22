@@ -210,7 +210,7 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
       </div>
 
       {il ? (
-        <p className="mt-4 max-w-2xl text-sm text-fg-2">
+        <p className="mt-4 text-sm text-fg-2">
           {t.rich('provinceNote', {
             join: (chunks) => (
               <Link href="/uye-ol" className="font-semibold text-brand-ink underline">

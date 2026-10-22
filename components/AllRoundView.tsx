@@ -61,7 +61,7 @@ export async function AllRoundView({ mode, type = 'single', data, locale, search
           </p>
         ) : null}
       </div>
-      <p className="mt-3 max-w-3xl text-sm text-fg-2">
+      <p className="mt-3 text-sm text-fg-2">
         {mode === 'sum'
           ? t('sumAbout')
           : t.rich('kinchAbout', {
