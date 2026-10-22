@@ -1,10 +1,11 @@
 // app/[locale]/siralamalar/[event]/[type]/page.tsx
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { RankingsView } from '@/components/RankingsView'
 import { pageMeta } from '@/lib/metadata'
 import type { SearchParamsRecord } from '@/lib/rankings-view'
-import { getRankings, rankingsHref, TYPE_SEGMENT, type RankingType } from '@/lib/wca/rankings'
+import { eventPage, getRankings, rankingsHref, TYPE_SEGMENT, type RankingType } from '@/lib/wca/rankings'
 import { EVENTS } from '@/lib/wca/records'
 
 type Props = { params: Promise<{ event: string; type: string }>; searchParams: Promise<SearchParamsRecord> }
@@ -24,12 +25,14 @@ export function generateStaticParams() {
   )
 }
 
-function parse(params: { event: string; type: string }): { eventId: string; type: RankingType } {
-  return { eventId: params.event, type: params.type === TYPE_SEGMENT.average ? 'average' : 'single' }
+// An unknown event or type is a 404 (lib/wca/rankings.ts, eventPage: dynamicParams alone does not hold here)
+async function parse(params: Props['params']): Promise<{ eventId: string; type: RankingType }> {
+  const { event, type } = await params
+  return eventPage(event, type) ?? notFound()
 }
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
-  const { eventId, type } = parse(await params)
+  const { eventId, type } = await parse(params)
   const [locale, t, sp] = await Promise.all([getLocale(), getTranslations('rankings'), searchParams])
   const name = EVENTS.find((e) => e.id === eventId)?.name[locale] ?? eventId
   // rankingsHref maps 3x3x3 single to /siralamalar, so /siralamalar/333/tekli declares /siralamalar as its canonical URL.
@@ -42,7 +45,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 }
 
 export default async function EventRankingsPage({ params, searchParams }: Props) {
-  const { eventId, type } = parse(await params)
+  const { eventId, type } = await parse(params)
   const [locale, rankings, sp] = await Promise.all([getLocale(), getRankings(eventId, type), searchParams])
   return <RankingsView eventId={eventId} type={type} rankings={rankings} locale={locale} searchParams={sp} />
 }

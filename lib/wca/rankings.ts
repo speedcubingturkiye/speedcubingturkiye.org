@@ -2,6 +2,7 @@
 // scripts/rankings-data.ts and refreshed daily by .github/workflows/daily-data.yml (full rankings spec §3, §6)
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { EVENTS } from './records'
 import type { RankingRow } from './types'
 
 export type RankingType = 'single' | 'average'
@@ -14,6 +15,22 @@ export const TYPE_SEGMENT: Record<RankingType, string> = { single: 'tekli', aver
 /** `/siralamalar` is 3x3x3 single; every other event/type lives under `/siralamalar/[event]/[type]`. */
 export function rankingsHref(eventId: string, type: RankingType): string {
   return eventId === '333' && type === 'single' ? '/siralamalar' : `/siralamalar/${eventId}/${TYPE_SEGMENT[type]}`
+}
+
+/** A type's URL segment back to the type; null for anything else. */
+export function typeFromSegment(segment: string): RankingType | null {
+  return segment === TYPE_SEGMENT.single ? 'single' : segment === TYPE_SEGMENT.average ? 'average' : null
+}
+
+/**
+ * An event page's address (/siralamalar/[event]/[type]) back to the list; null for an unknown event or type, or an
+ * average the event does not have. The pages call notFound() on null: they render per request, and dynamicParams =
+ * false only holds for prerendered pages, so the live site answered 200 for /siralamalar/999/tekli (2026-10-22).
+ */
+export function eventPage(event: string, segment: string): { eventId: string; type: RankingType } | null {
+  const found = EVENTS.find((e) => e.id === event)
+  const type = typeFromSegment(segment)
+  return found && type && (type === 'single' || found.hasAverage) ? { eventId: found.id, type } : null
 }
 
 /** The all-round lists (spec 2026-10-22): Sum of Ranks per type, and Kinch. */

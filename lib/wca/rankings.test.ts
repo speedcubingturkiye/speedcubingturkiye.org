@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { loadRankings, parseRankingFile, rankingsHref } from '@/lib/wca/rankings'
+import { eventPage, loadRankings, parseRankingFile, rankingsHref, typeFromSegment } from '@/lib/wca/rankings'
 
 describe('parseRankingFile', () => {
   it('maps [rank, WCA ID, name, best] lines to rows', () => {
@@ -49,5 +49,17 @@ describe('rankingsHref', () => {
   it('maps 3x3x3 single to /siralamalar', () => {
     expect(rankingsHref('333', 'single')).toBe('/siralamalar')
     expect(rankingsHref('444', 'average')).toBe('/siralamalar/444/ortalama')
+  })
+})
+
+describe('eventPage / typeFromSegment', () => {
+  it('reads an event page address, and nothing for an unknown event, type or an average that does not exist', () => {
+    expect(eventPage('444bf', 'tekli')).toEqual({ eventId: '444bf', type: 'single' })
+    expect(eventPage('333', 'ortalama')).toEqual({ eventId: '333', type: 'average' })
+    expect(eventPage('999', 'tekli')).toBeNull()
+    expect(eventPage('333', 'foo')).toBeNull()
+    expect(eventPage('333mbf', 'ortalama')).toBeNull()
+    expect(typeFromSegment('tekli')).toBe('single')
+    expect(typeFromSegment('average')).toBeNull()
   })
 })
