@@ -164,7 +164,21 @@
     "provinceUnavailable": "The province list could not be loaded; try again in a few minutes.",
     "nationalRank": "Türkiye",
     "event": "Event",
-    "filters": "Ranking options"
+    "filters": "Ranking options",
+    "mode": "Ranking",
+    "modeEvent": "Event",
+    "modeSum": "Sum of ranks",
+    "modeKinch": "Kinch",
+    "sumTitle": "Sum of ranks",
+    "kinchTitle": "<en>Kinch</en> ranks",
+    "sumDescription": "The sum of national ranks across all WCA events for competitors representing Türkiye. Data comes from the WCA daily.",
+    "kinchDescription": "Kinch scores for competitors representing Türkiye: how close they are to the national record in each event. Data comes from the WCA daily.",
+    "sumAbout": "Each event's national rank is added up; the lower the sum, the better. An event without a result counts its last rank + 1, shown in the muted colour.",
+    "kinchAbout": "In each event the score is 100 × the national record ÷ the competitor's best; the overall score is the mean over all 17 events, 0 for an event without a result. Averages count in most events, singles in 4BLD, 5BLD and MBLD, and the better of the two in 3BLD and FMC. Method: <source>kinch2002, SpeedSolving (2015)</source>.",
+    "total": "Sum",
+    "score": "Score",
+    "noResult": "No result",
+    "listEmpty": "No results from Türkiye yet."
   },
   "news": {
     "title": "News",

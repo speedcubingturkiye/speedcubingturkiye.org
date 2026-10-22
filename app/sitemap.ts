@@ -3,7 +3,7 @@ import { getPathname } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { site } from '@/site.config'
 import { getCompetitions } from '@/lib/wca/competitions'
-import { rankingsHref } from '@/lib/wca/rankings'
+import { KINCH_HREF, rankingsHref, sumOfRanksHref } from '@/lib/wca/rankings'
 import { EVENTS } from '@/lib/wca/records'
 import { todayIstanbul } from '@/lib/wca/status'
 import { listNews } from '@/lib/content'
@@ -28,10 +28,15 @@ const STATIC = [
   '/cerez-politikasi',
 ]
 
-// /siralamalar plus the 30 event/type pages (rankingsHref maps 3x3x3 single to /siralamalar)
-const RANKINGS = EVENTS.flatMap((e) =>
-  (e.hasAverage ? (['single', 'average'] as const) : (['single'] as const)).map((type) => rankingsHref(e.id, type)),
-)
+// /siralamalar plus the 30 event/type pages (rankingsHref maps 3x3x3 single to /siralamalar), then the all-round lists
+const RANKINGS = [
+  ...EVENTS.flatMap((e) =>
+    (e.hasAverage ? (['single', 'average'] as const) : (['single'] as const)).map((type) => rankingsHref(e.id, type)),
+  ),
+  sumOfRanksHref('single'),
+  sumOfRanksHref('average'),
+  KINCH_HREF,
+]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const today = todayIstanbul()

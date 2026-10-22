@@ -45,22 +45,17 @@ function formatCentiseconds(cs: number): string {
   return m ? `${m}:${sc}` : sc
 }
 
-/** WCA multi-blind encoding (new format 0DDTTTTTMM; old format 1SSAATTTTT). */
-function formatMultiBlind(value: number): string {
+/** WCA multi-blind encoding (new format 0DDTTTTTMM; old format 1SSAATTTTT) → cubes solved and attempted, seconds. */
+export function multiBlind(value: number): { solved: number; attempted: number; seconds: number } {
   const s = String(value).padStart(10, '0')
-  let solved: number
-  let attempted: number
-  let seconds: number
-  if (s[0] === '1') {
-    solved = 99 - Number(s.slice(1, 3))
-    attempted = Number(s.slice(3, 5))
-    seconds = Number(s.slice(5, 10))
-  } else {
-    const missed = Number(s.slice(8, 10))
-    solved = 99 - Number(s.slice(1, 3)) + missed
-    attempted = solved + missed
-    seconds = Number(s.slice(3, 8))
-  }
+  if (s[0] === '1') return { solved: 99 - Number(s.slice(1, 3)), attempted: Number(s.slice(3, 5)), seconds: Number(s.slice(5, 10)) }
+  const missed = Number(s.slice(8, 10))
+  const solved = 99 - Number(s.slice(1, 3)) + missed
+  return { solved, attempted: solved + missed, seconds: Number(s.slice(3, 8)) }
+}
+
+function formatMultiBlind(value: number): string {
+  const { solved, attempted, seconds } = multiBlind(value)
   return `${solved}/${attempted} ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 

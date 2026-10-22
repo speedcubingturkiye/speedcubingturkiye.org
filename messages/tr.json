@@ -164,7 +164,21 @@
     "provinceUnavailable": "İl listesi şu an yüklenemedi; birkaç dakika sonra tekrar dene.",
     "nationalRank": "Türkiye",
     "event": "Etkinlik",
-    "filters": "Sıralama seçenekleri"
+    "filters": "Sıralama seçenekleri",
+    "mode": "Sıralama",
+    "modeEvent": "Etkinlik",
+    "modeSum": "Toplam",
+    "modeKinch": "Kinch",
+    "sumTitle": "Sıralama toplamı",
+    "kinchTitle": "<en>Kinch</en> sıralaması",
+    "sumDescription": "Türkiye'yi temsil eden yarışmacıların tüm WCA etkinliklerindeki Türkiye sıralarının toplamı. Veriler WCA'dan günlük olarak alınır.",
+    "kinchDescription": "Türkiye'yi temsil eden yarışmacıların Kinch puanları: her etkinlikte Türkiye rekoruna ne kadar yakın oldukları. Veriler WCA'dan günlük olarak alınır.",
+    "sumAbout": "Her etkinlikteki Türkiye sırası toplanır; toplam ne kadar düşükse o kadar iyi. Sonucu olmayan etkinlikte o etkinliğin son sırasının bir fazlası sayılır; bunlar soluk renkte.",
+    "kinchAbout": "Her etkinlikte puan, 100 × Türkiye rekoru ÷ yarışmacının en iyi sonucu; genel puan 17 etkinliğin ortalaması, sonucu olmayan etkinlik 0. Çoğu etkinlikte ortalama; 4BLD, 5BLD ve MBLD'de tekli; 3BLD ve FMC'de ikisinden hangisi iyiyse o sayılır. Yöntem: <source>kinch2002, SpeedSolving (2015)</source>.",
+    "total": "Toplam",
+    "score": "Puan",
+    "noResult": "Sonuç yok",
+    "listEmpty": "Henüz Türkiye'den sonuç yok."
   },
   "news": {
     "title": "Haberler",

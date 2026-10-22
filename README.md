@@ -290,6 +290,11 @@ Gönderim hızı saniyede en fazla 10 mail. Bir gönderim Vercel'in 300 saniyeli
 
 Türkiye'yi temsil etmiş herkes listededir. Sayfada 25, 50, 100 ya da 500 satır gösterilir, "Sıramı bul" isimle ya da WCA ID ile arar.
 
+`/siralamalar/toplam/tekli`, `/siralamalar/toplam/ortalama` ve `/siralamalar/kinch` aynı dosyalardan hesaplanır (`lib/all-round.ts`):
+
+- **Sıralama toplamı:** her etkinlikteki ulusal sıraların toplamı. Sonucu olmayan etkinlikte o etkinliğin son sırasının bir fazlası sayılır (WCA Statistics kuralı).
+- **Kinch:** her etkinlikte 100 × Türkiye rekoru ÷ kişinin en iyisi; genel puan 17 etkinliğin ortalaması (yöntem: kinch2002, SpeedSolving 2015).
+
 `pnpm data:rankings` WCA'nın resmi sonuç dışa aktarımına (Results Export v2, TSV) bakar. Yeni bir dışa aktarım varsa zip'i (yaklaşık 378 MB) indirir, yalnız `results` ve `persons` tablolarını açar ve dosyaları yazar. Tarih aynıysa bir şey yapmaz.
 
 - Sıralama kuralı WCA'nın ulusal sıralamasıyla aynı. Türkiye'yi temsil ederken alınan sonuçlar sayılır. Vatandaşlığını sonradan değiştiren biri, Türkiye dönemindeki sonuçlarıyla listede kalır. Herkesin etkinlik başına en iyi tekli ve ortalaması alınır, eşit sonuçlar aynı sırayı paylaşır.

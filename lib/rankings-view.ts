@@ -70,7 +70,7 @@ export function normalize(text: string): string {
 }
 
 /** The rows whose name and WCA ID contain every word of the query, in ranking order; every row for an empty query. */
-export function filterRows<T extends RankingRow>(rows: T[], query: string): T[] {
+export function filterRows<T extends Pick<RankingRow, 'personName' | 'personId'>>(rows: T[], query: string): T[] {
   const words = normalize(query).split(/\s+/).filter(Boolean)
   if (words.length === 0) return rows
   return rows.filter((row) => {

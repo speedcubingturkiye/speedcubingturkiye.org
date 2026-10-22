@@ -16,6 +16,12 @@ export function rankingsHref(eventId: string, type: RankingType): string {
   return eventId === '333' && type === 'single' ? '/siralamalar' : `/siralamalar/${eventId}/${TYPE_SEGMENT[type]}`
 }
 
+/** The all-round lists (spec 2026-10-22): Sum of Ranks per type, and Kinch. */
+export function sumOfRanksHref(type: RankingType): string {
+  return `/siralamalar/toplam/${TYPE_SEGMENT[type]}`
+}
+export const KINCH_HREF = '/siralamalar/kinch'
+
 /** A data/rankings/<type>/<event>.json file → rows; throws on anything but [rank, WCA ID, name, best] lines. */
 export function parseRankingFile(text: string): RankingRow[] {
   const data: unknown = JSON.parse(text)
