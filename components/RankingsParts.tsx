@@ -1,15 +1,13 @@
-// components/RankingsParts.tsx: what every rankings list shares (2026-10-22): the title, the panel of choices, the pages
-// and the page size under the list, and the data source. The event lists (RankingsView) and the all-round lists
-// (AllRoundView) put their own table between them.
-import type { ComponentProps } from 'react'
+// components/RankingsParts.tsx: what every rankings list shares (2026-10-22): the title, the panel of choices and the
+// data source. The event lists (RankingsView) and the all-round lists (AllRoundView) put their own table between them
+// (components/RankingsTable.tsx, with the pages under it).
 import { getTranslations } from 'next-intl/server'
 import { getPathname, Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { Pager } from '@/components/Pager'
 import { ProvinceSelect } from '@/components/ProvinceSelect'
 import { RankingsSearch } from '@/components/RankingsSearch'
 import { PROVINCE_CHOICES } from '@/lib/membership-rules'
-import { DEFAULT_SIZE, listQuery, MAX_QUERY, PAGE_SIZES, pageAfterResize, type ListParams } from '@/lib/rankings-view'
+import { DEFAULT_SIZE, listQuery, type ListParams } from '@/lib/rankings-view'
 import { provinceSlug } from '@/lib/wca/city'
 import { KINCH_HREF, rankingsHref, sumOfRanksHref, type RankingType } from '@/lib/wca/rankings'
 import { EVENTS, eventNameLang } from '@/lib/wca/records'
@@ -17,7 +15,7 @@ import { EVENTS, eventNameLang } from '@/lib/wca/records'
 /** Which list a rankings page shows: one event's, the Sum of Ranks, or Kinch. */
 export type RankingsMode = 'event' | 'sum' | 'kinch'
 
-// Segmented switch item: the single/average switch and the per-page switch
+// Segmented switch item: the single/average switch (the per-page switch, in RankingsTable.tsx, is the same)
 // (optical centre of the uppercase label: 1px of padding moves from the bottom to the top, the tracking is added left)
 const SEGMENT =
   't-label pt-[11px] pr-4 pb-[9px] pl-[calc(1rem+0.08em)] text-fg-2 hover:text-fg aria-[current=page]:bg-fg aria-[current=page]:text-bg'
@@ -146,7 +144,7 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
                 id="rankings-province"
                 value={il}
                 action={action}
-                keep={{ ...keepSize, ...(query ? { ara: query } : {}) }}
+                keep={keepSize}
                 allLabel={t('allProvinces')}
                 options={PROVINCE_CHOICES.map((p) => ({ value: provinceSlug(p), label: p }))}
               />
@@ -185,14 +183,12 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
           </div>
         ) : null}
 
-        {/* "Sıramı bul": lists while typing (2026-10-22); a search keeps the province and the page size and starts at
-            page 1 */}
+        {/* "Sıramı bul": lists on every key (components/RankingsSearch.tsx); a search keeps the province and the page
+            size and starts at page 1 */}
         <RankingsSearch
           action={action}
-          query={query}
           keep={{ ...keepSize, ...(il ? { il } : {}) }}
           clearHref={withQuery(action, listQuery({ ...params, page: 1, query: '' }))}
-          maxLength={MAX_QUERY}
           labels={{ label: t('searchLabel'), placeholder: t('searchPlaceholder'), button: t('searchButton'), clear: t('searchClear') }}
         />
       </div>
@@ -214,41 +210,6 @@ export async function RankingsPanel({ mode, eventId = '333', type, pathname, par
         </p>
       ) : null}
     </section>
-  )
-}
-
-type PagerProps = {
-  params: ListParams
-  last: number
-  /** the link to this list with some parameters changed */
-  link: (change: Partial<ListParams>) => ComponentProps<typeof Link>['href']
-}
-
-/** Under a list: the pages, and the page size. */
-export async function RankingsPager({ params, last, link }: PagerProps) {
-  const t = await getTranslations('rankings')
-  const { page, size } = params
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-x-6">
-      <Pager page={page} last={last} href={(p) => link({ page: p })} />
-      <div className="mt-6 ml-auto flex items-center gap-3">
-        <span id="per-page" className="text-sm font-semibold">
-          {t('perPage')}
-        </span>
-        <div role="group" aria-labelledby="per-page" className="flex border border-line">
-          {PAGE_SIZES.map((s) => (
-            <Link
-              key={s}
-              href={link({ page: pageAfterResize(page, size, s), size: s })}
-              aria-current={s === size ? 'page' : undefined}
-              className={SEGMENT}
-            >
-              {s}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
   )
 }
 
