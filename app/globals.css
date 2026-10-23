@@ -128,6 +128,15 @@
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
   }
+  /* Tailwind v4's preflight leaves buttons on the arrow (2026-10-23): whatever acts on a click shows the hand, as a link
+     does, and a disabled one keeps the arrow. A checkbox's label toggles it, so it counts too. */
+  button:not(:disabled),
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  label:has(> input[type="checkbox"]:not(:disabled), > input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
   /* Theme switch (ThemeToggle): the whole page crossfades through the View Transitions API. The toggle skips the
      transition under prefers-reduced-motion. */
   ::view-transition-old(root),
@@ -246,15 +255,17 @@
   .btn-white:hover {
     filter: brightness(0.92);
   }
-  /* Pending submit: aria-disabled, not disabled, so the focused button keeps focus */
+  /* Pending submit: aria-disabled, not disabled, so the focused button keeps focus; the cursor says it is working */
   .btn[aria-disabled="true"] {
     opacity: 0.6;
+    cursor: progress;
   }
   /* The date field's calendar icon right at the field's 12px padding, where the Üye ol form draws its select's chevron
      (MembershipForm); Chrome adds a few pixels of its own around it */
   input[type="date"]::-webkit-calendar-picker-indicator {
     margin: 0;
     padding: 0;
+    cursor: pointer;
   }
   /* The logo's 45° square as list marker and divider (spec §3.3) */
   .sq {
