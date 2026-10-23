@@ -2,6 +2,7 @@
 // (scripts/uyelik-apps-script.gs): one JSON POST per call with the shared secret, from the server only, so the browser
 // never talks to Google. In development without the two variables the calls are logged and succeed, as SES's mails are.
 import type { Locale } from '@/i18n/routing'
+import { ABROAD } from '@/lib/wca/city'
 
 export type SheetRow = {
   token: string
@@ -141,18 +142,29 @@ function isMember(m: unknown): m is MemberDetails {
   )
 }
 
-// Development without the script: a sample member for whatever address asks, so Hesabım can be seen locally
-const devMember = (email: string): MemberDetails => ({
-  firstName: 'Deneme',
-  lastName: 'Üye',
-  email,
-  birthDate: '1990-01-01',
-  guardian: false,
-  city: 'Ankara',
-  wcaId: '',
-  helps: false,
-  locale: 'tr',
-})
+// Development without the script: a sample member for whatever address asks, so Hesabım can be seen locally. The
+// address's name picks what to look at (2026-10-22): "wca" linked, "sira" in the il ranking with the city locked,
+// "yurtdisi" in it from abroad, "cocuk" under 18; any other address is a plain member.
+const devMember = (email: string): MemberRecord => {
+  const has = (word: string) => email.split('@')[0].includes(word)
+  const ranked = has('sira') || has('yurtdisi')
+  const linked = ranked || has('wca')
+  return {
+    firstName: 'Deneme',
+    lastName: 'Üye',
+    email,
+    birthDate: has('cocuk') ? '2012-05-04' : '1990-01-01',
+    guardian: has('cocuk'),
+    city: has('yurtdisi') ? ABROAD : 'Ankara',
+    wcaId: linked ? '2019TEME01' : '',
+    helps: false,
+    locale: 'tr',
+    wcaVerified: linked,
+    ranking: ranked,
+    cityLockedUntil: ranked ? '2027-10-22' : '',
+    memberNo: '2026-0001',
+  }
+}
 
 /** Hesabım's link: 'ok' when the address is a member and had no link in the last 10 minutes, 'none' otherwise. */
 export async function linkFromSheet(email: string): Promise<'ok' | 'none' | 'error'> {
@@ -162,7 +174,7 @@ export async function linkFromSheet(email: string): Promise<'ok' | 'none' | 'err
 /** The member's details; null when the address is not (or no longer) a member. A script older than Parça 2 sends no
  *  WCA fields: that reads as unverified and out of the ranking. */
 export async function getMember(email: string): Promise<MemberRecord | null | 'error'> {
-  const answer = await post('get', { email }, { result: 'ok', member: { ...devMember(email), memberNo: '2026-0001' } })
+  const answer = await post('get', { email }, { result: 'ok', member: devMember(email) })
   if (answer.result === 'none') return null
   if (answer.result !== 'ok' || !isMember(answer.member)) return 'error'
   const m = answer.member as MemberDetails & Partial<Record<'wcaVerified' | 'ranking' | 'cityLockedUntil' | 'memberNo', unknown>>

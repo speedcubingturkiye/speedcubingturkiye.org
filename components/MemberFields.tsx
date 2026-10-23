@@ -6,7 +6,8 @@ import { ProvinceOptions } from '@/components/ProvinceOptions'
 import { ageOn } from '@/lib/membership-rules'
 import type { MemberFields as Values } from '@/lib/membership-sheet'
 
-export const control = 'w-full border border-line bg-bg px-3 py-2 text-fg focus:border-fg'
+// A read-only field (WCA ile kaydol's date of birth) sits on the panel colour, so it does not look like one to type in
+export const control = 'w-full border border-line bg-bg px-3 py-2 text-fg focus:border-fg [&[readonly]]:bg-bg-2 [&[readonly]]:text-fg-2'
 export const field = `mt-1 ${control}`
 export const check = 'flex items-start gap-2 text-sm text-fg-2'
 

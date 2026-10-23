@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { AccountEditor, type NewsletterStatus } from '@/components/AccountEditor'
 import { AccountLinkForm } from '@/components/AccountLinkForm'
+import { WcaButton } from '@/components/WcaLogo'
 import { readAccountToken } from '@/lib/account'
 import { pageMeta } from '@/lib/metadata'
 import { getMember } from '@/lib/membership-sheet'
-import { readToken } from '@/lib/newsletter-token'
 import { getSubscriber } from '@/lib/ses'
 import { todayIstanbul } from '@/lib/wca/status'
 import { wcaReady } from '@/lib/wca-link'
@@ -21,8 +21,8 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 // The page and its forms wait for the members sheet's script (lib/membership-sheet.ts, SHEET_TIMEOUT_MS)
 export const maxDuration = 60
 
-// The outcome of an address change (hesabim/eposta, app/actions/confirm.ts), of a WCA link (api/wca/donus, then
-// "Bağla" in app/actions/account.ts) and of WCA ile giriş (api/wca/donus)
+// The outcome of an address change (hesabim/eposta, app/actions/confirm.ts), of a WCA link and of WCA ile giriş
+// (api/wca/donus)
 const NOTICES = {
   'eposta-degisti': 'emailChanged',
   'eposta-kullanimda': 'emailTaken',
@@ -45,10 +45,8 @@ async function newsletterStatus(email: string): Promise<NewsletterStatus> {
   }
 }
 
-/**
- * Hesabım (spec 2026-10-21): ?t= is the one-hour link, from the mail or from WCA ile giriş (2026-10-22); without it, the
- * WCA login and the form that mails a link. ?wca= is a WCA account back from the WCA login, waiting for "Bağla".
- */
+/** Hesabım (spec 2026-10-21): ?t= is the one-hour link, from the mail or from WCA ile giriş (2026-10-22); without it,
+ *  the WCA login and the form that mails a link. */
 export default async function AccountPage({ searchParams }: Props) {
   const [locale, t, sp] = await Promise.all([getLocale(), getTranslations('account'), searchParams])
   const token = typeof sp.t === 'string' ? sp.t : ''
@@ -56,9 +54,6 @@ export default async function AccountPage({ searchParams }: Props) {
   const member = data ? await getMember(data.email) : null
   const durum = typeof sp.durum === 'string' && sp.durum in NOTICES ? NOTICES[sp.durum as keyof typeof NOTICES] : null
   const notice = token && !data ? t('expired') : data && member === null ? t('noMember') : member === 'error' ? t('loadFailed') : durum ? t(durum) : null
-  const wcaToken = data && typeof sp.wca === 'string' ? sp.wca : ''
-  const wca = wcaToken ? readToken('wcabag', wcaToken) : null
-  const pendingWca = data && wca?.wcaId && wca.email === data.email ? { token: wcaToken, wcaId: wca.wcaId, name: wca.name ?? '' } : null
   const withWca = wcaReady()
 
   return (
@@ -81,18 +76,14 @@ export default async function AccountPage({ searchParams }: Props) {
           newsletter={await newsletterStatus(data.email)}
           today={todayIstanbul()}
           wca={withWca}
-          pendingWca={pendingWca}
         />
       ) : (
         <>
           {withWca ? (
             // WCA ile giriş (2026-10-22): a plain form to the route that starts the WCA login, as on Üye ol
-            <form action="/api/wca/giris" method="post" className="mb-10 grid max-w-xl gap-3 border border-line bg-bg-2 p-5">
+            <form action="/api/wca/giris" method="post" className="mb-10 max-w-xl">
               <input type="hidden" name="locale" value={locale} />
-              <button type="submit" className="btn btn-brand w-fit">
-                {t('wcaLogin')}
-              </button>
-              <p className="text-sm text-fg-2">{t('wcaLoginNote')}</p>
+              <WcaButton wide>{t('wcaLogin')}</WcaButton>
             </form>
           ) : null}
           {withWca ? <h2 className="mb-6 text-2xl">{t('mailTitle')}</h2> : null}

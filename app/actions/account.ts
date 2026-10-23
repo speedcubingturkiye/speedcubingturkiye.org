@@ -1,17 +1,14 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import type { AccountState } from '@/app/actions/types'
 import { joinRanking, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
 import { canonicalEmail, readEmail } from '@/lib/email'
 import { botCheck } from '@/lib/form-guard'
 import { istanbulStamp } from '@/lib/membership'
 import { parseApplication } from '@/lib/membership-rules'
-import { linkMemberWca, setMemberRanking, sheetReady, unlinkMemberWca, updateMember } from '@/lib/membership-sheet'
+import { setMemberRanking, sheetReady, unlinkMemberWca, updateMember } from '@/lib/membership-sheet'
 import { requestSubscription } from '@/lib/newsletter'
-import { readToken } from '@/lib/newsletter-token'
 import { removeSubscriber } from '@/lib/ses'
-import { backToAccount } from '@/lib/wca-link'
 import { todayIstanbul } from '@/lib/wca/status'
 
 // Hesabım's forms (spec 2026-10-21). Each one but the link request carries the page's one-hour token in `t`; a token
@@ -44,18 +41,6 @@ export async function saveAccount(_prev: AccountState, formData: FormData): Prom
   if (result === 'none') return { ok: false, error: 'expired' }
   if (result === 'locked') return { ok: false, error: 'city_locked' }
   return result === 'ok' ? { ok: true } : { ok: false, error: 'send_failed' }
-}
-
-/** WCA hesabı (2026-10-22): "Bağla" links the WCA account the login brought back, waiting in a 10-minute token (`w`),
- *  to the page's membership; a WCA login someone else started never links without this press. */
-export async function confirmWcaLink(formData: FormData): Promise<void> {
-  const data = tokenOf(formData)
-  if (!data) redirect(`${formData.get('locale') === 'en' ? '/en' : ''}/hesabim?durum=gecersiz`)
-  const pending = readToken('wcabag', String(formData.get('w') ?? ''))
-  if (!pending?.wcaId || pending.email !== data.email) redirect(backToAccount(data, 'gecersiz'))
-  const result = await linkMemberWca(data.email, pending.wcaId, istanbulStamp(new Date()))
-  if (result === 'none') redirect(`${data.locale === 'en' ? '/en' : ''}/hesabim?durum=gecersiz`)
-  redirect(backToAccount(data, result === 'ok' ? 'wca-baglandi' : result === 'taken' ? 'wca-kullanimda' : 'wca-hata'))
 }
 
 /** WCA hesabı (spec 2026-10-21, Parça 2): the link goes, the il ranking with it. Linking starts at /api/wca/baglan. */

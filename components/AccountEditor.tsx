@@ -1,21 +1,20 @@
 'use client'
 
-import { useEffect, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, type ReactNode, type RefObject } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
-import { changeEmail, confirmWcaLink, leave, newsletter, ranking, saveAccount, unlinkWca } from '@/app/actions/account'
-import { ConfirmButton } from '@/components/ConfirmForm'
+import { changeEmail, leave, newsletter, ranking, saveAccount, unlinkWca } from '@/app/actions/account'
+import { Done } from '@/components/Done'
 import { check, field, MemberFields } from '@/components/MemberFields'
 import { useFormSubmit } from '@/components/useFormStartTime'
+import { WcaButton, WcaLogo, wcaIdLink } from '@/components/WcaLogo'
 import type { AccountState } from '@/app/actions/types'
 import { ABROAD, ageOn } from '@/lib/membership-rules'
 import type { MemberRecord } from '@/lib/membership-sheet'
 import { formatDate } from '@/lib/wca/format'
 
 export type NewsletterStatus = 'confirmed' | 'pending' | 'none' | 'unknown'
-/** A WCA account back from the WCA login, waiting for "Bağla" (2026-10-22): its 10-minute token and what to show */
-type PendingWca = { token: string; wcaId: string; name: string }
 
 const initial: AccountState = { ok: false }
 const failed: AccountState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
@@ -129,13 +128,11 @@ function RankingBox({ token, member, today }: { token: string; member: MemberRec
   )
 }
 
-/** WCA hesabı: linking goes out to the WCA login through /api/wca/baglan and comes back as `pendingWca`, linked only
- *  with "Bağla" (2026-10-22); a linked account can be unlinked here. */
-function WcaSection({ token, member, today, pendingWca }: { token: string; member: MemberRecord; today: string; pendingWca: PendingWca | null }) {
+/** WCA hesabı: linking goes out to the WCA login through /api/wca/baglan; a linked account can be unlinked here. */
+function WcaSection({ token, member, today }: { token: string; member: MemberRecord; today: string }) {
   const t = useTranslations('account')
   const locale = useLocale()
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(unlinkWca, initial, failed, done)
-  const [dismissed, setDismissed] = useState(false)
   return (
     <Section id="hesap-wca" title={t('wcaTitle')}>
       {member.wcaVerified ? (
@@ -143,7 +140,10 @@ function WcaSection({ token, member, today, pendingWca }: { token: string; membe
           {state.ok ? null : (
             <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
               <TokenField token={token} />
-              <p className="text-sm text-fg-2">{t('wcaLinkedAs', { wcaId: member.wcaId })}</p>
+              <p className="flex items-center gap-2 text-sm text-fg-2">
+                <WcaLogo className="size-6 shrink-0" />
+                <span>{t.rich('wcaLinkedAs', { wcaId: member.wcaId, id: wcaIdLink(member.wcaId) })}</span>
+              </p>
               <button type="submit" aria-disabled={pending} className="btn btn-outline w-fit">
                 {t('wcaUnlink')}
               </button>
@@ -152,28 +152,13 @@ function WcaSection({ token, member, today, pendingWca }: { token: string; membe
           <Status state={state} pending={pending} ok={t('wcaUnlinked')} statusRef={statusRef} />
           {state.ok ? null : <RankingBox token={token} member={member} today={today} />}
         </>
-      ) : pendingWca && !dismissed ? (
-        <form action={confirmWcaLink} className="grid gap-4">
-          <TokenField token={token} />
-          <input type="hidden" name="w" value={pendingWca.token} />
-          <input type="hidden" name="locale" value={locale} />
-          <p className="text-sm text-fg-2">{t('wcaConfirmText', { wcaId: pendingWca.wcaId, name: pendingWca.name })}</p>
-          <div className="flex flex-wrap gap-3">
-            <ConfirmButton label={t('wcaConfirm')} pendingLabel={t('wcaLinking')} />
-            <button type="button" onClick={() => setDismissed(true)} className="btn btn-outline">
-              {t('wcaCancel')}
-            </button>
-          </div>
-        </form>
       ) : (
         // A plain form to the route that starts the WCA login: no JS needed, and the token stays out of the address
         <form action="/api/wca/baglan" method="post" className="grid gap-4">
           <TokenField token={token} />
           <input type="hidden" name="locale" value={locale} />
           <p className="text-sm text-fg-2">{t('wcaIntro')}</p>
-          <button type="submit" className="btn btn-brand w-fit">
-            {t('wcaLink')}
-          </button>
+          <WcaButton>{t('wcaLink')}</WcaButton>
         </form>
       )}
     </Section>
@@ -249,7 +234,6 @@ export function AccountEditor({
   newsletter: status,
   today,
   wca,
-  pendingWca,
 }: {
   token: string
   member: MemberRecord
@@ -257,7 +241,6 @@ export function AccountEditor({
   today: string
   /** whether the WCA link is set up (lib/wca-link.ts wcaReady) */
   wca: boolean
-  pendingWca: PendingWca | null
 }) {
   const t = useTranslations('account')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(leave, initial, failed, done)
@@ -266,18 +249,12 @@ export function AccountEditor({
     window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
-  if (state.ok) {
-    return (
-      <p ref={statusRef} tabIndex={-1} role="status" className="text-lg font-semibold text-ok">
-        {t('left')}
-      </p>
-    )
-  }
+  if (state.ok) return <Done statusRef={statusRef} message={t('left')} />
 
   return (
     <div className="grid gap-10">
       <DetailsSection token={token} member={member} today={today} />
-      {wca ? <WcaSection token={token} member={member} today={today} pendingWca={pendingWca} /> : null}
+      {wca ? <WcaSection token={token} member={member} today={today} /> : null}
       <AddressSection token={token} email={member.email} />
       <NewsletterSection token={token} status={status} />
       <Section id="hesap-ayril" title={t('leaveTitle')}>

@@ -1,8 +1,10 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { applyForMembership } from '@/app/actions/membership'
+import { Done } from '@/components/Done'
 import { check, field, MemberFields } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
 import type { MembershipState } from '@/app/actions/types'
@@ -14,17 +16,21 @@ const failed: MembershipState = { ok: false, error: 'send_failed' } // the actio
 /**
  * The Üye ol form (spec 2026-10-19 §2), built like ContactForm: the address, the member's details (MemberFields, shared
  * with Hesabım), the newsletter box and the notice. `today` is the Istanbul date from the page, so the server and the
- * browser draw the same form.
+ * browser draw the same form. `intro` (the page's WCA ile kaydol box and the form's heading) goes with the form: once
+ * it is sent, the result stands alone (2026-10-22).
  */
-export function MembershipForm({ locale, today }: { locale: Locale; today: string }) {
+export function MembershipForm({ locale, today, intro }: { locale: Locale; today: string; intro?: ReactNode }) {
   const t = useTranslations('membership')
   const forms = useTranslations('forms')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(applyForMembership, initial, failed, (s) => s.ok)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
 
+  if (state.ok) return <Done statusRef={statusRef} message={t('sent')} />
+
   return (
-    <div className="grid max-w-xl gap-4">
-      {state.ok ? null : (
+    <>
+      {intro}
+      <div className="grid max-w-xl gap-4">
         <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-4">
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
@@ -71,10 +77,10 @@ export function MembershipForm({ locale, today }: { locale: Locale; today: strin
             {pending ? t('sending') : t('submit')}
           </button>
         </form>
-      )}
-      <p ref={statusRef} tabIndex={-1} role="status" aria-live="polite" className={`text-sm font-semibold ${state.ok ? 'text-ok' : 'text-brand-ink'}`}>
-        {pending ? '' : state.ok ? t('sent') : state.error ? t(`error.${state.error}`) : ''}
-      </p>
-    </div>
+        <p ref={statusRef} tabIndex={-1} role="status" aria-live="polite" className="text-sm font-semibold text-brand-ink">
+          {pending || !state.error ? '' : t(`error.${state.error}`)}
+        </p>
+      </div>
+    </>
   )
 }

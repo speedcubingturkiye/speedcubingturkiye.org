@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
+import { Done, MemberNextSteps } from '@/components/Done'
 import { MembershipForm } from '@/components/MembershipForm'
+import { WcaButton } from '@/components/WcaLogo'
 import { WcaSignupForm } from '@/components/WcaSignupForm'
 import { pageMeta } from '@/lib/metadata'
 import { readToken } from '@/lib/newsletter-token'
@@ -31,6 +33,7 @@ export default async function MembershipPage({ searchParams }: Props) {
   const wca = token ? readToken('kaydol', token) : null
   const today = todayIstanbul()
   const notice = token && !wca ? t('wcaExpired') : durum === 'gecersiz' ? t('invalidLink') : durum === 'wca-hata' ? t('wcaFailed') : null
+  const confirmed = durum === 'onaylandi' || durum === 'onaylandi-wca'
   const withWca = wcaReady()
 
   return (
@@ -38,17 +41,19 @@ export default async function MembershipPage({ searchParams }: Props) {
       <header className="mb-8">
         <h1>{t('title')}</h1>
         <p className="mt-3 text-lg text-fg-2">{t('lead')}</p>
-        <p className="mt-2 text-sm text-fg-2">
-          {t('note')} {account('already')}{' '}
-          <Link href="/hesabim" className="underline">
-            {account('title')}
-          </Link>
-        </p>
+        {confirmed ? null : (
+          <p className="mt-2 text-sm text-fg-2">
+            {t('note')} {account('already')}{' '}
+            <Link href="/hesabim" className="underline">
+              {account('title')}
+            </Link>
+          </p>
+        )}
       </header>
-      {durum === 'onaylandi' || durum === 'onaylandi-wca' ? (
-        <p role="status" className="text-lg font-semibold text-ok">
-          {t(durum === 'onaylandi' ? 'confirmed' : 'confirmedWca')}
-        </p>
+      {confirmed ? (
+        <Done message={t(durum === 'onaylandi' ? 'confirmed' : 'confirmedWca')}>
+          <MemberNextSteps account={t('doneAccount')} calendar={t('doneCalendar')} />
+        </Done>
       ) : wca ? (
         <WcaSignupForm
           token={token}
@@ -58,25 +63,29 @@ export default async function MembershipPage({ searchParams }: Props) {
           defaults={{ ...splitName(wca.name ?? ''), email: wca.email, birthDate: wca.dob ?? '' }}
         />
       ) : (
-        <>
-          {notice ? (
-            <p role="status" className="mb-6 font-semibold text-brand-ink">
-              {notice}
-            </p>
-          ) : null}
-          {withWca ? (
-            // WCA ile kaydol (spec 2026-10-21): a plain form to the route that starts the WCA login
-            <form action="/api/wca/kaydol" method="post" className="mb-10 grid max-w-xl gap-3 border border-line bg-bg-2 p-5">
-              <input type="hidden" name="locale" value={locale} />
-              <button type="submit" className="btn btn-brand w-fit">
-                {t('wcaSignup')}
-              </button>
-              <p className="text-sm text-fg-2">{t('wcaSignupNote')}</p>
-            </form>
-          ) : null}
-          {withWca ? <h2 className="mb-6 text-2xl">{t('manualTitle')}</h2> : null}
-          <MembershipForm locale={locale} today={today} />
-        </>
+        // The notice, the WCA ile kaydol box and the form's heading go with the form: once it is sent, the result stands
+        // alone
+        <MembershipForm
+          locale={locale}
+          today={today}
+          intro={
+            <>
+              {notice ? (
+                <p role="status" className="mb-6 font-semibold text-brand-ink">
+                  {notice}
+                </p>
+              ) : null}
+              {withWca ? (
+                // WCA ile kaydol (spec 2026-10-21): a plain form to the route that starts the WCA login
+                <form action="/api/wca/kaydol" method="post" className="mb-10 max-w-xl">
+                  <input type="hidden" name="locale" value={locale} />
+                  <WcaButton wide>{t('wcaSignup')}</WcaButton>
+                </form>
+              ) : null}
+              {withWca ? <h2 className="mb-6 text-2xl">{t('manualTitle')}</h2> : null}
+            </>
+          }
+        />
       )}
     </section>
   )

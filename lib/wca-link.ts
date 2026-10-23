@@ -1,14 +1,15 @@
 // lib/wca-link.ts: the WCA login (spec 2026-10-21), for three flows:
-// - WCA bağlama (Parça 2): Hesabım sends the member through it (scope `public`) and keeps only the WCA ID it returns,
-//   linked once the member presses "Bağla" on Hesabım (2026-10-22).
+// - WCA bağlama (Parça 2): Hesabım sends the member through it (scope `public`) and keeps only the WCA ID it returns.
 // - WCA ile kaydol: Üye ol asks for the profile, the email and the date of birth (`public email dob`) to fill the form.
 // - WCA ile giriş (2026-10-22): Hesabım's door without a mail, for a member whose WCA ID is verified (scope `public`).
 // The WCA has no PKCE (its Doorkeeper grants table has no code_challenge), so a random state in a 10-minute cookie ties
 // the return to the browser that left. The cookie also names the flow: `<state>.h.<Hesabım token>`, `<state>.k.<locale>`
-// or `<state>.g.<locale>`. The routes that start a flow take only the site's own pages' forms (fromThisSite).
+// or `<state>.g.<locale>`. The routes that start a flow take only the site's own pages' forms (fromThisSite), so no
+// other page can send a visitor through a login that links their WCA account to someone else's membership.
 import { randomBytes } from 'node:crypto'
 import type { Locale } from '@/i18n/routing'
-import { memberByWca } from '@/lib/membership-sheet'
+import { istanbulStamp } from '@/lib/membership'
+import { linkMemberWca, memberByWca } from '@/lib/membership-sheet'
 import { WCA_ID_RE } from '@/lib/membership-rules'
 import { makeToken, readToken, type TokenData } from '@/lib/newsletter-token'
 import { WCA_BASE, WCA_UA } from '@/lib/wca/client'
@@ -122,8 +123,7 @@ export async function wcaProfile(code: string): Promise<WcaProfile | 'error'> {
 }
 
 /** The return from the WCA: where to send the visitor. A missing cookie, another state or (for Hesabım) a page link that
- *  ran out sends them back without touching anything. Nothing is linked here: the WCA account waits on Hesabım, in a
- *  10-minute token, for the member's "Bağla" (2026-10-22), so a login a stranger started cannot link quietly. */
+ *  ran out sends them back without touching anything. */
 export async function finishWcaLink(cookie: string | undefined, params: URLSearchParams, now = Date.now()): Promise<string> {
   const [state, kind, payload] = (cookie ?? '').split('.')
   const stateOk = Boolean(state) && state === params.get('state')
@@ -140,8 +140,9 @@ export async function finishWcaLink(cookie: string | undefined, params: URLSearc
   const profile = await wcaProfile(code)
   if (profile === 'error') return backToAccount(data, 'wca-hata', now)
   if (profile.wcaId === null) return backToAccount(data, 'wca-yok', now)
-  const pending = makeToken('wcabag', { email: data.email, locale: data.locale, wcaId: profile.wcaId, name: profile.name }, now)
-  return `${backToAccount(data, '', now)}&wca=${pending}`
+  const result = await linkMemberWca(data.email, profile.wcaId, istanbulStamp(new Date(now)))
+  if (result === 'none') return `${prefix(data.locale)}/hesabim?durum=gecersiz` // left meanwhile
+  return backToAccount(data, { ok: 'wca-baglandi', taken: 'wca-kullanimda', error: 'wca-hata' }[result], now)
 }
 
 /** WCA ile giriş's return (2026-10-22): Hesabım with a fresh one-hour token for the member whose verified WCA ID this is;

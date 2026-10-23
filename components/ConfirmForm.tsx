@@ -24,8 +24,7 @@ export function ConfirmForm({ action, fields, label, pendingLabel }: Props) {
   )
 }
 
-/** The button alone, for a form of its own (Hesabım's WCA "Bağla") */
-export function ConfirmButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
+function ConfirmButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus()
   return (
     <button type="submit" disabled={pending} className="btn btn-brand disabled:opacity-70">

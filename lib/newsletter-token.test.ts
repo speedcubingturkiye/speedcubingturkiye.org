@@ -1,6 +1,6 @@
 // lib/newsletter-token.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ACCOUNT_TTL_MS, codeOf, CONFIRM_TTL_MS, LINK_TTL_MS, makeToken, readToken, signCode, SIGNUP_TTL_MS } from '@/lib/newsletter-token'
+import { ACCOUNT_TTL_MS, codeOf, CONFIRM_TTL_MS, makeToken, readToken, signCode, SIGNUP_TTL_MS } from '@/lib/newsletter-token'
 
 const data = { email: 'kutay@example.com', locale: 'en' as const }
 
@@ -98,16 +98,6 @@ describe('newsletter tokens', () => {
 })
 
 describe('the security package tokens (2026-10-22)', () => {
-  it('a wcabag carries the member and the WCA account for 10 minutes, and opens no other door', () => {
-    const now = Date.UTC(2026, 9, 22, 12)
-    const data = { email: 'ayse@example.com', locale: 'tr' as const, wcaId: '2019TEME01', name: 'Ayşe Yılmaz' }
-    const token = makeToken('wcabag', data, now)
-    expect(readToken('wcabag', token, now + LINK_TTL_MS)).toEqual(data)
-    expect(readToken('wcabag', token, now + LINK_TTL_MS + 1000)).toBeNull()
-    expect(readToken('hesap', token, now)).toBeNull()
-    expect(readToken('wcabag', makeToken('wcabag', { email: 'ayse@example.com', locale: 'tr' }, now), now)).toBeNull() // no WCA ID
-  })
-
   it('a signed confirm code gives its code back, and nothing for a made-up or changed one', () => {
     const code = 'k'.repeat(43)
     expect(codeOf(signCode(code))).toBe(code)
