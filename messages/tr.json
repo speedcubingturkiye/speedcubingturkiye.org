@@ -60,8 +60,8 @@
     "sectionNav": "Alt sayfalar"
   },
   "home": {
-    "metaTitle": "Speedcubing Türkiye: Türkiye'de WCA yarışmaları",
-    "metaDescription": "Türkiye'de düzenlenen WCA yarışmalarının takvimi, ulusal sıralamalar ve yarışmacılar için rehberler.",
+    "metaTitle": "Speedcubing Türkiye",
+    "metaDescription": "Speedcubing Türkiye: Türkiye'deki WCA yarışmalarının takvimi, Türkiye ve il sıralamaları, ilk yarışma rehberi ve ücretsiz üyelik.",
     "nextCompetition": "Sıradaki yarışma",
     "competitionPage": "Yarışma sayfası",
     "carousel": {
@@ -99,6 +99,7 @@
   },
   "competitions": {
     "title": "Yarışmalar",
+    "metaTitle": "Türkiye'deki WCA yarışmaları",
     "description": "Türkiye'deki WCA yarışmaları: yaklaşan ve geçmiş yarışmalar, kayıt durumu ve detaylar.",
     "source": "Yarışma bilgileri WCA'dan alınır.",
     "upcoming": "Yaklaşan",

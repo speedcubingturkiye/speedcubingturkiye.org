@@ -14,7 +14,8 @@ import type { CompetitionListItem } from '@/lib/wca/types'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('competitions')
-  return pageMeta(await getLocale(), '/yarismalar', { title: t('title'), description: t('description') })
+  // The search words in the tab and the search result; the page's heading stays "Yarışmalar" (2026-10-24)
+  return pageMeta(await getLocale(), '/yarismalar', { title: t('metaTitle'), description: t('description') })
 }
 
 type Props = { searchParams: Promise<SearchParamsRecord> }

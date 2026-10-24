@@ -60,8 +60,8 @@
     "sectionNav": "Section pages"
   },
   "home": {
-    "metaTitle": "Speedcubing Türkiye: WCA competitions in Türkiye",
-    "metaDescription": "The calendar of WCA competitions held in Türkiye, national rankings and guides for competitors.",
+    "metaTitle": "Speedcubing Türkiye",
+    "metaDescription": "Speedcubing Türkiye: the calendar of WCA competitions in Türkiye, national and province rankings, a first-competition guide and free membership.",
     "nextCompetition": "Next competition",
     "competitionPage": "Competition page",
     "carousel": {
@@ -99,6 +99,7 @@
   },
   "competitions": {
     "title": "Competitions",
+    "metaTitle": "WCA competitions in Türkiye",
     "description": "WCA competitions in Türkiye: upcoming and past, registration status and details.",
     "source": "Competition details come from the WCA.",
     "upcoming": "Upcoming",

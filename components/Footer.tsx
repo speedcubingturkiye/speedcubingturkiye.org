@@ -55,7 +55,9 @@ export async function Footer() {
 
   return (
     <footer className="bg-ink-band text-white">
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      {/* data-nosnippet: search results never quote the footer, its legal lines above all, as a page's summary
+          (2026-10-24); Google honours it on a div, not on <footer> */}
+      <div data-nosnippet="" className="mx-auto max-w-6xl px-4 py-12">
         <div aria-hidden="true">
           <Logo variant="long" tone="inverted" className="h-8 w-auto" />
         </div>
