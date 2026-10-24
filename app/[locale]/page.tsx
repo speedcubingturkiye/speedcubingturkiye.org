@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
-import { site } from '@/site.config'
+import { activeChannels, site } from '@/site.config'
 import { pageMeta } from '@/lib/metadata'
 import { WCA_BASE } from '@/lib/wca/client'
 import { getCompetitions, getNextCompetition, getUpcomingWithDetails } from '@/lib/wca/competitions'
@@ -13,6 +13,24 @@ import { DataUnavailable } from '@/components/DataUnavailable'
 import { FollowBand } from '@/components/FollowBand'
 import { HomeHero } from '@/components/HomeHero'
 import { NewsCard } from '@/components/NewsCard'
+
+// Who the site is, for search engines (2026-10-24): its name, this page as its home, the logo and the channels. Bing
+// put /yarismalar above the home page for the site's own name.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', '@id': `${site.url}/#website`, url: `${site.url}/`, name: site.name, inLanguage: ['tr', 'en'], publisher: { '@id': `${site.url}/#organization` } },
+    {
+      '@type': 'Organization',
+      '@id': `${site.url}/#organization`,
+      name: site.name,
+      url: `${site.url}/`,
+      logo: `${site.url}/apple-icon.png`,
+      email: site.contactEmail,
+      sameAs: activeChannels().map(([key]) => site.channels[key]),
+    },
+  ],
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('home')
@@ -39,6 +57,8 @@ export default async function HomePage() {
 
   return (
     <div>
+      {/* "<" escaped, so no text in the data can close the script */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       {/* Slide titles are h2s inside the carousel; this is the page's single h1 */}
       <h1 className="sr-only">
         <BrandText>{site.name}</BrandText>
