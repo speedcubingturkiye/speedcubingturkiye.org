@@ -12,6 +12,7 @@ import { WcaButton, WcaLogo, wcaIdLink } from '@/components/WcaLogo'
 import type { AccountState } from '@/app/actions/types'
 import { ABROAD, ageOn } from '@/lib/membership-rules'
 import type { MemberRecord } from '@/lib/membership-sheet'
+import type { PhoneCountry } from '@/lib/phone'
 import { formatDate } from '@/lib/wca/format'
 
 export type NewsletterStatus = 'confirmed' | 'pending' | 'none' | 'unknown'
@@ -52,14 +53,14 @@ function Section({ id, title, children }: { id: string; title: string; children:
 // Every form carries the page's one-hour token: the page sets no cookie
 const TokenField = ({ token }: { token: string }) => <input type="hidden" name="t" value={token} />
 
-function DetailsSection({ token, member, today }: { token: string; member: MemberRecord; today: string }) {
+function DetailsSection({ token, member, today, countries }: { token: string; member: MemberRecord; today: string; countries: PhoneCountry[] }) {
   const t = useTranslations('account')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(saveAccount, initial, failed, done)
   return (
     <Section id="hesap-bilgiler" title={t('details')}>
       <form action={formAction} onSubmit={onSubmit} className="grid gap-4">
         <TokenField token={token} />
-        <MemberFields today={today} defaults={member} error={state.error} />
+        <MemberFields today={today} countries={countries} defaults={member} error={state.error} />
         {/* aria-disabled, not disabled: a disabled button drops keyboard focus to <body> while the action runs */}
         <button type="submit" aria-disabled={pending} className="btn btn-brand w-fit">
           {pending ? t('saving') : t('save')}
@@ -233,12 +234,15 @@ export function AccountEditor({
   member,
   newsletter: status,
   today,
+  countries,
   wca,
 }: {
   token: string
   member: MemberRecord
   newsletter: NewsletterStatus
   today: string
+  /** the phone's list (lib/phone.ts phoneCountries) */
+  countries: PhoneCountry[]
   /** whether the WCA link is set up (lib/wca-link.ts wcaReady) */
   wca: boolean
 }) {
@@ -253,7 +257,7 @@ export function AccountEditor({
 
   return (
     <div className="grid gap-10">
-      <DetailsSection token={token} member={member} today={today} />
+      <DetailsSection token={token} member={member} today={today} countries={countries} />
       {wca ? <WcaSection token={token} member={member} today={today} /> : null}
       <AddressSection token={token} email={member.email} />
       <NewsletterSection token={token} status={status} />

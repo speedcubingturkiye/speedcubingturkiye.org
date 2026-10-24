@@ -7,16 +7,18 @@ export type MembershipState = {
   ok: boolean
   kind?: 'started' | 'linked' | 'member'
   ranking?: boolean
-  error?: 'invalid' | 'too_fast' | 'guardian' | 'closed' | 'send_failed' | 'wca_expired' | 'wca_taken'
+  error?: 'invalid' | 'too_fast' | 'guardian' | 'phone' | 'closed' | 'send_failed' | 'wca_expired' | 'wca_taken'
 }
 /** Hesabım's forms (spec 2026-10-21); 'expired': the page's one-hour link ran out, or the membership is gone;
- *  'city_locked': the il ranking holds the city; 'not_allowed': the il ranking needs a verified WCA ID */
+ *  'city_locked': the il ranking holds the city; 'not_allowed': the il ranking needs a verified WCA ID; 'phone': the
+ *  phone number did not read (lib/phone.ts, 2026-10-24) */
 export type AccountState = {
   ok: boolean
   error?:
     | 'invalid'
     | 'too_fast'
     | 'guardian'
+    | 'phone'
     | 'expired'
     | 'same_email'
     | 'confirm'

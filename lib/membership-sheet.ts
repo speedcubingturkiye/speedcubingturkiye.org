@@ -15,7 +15,10 @@ export type SheetRow = {
   guardian: boolean
   city: string
   wcaId: string
+  /** "+905054182759"; `chat`: the WhatsApp chat groups too (2026-10-24) */
+  phone: string
   helps: boolean
+  chat: boolean
   locale: Locale
   /** WCA ile kaydol (spec 2026-10-21): the WCA ID came from a WCA login; join the il ranking; the WCA login proved the
    *  address. A typed application leaves them out. */
@@ -121,7 +124,10 @@ export type MemberDetails = {
   guardian: boolean
   city: string
   wcaId: string
+  /** "+905054182759", '' until the member gives one (a row from before 2026-10-24); `chat`: the WhatsApp chat groups */
+  phone: string
   helps: boolean
+  chat: boolean
   locale: Locale
 }
 /** The details and the WCA side (Parça 2): `wcaVerified`, the WCA login confirmed the WCA ID; `ranking`, in the il
@@ -131,7 +137,8 @@ export type MemberRecord = MemberDetails & { wcaVerified: boolean; ranking: bool
 /** What Hesabım's form may change; the address has its own confirmed flow, the WCA ID comes only from a WCA login */
 export type MemberFields = Omit<MemberDetails, 'email' | 'locale' | 'wcaId'>
 
-function isMember(m: unknown): m is MemberDetails {
+// A script older than 2026-10-24 sends no phone and no chat groups: getMember reads them as '' and false
+function isMember(m: unknown): m is Omit<MemberDetails, 'phone' | 'chat'> {
   if (typeof m !== 'object' || m === null) return false
   const r = m as Record<string, unknown>
   return (
@@ -144,7 +151,8 @@ function isMember(m: unknown): m is MemberDetails {
 
 // Development without the script: a sample member for whatever address asks, so Hesabım can be seen locally. The
 // address's name picks what to look at (2026-10-22): "wca" linked, "sira" in the il ranking with the city locked,
-// "yurtdisi" in it from abroad, "cocuk" under 18; any other address is a plain member.
+// "yurtdisi" in it from abroad, "cocuk" under 18, "sohbet" in the WhatsApp chat groups; any other address is a plain
+// member.
 const devMember = (email: string): MemberRecord => {
   const has = (word: string) => email.split('@')[0].includes(word)
   const ranked = has('sira') || has('yurtdisi')
@@ -157,7 +165,9 @@ const devMember = (email: string): MemberRecord => {
     guardian: has('cocuk'),
     city: has('yurtdisi') ? ABROAD : 'Ankara',
     wcaId: linked ? '2019TEME01' : '',
+    phone: '+905054182759',
     helps: false,
+    chat: has('sohbet'),
     locale: 'tr',
     wcaVerified: linked,
     ranking: ranked,
@@ -177,9 +187,17 @@ export async function getMember(email: string): Promise<MemberRecord | null | 'e
   const answer = await post('get', { email }, { result: 'ok', member: devMember(email) })
   if (answer.result === 'none') return null
   if (answer.result !== 'ok' || !isMember(answer.member)) return 'error'
-  const m = answer.member as MemberDetails & Partial<Record<'wcaVerified' | 'ranking' | 'cityLockedUntil' | 'memberNo', unknown>>
+  const m = answer.member as typeof answer.member & Partial<Record<'wcaVerified' | 'ranking' | 'cityLockedUntil' | 'memberNo' | 'phone' | 'chat', unknown>>
   const text = (v: unknown) => (typeof v === 'string' ? v : '')
-  return { ...m, wcaVerified: m.wcaVerified === true, ranking: m.ranking === true, cityLockedUntil: text(m.cityLockedUntil), memberNo: text(m.memberNo) }
+  return {
+    ...m,
+    phone: text(m.phone),
+    chat: m.chat === true,
+    wcaVerified: m.wcaVerified === true,
+    ranking: m.ranking === true,
+    cityLockedUntil: text(m.cityLockedUntil),
+    memberNo: text(m.memberNo),
+  }
 }
 
 /** 'locked': the city may not change yet (the il ranking's lock). `at`: the Istanbul stamp the lock is measured at. */

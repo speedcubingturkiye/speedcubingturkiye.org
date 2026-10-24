@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { sendContact } from '@/app/actions/contact'
+import { Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
 import { CONTACT_SUBJECTS, type ActionState, type ContactSubject } from '@/app/actions/types'
 import type { Locale } from '@/i18n/routing'
@@ -34,11 +35,13 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
 
           <label className="block text-sm font-semibold">
             {t('name')}
+            <Required />
             <input className={field} name="name" required minLength={2} maxLength={100} autoComplete="name" />
           </label>
 
           <label className="block text-sm font-semibold">
             {t('email')}
+            <Required />
             <input className={field} name="email" type="email" required maxLength={254} autoComplete="email" />
           </label>
 
@@ -65,6 +68,7 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
 
           <label className="block text-sm font-semibold">
             {t('message')}
+            <Required />
             <textarea className={field} name="message" required minLength={10} maxLength={5000} rows={6} />
           </label>
 

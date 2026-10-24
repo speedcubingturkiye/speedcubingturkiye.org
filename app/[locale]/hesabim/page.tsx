@@ -6,6 +6,7 @@ import { WcaButton } from '@/components/WcaLogo'
 import { readAccountToken } from '@/lib/account'
 import { pageMeta } from '@/lib/metadata'
 import { getMember } from '@/lib/membership-sheet'
+import { phoneCountries } from '@/lib/phone'
 import { getSubscriber } from '@/lib/ses'
 import { todayIstanbul } from '@/lib/wca/status'
 import { wcaReady } from '@/lib/wca-link'
@@ -75,6 +76,7 @@ export default async function AccountPage({ searchParams }: Props) {
           member={member}
           newsletter={await newsletterStatus(data.email)}
           today={todayIstanbul()}
+          countries={phoneCountries(locale)}
           wca={withWca}
         />
       ) : (

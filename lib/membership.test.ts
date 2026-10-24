@@ -14,7 +14,7 @@ vi.mock('@/lib/ses', () => ({ sendMail: vi.fn() }))
 
 const NOW = new Date(Date.UTC(2026, 9, 19, 11, 5)) // 14:05 in Istanbul
 // What goes to the sheet; the newsletter box never does
-const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: false }
+const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', phone: '+905321234567', helps: false, chat: false }
 const APP: Application = { ...FIELDS, newsletter: false }
 
 beforeEach(() => {

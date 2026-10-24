@@ -36,8 +36,8 @@ export async function saveAccount(_prev: AccountState, formData: FormData): Prom
   formData.set('email', data.email)
   const parsed = parseApplication(formData, todayIstanbul())
   if (!parsed.ok) return { ok: false, error: parsed.error }
-  const { firstName, lastName, birthDate, guardian, city, helps } = parsed.data
-  const result = await updateMember(data.email, { firstName, lastName, birthDate, guardian, city, helps }, istanbulStamp(new Date()))
+  const { firstName, lastName, birthDate, guardian, city, phone, helps, chat } = parsed.data
+  const result = await updateMember(data.email, { firstName, lastName, birthDate, guardian, city, phone, helps, chat }, istanbulStamp(new Date()))
   if (result === 'none') return { ok: false, error: 'expired' }
   if (result === 'locked') return { ok: false, error: 'city_locked' }
   return result === 'ok' ? { ok: true } : { ok: false, error: 'send_failed' }

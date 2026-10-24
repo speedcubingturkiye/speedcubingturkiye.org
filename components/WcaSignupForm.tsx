@@ -6,11 +6,12 @@ import { Link } from '@/i18n/navigation'
 import type { Locale } from '@/i18n/routing'
 import { signUpWithWca } from '@/app/actions/membership'
 import { Done, MemberNextSteps } from '@/components/Done'
-import { check, field, MemberFields } from '@/components/MemberFields'
+import { check, field, MemberFields, Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
 import { WcaLogo, wcaIdLink } from '@/components/WcaLogo'
 import type { MembershipState } from '@/app/actions/types'
 import { ageOn } from '@/lib/membership-rules'
+import type { PhoneCountry } from '@/lib/phone'
 
 const initial: MembershipState = { ok: false }
 const failed: MembershipState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
@@ -21,9 +22,23 @@ type Defaults = { firstName: string; lastName: string; email: string; birthDate:
  * WCA ile kaydol (spec 2026-10-21): the Üye ol form, filled from the WCA login. `token` is its 30-minute token, sent
  * back with the form; it leaves the address bar on load. The WCA ID shows as verified, and with one the il ranking box
  * offers itself (abroad too since 2026-10-22), the guardian's box too under 18. The address the WCA verified starts the
- * membership at once; the date of birth the WCA gave stays as it came.
+ * membership at once; the date of birth the WCA gave stays as it came. `countries`: the phone's list.
  */
-export function WcaSignupForm({ token, locale, today, wcaId, defaults }: { token: string; locale: Locale; today: string; wcaId?: string; defaults: Defaults }) {
+export function WcaSignupForm({
+  token,
+  locale,
+  today,
+  countries,
+  wcaId,
+  defaults,
+}: {
+  token: string
+  locale: Locale
+  today: string
+  countries: PhoneCountry[]
+  wcaId?: string
+  defaults: Defaults
+}) {
   const t = useTranslations('membership')
   const account = useTranslations('account')
   const forms = useTranslations('forms')
@@ -79,12 +94,14 @@ export function WcaSignupForm({ token, locale, today, wcaId, defaults }: { token
         ) : null}
         <MemberFields
           today={today}
+          countries={countries}
           error={state.error}
-          defaults={{ firstName: defaults.firstName, lastName: defaults.lastName, birthDate: defaults.birthDate, guardian: false, city: '', helps: false }}
+          defaults={{ firstName: defaults.firstName, lastName: defaults.lastName, birthDate: defaults.birthDate, guardian: false, city: '', phone: '', helps: false, chat: false }}
           birthDateLocked={defaults.birthDate !== ''}
           afterNames={
             <label className="block text-sm font-semibold">
               {t('email')}
+              <Required />
               <input className={field} name="email" type="email" required maxLength={254} autoComplete="email" defaultValue={defaults.email} />
             </label>
           }
@@ -114,7 +131,10 @@ export function WcaSignupForm({ token, locale, today, wcaId, defaults }: { token
         {offerRanking && ranking && minor ? (
           <label className={check}>
             <input type="checkbox" name="rankingGuardian" required className="mt-1 accent-brand" />
-            <span>{account('rankingGuardian')}</span>
+            <span>
+              {account('rankingGuardian')}
+              <Required />
+            </span>
           </label>
         ) : null}
         {/* KVKK md. 10: inform at the point of collection */}

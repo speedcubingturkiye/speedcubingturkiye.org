@@ -267,6 +267,41 @@
     padding: 0;
     cursor: pointer;
   }
+  /* Telefon's country list (MemberFields, 2026-10-24). Where the browser can (Chrome's customizable select) it draws the
+     list on the page, so the flags' font reaches it and each country has its flag; elsewhere the browser's own list
+     names them. Still a real select: keys, typing a name and the form work as ever. */
+  .phone-country,
+  .phone-country::picker(select) {
+    appearance: base-select;
+  }
+  .phone-country::picker(select) {
+    width: min(18rem, calc(100vw - 2rem));
+    max-height: 20rem;
+    overflow-x: hidden;
+    border: 1px solid var(--color-line);
+    background: var(--color-bg);
+  }
+  /* A long name wraps instead of widening the list; the focus ring sits inside the row, where the list cannot clip it */
+  .phone-country option {
+    padding: 0.375rem 0.75rem;
+    font-weight: 400;
+    white-space: normal;
+    outline-offset: -2px;
+  }
+  .phone-country option::before {
+    content: attr(data-flag);
+    margin-inline-end: 0.5rem;
+  }
+  .phone-country option:checked {
+    font-weight: 700;
+  }
+  .phone-country option:hover,
+  .phone-country option:focus-visible {
+    background: var(--color-bg-2);
+  }
+  .phone-country option::checkmark {
+    display: none;
+  }
   /* The logo's 45° square as list marker and divider (spec §3.3) */
   .sq {
     display: inline-block;

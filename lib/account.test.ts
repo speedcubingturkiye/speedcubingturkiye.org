@@ -105,7 +105,7 @@ describe('leaveMembership', () => {
 describe('joinRanking', () => {
   const MEMBER = {
     firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul',
-    wcaId: '2019TEME01', helps: false, locale: 'tr' as const, wcaVerified: true, ranking: false, cityLockedUntil: '', memberNo: '2026-0001',
+    wcaId: '2019TEME01', phone: '+905321234567', helps: false, chat: false, locale: 'tr' as const, wcaVerified: true, ranking: false, cityLockedUntil: '', memberNo: '2026-0001',
   }
 
   it('asks someone under 18 for the guardian box and lets an adult in with the Istanbul stamp', async () => {

@@ -5,7 +5,7 @@
 // the script: @OnlyCurrentDoc keeps its access to this spreadsheet alone.
 /** @OnlyCurrentDoc */
 const SHEET = 'Üyeler'
-const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu', 'WCA doğrulandı', 'İl sıralaması', 'İl tarihi', 'Üye no']
+const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu', 'WCA doğrulandı', 'İl sıralaması', 'İl tarihi', 'Üye no', 'Telefon', 'Sohbet grupları']
 const COL = Object.fromEntries(HEADERS.map((h, i) => [h, i]))
 const PENDING = 'Onay bekliyor'
 const MEMBER = 'Üye'
@@ -139,8 +139,9 @@ function apply(b) {
   // Abroad joins too (2026-10-22): the rankings have a Yurt dışı list
   const joins = Boolean(b.ranking && b.wcaVerified)
   const when = (yes) => (yes ? b.at : '')
-  // Üye no stays empty here: numberMembers gives it once the membership begins
-  const row = [b.at, b.confirmed ? MEMBER : PENDING, b.firstName, b.lastName, email, b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '', b.locale, when(b.confirmed), b.token, when(b.wcaVerified), when(joins), when(joins), ''].map(text)
+  // Üye no stays empty here: numberMembers gives it once the membership begins. Telefon (2026-10-24): the Secretary
+  // adds every member to the WhatsApp community with it; Sohbet grupları: when the box for the chat groups was ticked.
+  const row = [b.at, b.confirmed ? MEMBER : PENDING, b.firstName, b.lastName, email, b.birthDate, b.guardian ? 'Evet' : '', b.city, b.wcaId, b.helps ? 'Evet' : '', b.locale, when(b.confirmed), b.token, when(b.wcaVerified), when(joins), when(joins), '', b.phone || '', when(b.chat)].map(text)
   if (i >= 0) sh.getRange(i + 2, 1, 1, HEADERS.length).setValues([row])
   else sh.appendRow(row)
   return { result: b.confirmed ? 'started' : 'pending' }
@@ -215,6 +216,8 @@ function get(b) {
       ranking: marked(r, 'İl sıralaması'),
       cityLockedUntil: lockedUntil(r, Date.now()),
       memberNo: r[COL['Üye no']],
+      phone: r[COL['Telefon']],
+      chat: marked(r, 'Sohbet grupları'),
     },
   }
 }
@@ -234,6 +237,9 @@ function update(b) {
   const values = [b.firstName, b.lastName, r[COL['E-posta']], b.birthDate, b.guardian ? 'Evet' : '', b.city, r[COL['WCA ID']], b.helps ? 'Evet' : '']
   sh.getRange(i + 2, COL['Ad'] + 1, 1, values.length).setValues([values.map(text)])
   if (moved && marked(r, 'İl sıralaması')) mark(sh, i, { 'İl tarihi': b.at })
+  // Telefon and Sohbet grupları (2026-10-24): the chat groups keep the stamp of their first yes. A site older than them
+  // sends no phone and leaves both alone.
+  if (typeof b.phone === 'string') mark(sh, i, { Telefon: b.phone, 'Sohbet grupları': b.chat ? r[COL['Sohbet grupları']] || b.at : '' })
   return { result: 'ok' }
 }
 
@@ -365,11 +371,17 @@ function sheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet()
   const sh = ss.getSheetByName(SHEET) || ss.insertSheet(SHEET)
   if (sh.getLastRow() === 0) sh.appendRow(HEADERS)
-  // Columns added later (N to P, spec 2026-10-21; Q, Üye no, 2026-10-22) get their headers on the first call after an
-  // update
-  else if (sh.getRange(1, HEADERS.length).getDisplayValue() === '') {
+  else {
+    // Columns added later (N to P, spec 2026-10-21; Q, Üye no, 2026-10-22; R and S, Telefon and Sohbet grupları,
+    // 2026-10-24) get their headers on the first call after an update. R and right were free for notes until then: a
+    // note column in R or S stops every call, rather than its notes being read and overwritten as phone numbers.
     const added = HEADERS.slice(COL['WCA doğrulandı'])
-    sh.getRange(1, COL['WCA doğrulandı'] + 1, 1, added.length).setValues([added])
+    const range = sh.getRange(1, COL['WCA doğrulandı'] + 1, 1, added.length)
+    const head = range.getDisplayValues()[0]
+    if (head.some((v, j) => v !== '' && v !== added[j] && COL[added[j]] >= COL['Telefon'])) {
+      throw new Error('Üyeler: R ve S sütunları artık Telefon ve Sohbet grupları için. Oradaki notları sağdaki boş bir sütuna taşıyın.')
+    }
+    if (head[head.length - 1] === '') range.setValues([added])
   }
   return sh
 }

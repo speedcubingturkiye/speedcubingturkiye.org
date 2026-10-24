@@ -5,10 +5,11 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { applyForMembership } from '@/app/actions/membership'
 import { Done } from '@/components/Done'
-import { check, field, MemberFields } from '@/components/MemberFields'
+import { check, field, MemberFields, Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
 import type { MembershipState } from '@/app/actions/types'
 import type { Locale } from '@/i18n/routing'
+import type { PhoneCountry } from '@/lib/phone'
 
 const initial: MembershipState = { ok: false }
 const failed: MembershipState = { ok: false, error: 'send_failed' } // the action never answered (rate limit, network)
@@ -16,10 +17,23 @@ const failed: MembershipState = { ok: false, error: 'send_failed' } // the actio
 /**
  * The Üye ol form (spec 2026-10-19 §2), built like ContactForm: the address, the member's details (MemberFields, shared
  * with Hesabım), the newsletter box and the notice. `today` is the Istanbul date from the page, so the server and the
- * browser draw the same form. `intro` (the page's WCA ile kaydol box and the form's heading) goes with the form: once
- * it is sent, the result stands alone (2026-10-22).
+ * browser draw the same form. `intro` (the page's notice and its "WCA yarışmasında yarıştın mı?" question) goes with
+ * the form: once it is sent, the result stands alone (2026-10-22). `waitsForChoice`: the form shows only once "Hayır"
+ * is chosen (the page's `group`, 2026-10-24). `countries`: the phone's list (lib/phone.ts phoneCountries).
  */
-export function MembershipForm({ locale, today, intro }: { locale: Locale; today: string; intro?: ReactNode }) {
+export function MembershipForm({
+  locale,
+  today,
+  countries,
+  intro,
+  waitsForChoice = false,
+}: {
+  locale: Locale
+  today: string
+  countries: PhoneCountry[]
+  intro?: ReactNode
+  waitsForChoice?: boolean
+}) {
   const t = useTranslations('membership')
   const forms = useTranslations('forms')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(applyForMembership, initial, failed, (s) => s.ok)
@@ -30,7 +44,7 @@ export function MembershipForm({ locale, today, intro }: { locale: Locale; today
   return (
     <>
       {intro}
-      <div className="grid max-w-xl gap-4">
+      <div className={waitsForChoice ? 'hidden max-w-xl gap-4 group-has-[#yol-form:checked]:grid' : 'grid max-w-xl gap-4'}>
         <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-4">
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
@@ -44,10 +58,12 @@ export function MembershipForm({ locale, today, intro }: { locale: Locale; today
 
           <MemberFields
             today={today}
+            countries={countries}
             error={state.error}
             afterNames={
               <label className="block text-sm font-semibold">
                 {t('email')}
+                <Required />
                 <input className={field} name="email" type="email" required maxLength={254} autoComplete="email" />
               </label>
             }

@@ -1,6 +1,7 @@
 // lib/membership-rules.ts: the Üye ol form's rules (04.2026.01 madde 1-2, spec 2026-10-19 §2), shared by the form and
 // the server action, so nothing here may import server-only code.
 import { readEmail } from '@/lib/email'
+import { readPhone } from '@/lib/phone'
 import { ABROAD, PROVINCES } from '@/lib/wca/city'
 
 export { ABROAD }
@@ -22,12 +23,16 @@ export type Application = {
   /** the parent or guardian box (madde 2), ticked by someone under 18; always false for an adult */
   guardian: boolean
   city: string
+  /** "+905054182759" (readPhone): every member joins the WhatsApp community with it (2026-10-24) */
+  phone: string
   /** "Yarışmalara yardım etmek istiyorum" */
   helps: boolean
+  /** the WhatsApp chat groups, where each group sees the number (2026-10-24) */
+  chat: boolean
   /** the newsletter box: the membership link confirms the subscription too; never written to the sheet */
   newsletter: boolean
 }
-export type ApplicationError = 'invalid' | 'guardian'
+export type ApplicationError = 'invalid' | 'guardian' | 'phone'
 
 /** Whole years between two YYYY-MM-DD dates; someone born on 29 February turns a year older on 1 March. */
 export function ageOn(birthDate: string, today: string): number {
@@ -61,6 +66,9 @@ export function parseApplication(
     isDate(birthDate) && birthDate >= '1900-01-01' && birthDate <= today &&
     (PROVINCES.includes(city) || city === ABROAD)
   if (!valid) return { ok: false, error: 'invalid' }
+  // The country code's list and the number after it (2026-10-24)
+  const phone = readPhone(text('phoneCountry'), text('phone'))?.number
+  if (!phone) return { ok: false, error: 'phone' }
   const minor = ageOn(birthDate, today) < 18
   const guardian = formData.get('guardian') === 'on'
   if (minor && !guardian) return { ok: false, error: 'guardian' }
@@ -73,7 +81,9 @@ export function parseApplication(
       birthDate,
       guardian: minor && guardian,
       city,
+      phone,
       helps: formData.get('helps') === 'on',
+      chat: formData.get('chat') === 'on',
       newsletter: formData.get('newsletter') === 'on',
     },
   }

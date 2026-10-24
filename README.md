@@ -246,11 +246,13 @@ Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları y
 
 **E-posta adresleri.** Formlar adresi tek biçimde tutar: küçük harf, "+" eki yok, Gmail'de noktasız (`lib/email.ts`, betikte `canon`). `kutay.temel@gmail.com` ile `kutaytemel@gmail.com` aynı üyeliktir.
 
+**WhatsApp.** Üye ol formu ve Hesabım telefon numarasını zorunlu sorar: başta ülke kodu listesi (Türkiye seçili), ardından numara. Numara `+905054182759` biçiminde R'ye yazılır. `lib/phone.ts`, libphonenumber-js'in (Google'ın numara kuralları) cep numarası kurallarıyla okur; son yedi hanesi aynı ya da sıralı (555 55 55, 123 45 67) uydurma numaraları reddeder. Sekreter her yeni üyeyi bu numarayla WhatsApp topluluğuna, S'de tarih olanları sohbet gruplarına da ekler; S'si boşalanı sohbet gruplarından çıkarır. Üyelikten ayrılanın satırı silinir: ayda bir topluluğun üye listesini R ile karşılaştır, tabloda olmayan numaraları topluluktan ve gruplardan çıkar (aydınlatma metni 30 gün diyor). 24 Ekim 2026'dan önceki üyelerin R'si boş; numaralarını Hesabım'da bir sonraki kayıtta girerler.
+
 **WCA ve il sıralaması.** Hesabım'dan WCA hesabını bağlayan üyenin WCA ID'si WCA girişiyle doğrulanır; WCA'dan yalnız WCA ID alınır. Bağlarken `/api/wca` yolunda 10 dakikalık bir çerez kurulur. WCA girişini başlatan rotalar yalnız sitenin kendi sayfalarından gelen formları kabul eder. Doğrulanmış üye il sıralamasına katılabilir; sıralama sayfaları `?il=` ile o ilin üyelerini, `?il=yurt-disi` ile şehri Yurt dışı olanları gösterir.
 - **WCA ile giriş:** Hesabım'daki "WCA ile giriş yap" düğmesi WCA ID'si doğrulanmış üyeyi bulur ve Hesabım'ı 1 saatlik linkle açar. Doğrulanmamış WCA hesabına mail linkini önerir.
 - **WCA ile kaydol:** Üye ol'daki düğme WCA'dan ad, e-posta, doğum tarihi ve WCA ID'yi alır (kapsam `public email dob`) ve formu doldurur. Doğum tarihi WCA'dan geldiği gibi kalır. E-posta, tek biçimiyle WCA'daki adresle aynıysa üyelik onay maili olmadan başlar ve kısa bir "Üyeliğin başladı" maili gider; bülten kutusu da onay maili olmadan aboneliği başlatır. Zaten üye olan adreste WCA ID üyeliğe bağlanır. E-posta değiştirilirse bugünkü onay maili gider.
 - **WCA ID:** artık elle girilmez; yalnız WCA girişiyle gelir. Eski elle girilmiş ID'ler tabloda doğrulanmamış kalır (I dolu, N boş).
-- **Sütunlar:** Betik N, O, P ve Q sütunlarını (WCA doğrulandı, İl sıralaması, İl tarihi, Üye no) kendisi kurar ve yazar; R ve sağı not için serbest. N ve O'da tarih varsa "evet" demektir.
+- **Sütunlar:** Betik N'den S'ye sütunları (WCA doğrulandı, İl sıralaması, İl tarihi, Üye no, Telefon, Sohbet grupları) kendisi kurar ve yazar; T ve sağı not için serbest. R ya da S'nin başlığında başka bir şey yazıyorsa betik her işlemde hata verir; oradaki notları T'ye ya da sağına taşı. N, O ve S'de tarih varsa "evet" demektir.
 - **Üye no:** Betik her işlemde numarası olmayan üyelere onay sırasıyla `YYYY-NNNN` verir. Sayaç Script Properties'te `uyeNo:YYYY` adıyla durur; bir numara ikinci kez verilmez.
 - **Şehir kuralı:** P, şehir kuralının başlangıcıdır. Sıralamaya katılan üyenin şehri bir yıl değişmez, sıralamadan çıksa da. Taşınan üye için P'yi silmek şehrini açar.
 - **Betik:** `linkWca`, `unlinkWca`, `byWca`, `ranking` ve `rankingMembers` işlemleri bunun için.
@@ -352,3 +354,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/wca
 - [Editör rehberi](docs/editor-kullanim.md): panelle içerik düzenleme
 - [Yayın kontrol listesi](docs/yayin-kontrol-listesi.md): kurulum adımları ve canlı testler
 - [Değişiklik günlüğü](CHANGELOG.md)
+
+## Teşekkür
+
+- Telefon alanının bayrakları [Twemoji](https://github.com/twitter/twemoji) çizimleridir (© Twitter, Inc. ve katkıda bulunanlar, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Yazı tipi, bu çizimlerin bayrak alt kümesidir; [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT) paketinden gelir.

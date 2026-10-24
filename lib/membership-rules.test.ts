@@ -5,7 +5,7 @@ import { ABROAD, ageOn, parseApplication, POPULAR_PROVINCES, PROVINCE_CHOICES } 
 const TODAY = '2026-10-19'
 const form = (over: Record<string, string> = {}) => {
   const f = new FormData()
-  const base: Record<string, string> = { firstName: 'Ayşe', lastName: 'Yılmaz', email: ' Ayse@Example.com ', birthDate: '1990-05-04', city: 'İstanbul' }
+  const base: Record<string, string> = { firstName: 'Ayşe', lastName: 'Yılmaz', email: ' Ayse@Example.com ', birthDate: '1990-05-04', city: 'İstanbul', phoneCountry: 'TR', phone: '0505 418 27 59' }
   for (const [k, v] of Object.entries({ ...base, ...over })) f.set(k, v)
   return f
 }
@@ -40,9 +40,16 @@ describe('parseApplication', () => {
     const r = parseApplication(form({ helps: 'on', newsletter: 'on' }), TODAY)
     expect(r).toEqual({
       ok: true,
-      data: { firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: true, newsletter: true },
+      data: {
+        firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', phone: '+905054182759', helps: true, chat: false, newsletter: true,
+      },
     })
     expect(parseApplication(form(), TODAY)).toMatchObject({ ok: true, data: { helps: false, newsletter: false } })
+  })
+
+  it('asks for a mobile number in the chosen country, and records the chat groups box (2026-10-24)', () => {
+    for (const phone of ['', '0312 418 27 59', '0555 555 55 55', 'abc']) expect(parseApplication(form({ phone }), TODAY)).toEqual({ ok: false, error: 'phone' })
+    expect(parseApplication(form({ phoneCountry: 'DE', phone: '01515 2468135', chat: 'on' }), TODAY)).toMatchObject({ ok: true, data: { phone: '+4915152468135', chat: true } })
   })
 
   it('accepts abroad as the city', () => {

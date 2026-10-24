@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
-const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu', 'WCA doğrulandı', 'İl sıralaması', 'İl tarihi', 'Üye no']
+const HEADERS = ['Başvuru tarihi', 'Durum', 'Ad', 'Soyad', 'E-posta', 'Doğum tarihi', 'Veli onayı', 'Şehir', 'WCA ID', 'Yarışmalara yardım', 'Dil', 'Onay tarihi', 'Onay kodu', 'WCA doğrulandı', 'İl sıralaması', 'İl tarihi', 'Üye no', 'Telefon', 'Sohbet grupları']
 const row = (status: string, email: string, more: Partial<Record<string, string>> = {}) =>
   HEADERS.map((h) => ({ 'Başvuru tarihi': '2026-10-20 10:00', Durum: status, Ad: 'Ayşe', Soyad: 'Yılmaz', 'E-posta': email, 'Doğum tarihi': '1990-05-04', Şehir: 'İstanbul', Dil: 'tr', ...more })[h] ?? '')
 
@@ -15,7 +15,8 @@ const row = (status: string, email: string, more: Partial<Record<string, string>
 function load(cells: string[][], counters: Record<string, string> = {}) {
   const shown = (v: string) => (v.startsWith("'") ? v.slice(1) : v)
   const range = (r: number, c: number, nr = 1, nc = 1) => ({
-    getDisplayValues: () => cells.slice(r - 1, r - 1 + nr).map((line) => line.slice(c - 1, c - 1 + nc).map(shown)),
+    // Sheets gives every cell of the range, an empty one as ''
+    getDisplayValues: () => cells.slice(r - 1, r - 1 + nr).map((line) => Array.from({ length: nc }, (_, j) => shown(line[c - 1 + j] ?? ''))),
     getDisplayValue: () => shown(cells[r - 1]?.[c - 1] ?? ''),
     setValues: (values: string[][]) => values.forEach((line, i) => line.forEach((v, j) => (cells[r - 1 + i][c - 1 + j] = v))),
     setValue: (v: string) => (cells[r - 1][c - 1] = v),
@@ -39,12 +40,16 @@ function load(cells: string[][], counters: Record<string, string> = {}) {
 
 describe('the members sheet script, Hesabım actions', () => {
   it('get reads a member and treats an application waiting for its link as no member', () => {
-    const post = load([HEADERS, row('Üye', 'ayse@example.com', { 'Veli onayı': 'Evet', 'WCA ID': '2019TEME01', Dil: 'en' }), row('Onay bekliyor', 'bekle@example.com')])
+    const post = load([
+      HEADERS,
+      row('Üye', 'ayse@example.com', { 'Veli onayı': 'Evet', 'WCA ID': '2019TEME01', Dil: 'en', Telefon: '+905321234567', 'Sohbet grupları': '2026-10-20 10:00' }),
+      row('Onay bekliyor', 'bekle@example.com'),
+    ])
     expect(post('get', { email: 'AYSE@example.com' })).toEqual({
       result: 'ok',
       member: {
         firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com', birthDate: '1990-05-04', guardian: true, city: 'İstanbul', wcaId: '2019TEME01', helps: false, locale: 'en',
-        wcaVerified: false, ranking: false, cityLockedUntil: '', memberNo: '2026-0001',
+        wcaVerified: false, ranking: false, cityLockedUntil: '', memberNo: '2026-0001', phone: '+905321234567', chat: true,
       },
     })
     expect(post('get', { email: 'bekle@example.com' })).toEqual({ result: 'none' })
@@ -63,7 +68,8 @@ describe('the members sheet script, Hesabım actions', () => {
     // A WCA ID sent along is ignored: it comes only from a WCA login (spec 2026-10-21, WCA ile kaydol)
     const fields = { firstName: 'Ayşe Nur', lastName: 'Yılmaz', birthDate: '2010-01-02', guardian: true, city: 'Ankara', wcaId: '2019TEME01', helps: true }
     expect(post('update', { email: 'ayse@example.com', ...fields }).result).toBe('ok')
-    expect(cells[1]).toEqual(['2026-10-20 10:00', 'Üye', "'Ayşe Nur", "'Yılmaz", "'ayse@example.com", "'2010-01-02", "'Evet", "'Ankara", '', "'Evet", 'tr', '', '', '', '', '', "'2026-0001"])
+    // No phone sent (a site older than 2026-10-24): Telefon and Sohbet grupları stay as they are
+    expect(cells[1]).toEqual(['2026-10-20 10:00', 'Üye', "'Ayşe Nur", "'Yılmaz", "'ayse@example.com", "'2010-01-02", "'Evet", "'Ankara", '', "'Evet", 'tr', '', '', '', '', '', "'2026-0001", '', ''])
     expect(post('update', { email: 'kim@example.com', ...fields }).result).toBe('none')
   })
 
@@ -90,10 +96,12 @@ const FIELDS = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04
 const verified = { 'WCA ID': '2019TEME01', 'WCA doğrulandı': STAMP }
 
 describe('the members sheet script, WCA and il sıralaması (spec 2026-10-21, Parça 2)', () => {
-  it('adds the N to P headers to a sheet made before them', () => {
-    const cells = [HEADERS.slice(0, 13), row('Üye', 'ayse@example.com')]
-    load(cells)('get', { email: 'ayse@example.com' })
-    expect(cells[0]).toEqual(HEADERS)
+  it('adds the N to S headers to a sheet made before them', () => {
+    for (const made of [13, 17]) {
+      const cells = [HEADERS.slice(0, made), row('Üye', 'ayse@example.com')]
+      load(cells)('get', { email: 'ayse@example.com' })
+      expect(cells[0]).toEqual(HEADERS)
+    }
   })
 
   it('get tells the WCA mark, the ranking and until when the city is locked', () => {
@@ -296,5 +304,39 @@ describe('the members sheet script, the security package (2026-10-22)', () => {
   it('rankingMembers lists abroad members too, for the Yurt dışı list', () => {
     const cells = [HEADERS, row('Üye', 'a@example.com', { 'WCA ID': '2019AAAA01', 'WCA doğrulandı': STAMP, 'İl sıralaması': STAMP, Şehir: 'Yurt dışı' })]
     expect(load(cells)('rankingMembers', {})).toEqual({ result: 'ok', members: [{ wcaId: '2019AAAA01', il: 'Yurt dışı' }] })
+  })
+})
+
+describe('the members sheet script, Telefon and Sohbet grupları (2026-10-24)', () => {
+  const APPLY = { token: 't'.repeat(43), at: STAMP, firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'Ankara', wcaId: '', helps: false, locale: 'tr' }
+
+  it('apply writes the phone as text and stamps the chat groups only when asked', () => {
+    const cells = [HEADERS]
+    const post = load(cells)
+    expect(post('apply', { ...APPLY, email: 'ayse@example.com', phone: '+905321234567', chat: true }).result).toBe('pending')
+    expect(post('apply', { ...APPLY, email: 'ali@example.com', phone: '+4915112345678', chat: false }).result).toBe('pending')
+    expect(cells.slice(1).map((r) => r.slice(17))).toEqual([["'+905321234567", `'${STAMP}`], ["'+4915112345678", '']])
+  })
+
+  it('update writes the phone and keeps the stamp of the first yes to the chat groups until a no', () => {
+    const cells = [HEADERS, row('Üye', 'ayse@example.com', { Telefon: '+905321234567', 'Sohbet grupları': STAMP })]
+    const post = load(cells)
+    const save = (more: object) => post('update', { email: 'ayse@example.com', ...FIELDS, at: '2026-11-01 10:00', ...more }).result
+    expect(save({ phone: '+905559876543', chat: true })).toBe('ok')
+    expect(cells[1].slice(17)).toEqual(["'+905559876543", `'${STAMP}`])
+    expect(save({})).toBe('ok') // a site older than 2026-10-24 sends no phone
+    expect(cells[1].slice(17)).toEqual(["'+905559876543", `'${STAMP}`])
+    expect(save({ phone: '+905559876543', chat: false })).toBe('ok')
+    expect(cell(cells, 1, 'Sohbet grupları')).toBe('')
+    expect(save({ phone: '+905559876543', chat: true })).toBe('ok')
+    expect(cell(cells, 1, 'Sohbet grupları')).toBe("'2026-11-01 10:00")
+  })
+
+  it('a note column in R or S stops every call and stays as it was', () => {
+    for (const notes of [[...HEADERS.slice(0, 17), 'Notlar'], [...HEADERS.slice(0, 18), 'Notlar']]) {
+      const cells = [notes, row('Üye', 'ayse@example.com')]
+      expect(() => load(cells)('get', { email: 'ayse@example.com' })).toThrow(/R ve S/)
+      expect(cells[0]).toEqual(notes)
+    }
   })
 })

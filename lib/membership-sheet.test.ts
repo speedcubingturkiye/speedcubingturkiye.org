@@ -22,10 +22,10 @@ import {
 } from '@/lib/membership-sheet'
 
 const fetchMock = vi.fn()
-const FIELDS: MemberFields = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', helps: true }
+const FIELDS: MemberFields = { firstName: 'Ayşe', lastName: 'Yılmaz', birthDate: '1990-05-04', guardian: false, city: 'İstanbul', phone: '+905321234567', helps: true, chat: false }
 const ROW: SheetRow = {
   token: 't'.repeat(43), at: '2026-10-19 14:05', firstName: 'Ayşe', lastName: 'Yılmaz', email: 'ayse@example.com',
-  birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', helps: true, locale: 'tr',
+  birthDate: '1990-05-04', guardian: false, city: 'İstanbul', wcaId: '', phone: '+905321234567', helps: true, chat: false, locale: 'tr',
 }
 const answer = (body: unknown, status = 200) => fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(body), { status }))
 
