@@ -57,6 +57,7 @@
     "live": "Canlı sonuçlar",
     "wca": "WCA'da Türkiye yarışmaları",
     "mainNav": "Ana menü",
+    "groupMenu": "{label} menüsü",
     "sectionNav": "Alt sayfalar"
   },
   "home": {

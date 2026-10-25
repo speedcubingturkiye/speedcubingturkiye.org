@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 
 type Props = {
@@ -14,11 +15,13 @@ type Props = {
 }
 
 /**
- * A header group that opens a list of its pages, as the WCA's "Information" menu: on hover and on click, and the label
- * is no page of its own. Disclosure pattern (a button with aria-expanded), not an ARIA menu: Tab walks the links, Esc
- * closes and gives focus back to the button, a click or focus outside closes it.
+ * A header group: its label goes to the group's first page (Bilgi to Hakkımızda, Yarışmalar to Takvim; 2026-10-25), and
+ * the list of its pages opens on hover or from the arrow beside the label (a click, a touch, Enter or Space).
+ * Disclosure navigation with top-level links (WAI-ARIA APG), not an ARIA menu: Tab walks the label, the arrow and the
+ * open list's links; Esc closes the list and gives focus back to the arrow; a click or focus outside closes it.
  */
 export function NavDropdown({ label, items, active, pathname, open, onOpenChange }: Props) {
+  const t = useTranslations('nav')
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -65,21 +68,31 @@ export function NavDropdown({ label, items, active, pathname, open, onOpenChange
         if (!root.current?.contains(e.relatedTarget as Node)) onOpenChange(false)
       }}
     >
+      <Link
+        href={items[0].href}
+        aria-current={pathname === items[0].href ? 'page' : undefined}
+        data-active={active}
+        data-open={open}
+        // pt-2 pb-1: the same box as the plain header links, so the underline sits on one line
+        className="t-label border-b-2 border-transparent pt-2 pb-1 text-fg-2 hover:text-fg data-[active=true]:border-brand data-[active=true]:text-fg data-[open=true]:text-fg"
+      >
+        {label}
+      </Link>
       <button
         ref={button}
         type="button"
         aria-expanded={open}
         aria-controls={id}
-        data-active={active}
+        aria-label={t('groupMenu', { label })}
         onPointerDown={(e) => {
           lastPointer.current = e.pointerType
         }}
         // A mouse click keeps a hover-opened list open; Enter, Space and a touch toggle it (a keyboard click has detail 0).
         onClick={(e) => onOpenChange(e.detail > 0 && lastPointer.current === 'mouse' ? true : !open)}
-        // pt-2 pb-1: the same box as the plain header links, so the underline sits on one line
-        className="t-label inline-flex cursor-pointer items-center gap-1.5 border-b-2 border-transparent pt-2 pb-1 text-fg-2 hover:text-fg aria-expanded:text-fg data-[active=true]:border-brand data-[active=true]:text-fg"
+        // 24px wide, a touch target, with the arrow 7px from the label as before; -mr-1.5 keeps the row's gap to the next
+        // item as it was
+        className="-mr-1.5 inline-flex h-8 w-6 cursor-pointer items-center justify-center text-fg-2 hover:text-fg aria-expanded:text-fg"
       >
-        {label}
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" className={open ? 'rotate-180 transition-transform' : 'transition-transform'}>
           <path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>

@@ -57,6 +57,7 @@
     "live": "Live results",
     "wca": "Turkish competitions on the WCA",
     "mainNav": "Main navigation",
+    "groupMenu": "{label} menu",
     "sectionNav": "Section pages"
   },
   "home": {
