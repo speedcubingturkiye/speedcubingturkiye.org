@@ -8,19 +8,20 @@
 </p>
 
 <p align="center">
-  Türkiye'deki WCA yarışmaları, ulusal sıralamalar ve speedcubing topluluğu için site.<br>
+  Türkiye'deki WCA yarışmaları, sıralamalar ve speedcubing topluluğu için site.<br>
   <a href="https://speedcubingturkiye.org"><b>speedcubingturkiye.org</b></a>
 </p>
 
 ## Neler var
 
-- Yarışma takvimi ve yarışma sayfaları: kayıt durumu, kontenjan, yer ve WCA Live bağlantısı.
-- 17 etkinlikte eksiksiz Türkiye sıralamaları. Her sabah güncellenir.
-- İlk kez yarışacaklar ve veliler için rehberler, sık sorulan sorular.
-- Haberler ve RSS. Türkiye'de yeni bir yarışma açılınca duyurusu otomatik yazılır.
-- Çift onaylı e-posta bülteni.
-- Organizasyon sayfaları: tek sayfada belgeler (tüzük, yönetmelikler, politikalar, ilanlar), gönüllülük, güvenli ortam.
-- Türkçe ve İngilizce (ilk açılışta tarayıcının diline göre), sistem, açık ve koyu tema. Metinler tarayıcıdan, görsel editörle düzenlenir.
+- Yarışma takvimi ve her yarışmanın kendi sayfası: kayıt durumu, kontenjan, yer, WCA Live bağlantısı
+- 17 etkinlikte Türkiye sıralamaları, her sabah güncellenir. Üyeler isterse il sıralamasına da katılır.
+- İlk kez yarışacaklar ve veliler için rehberler, sık sorulan sorular
+- Haberler ve RSS. Türkiye'de yeni bir yarışma açılınca duyurusunu site kendisi yazar.
+- E-posta bülteni
+- Üyelik ve üyelerin kendi bilgilerini yönettiği Hesabım sayfası, WCA hesabıyla giriş
+- Organizasyonun belgeleri, gönüllülük ve güvenli ortam sayfaları
+- Türkçe ve İngilizce, açık ve koyu tema. İçerik tarayıcıdan, görsel bir editörle düzenlenir.
 
 ## Nasıl çalışır
 
@@ -32,6 +33,7 @@ flowchart TB
     cron["Vercel Cron<br/>her gün 12:00"]
     repo[("GitHub<br/>main dalı")]
     site["Vercel<br/>speedcubingturkiye.org"]
+    sheet[("Google tablosu<br/>üyeler")]
     ses["Amazon SES"]
     inbox(["info@ ve aboneler"])
 
@@ -41,7 +43,8 @@ flowchart TB
     daily -->|"sıralama verisi"| repo
     cron -->|"yarışma haberi"| repo
     repo -->|"her push bir deploy"| site
-    wca -->|"yarışma bilgileri"| site
+    wca -->|"yarışma bilgileri, WCA ile giriş"| site
+    site <-->|"üyelik, Hesabım"| sheet
     site -->|"form, onay, duyuru, bülten"| ses
     ses --> inbox
 
@@ -49,13 +52,13 @@ flowchart TB
     class site brand
 ```
 
-Sitenin veritabanı yok. Sayfalar, haberler ve ayarlar bu repodaki dosyalardır. Panelden yapılan her kayıt `main`'e bir commit olur ve her push Vercel'de yeni bir deploy başlatır. Yarışmalar WCA API'den okunup önbelleğe alınır. Sıralamalar her sabah WCA'nın sonuç dışa aktarımından yeniden üretilir. Bülten aboneleri Amazon SES'in kişi listesinde durur.
+Sitenin bir veritabanı yok. Sayfalar, haberler ve ayarlar bu repodaki dosyalar; panelden yapılan her değişiklik `main`'e bir commit olarak düşer ve Vercel her push'ta siteyi yeniden yayınlar. Yarışma bilgileri WCA API'sinden gelir, sıralamalar her sabah WCA'nın sonuç dışa aktarımından yeniden hesaplanır. Bülten aboneleri Amazon SES'te, üyeler Sekreter'in Google tablosunda durur.
 
-Türkçe sayfalar kökte, İngilizceler `/en` altında. Site Next.js 16 (App Router), TypeScript, Tailwind CSS 4, next-intl, MDX ve Keystatic ile yazıldı. Şemadaki saatler Türkiye saatidir.
+Türkçe sayfalar kök adreste, İngilizceler `/en` altında. Site Next.js 16 (App Router), TypeScript, Tailwind CSS 4, next-intl, MDX ve Keystatic ile yazıldı. Şemadaki saatler Türkiye saati.
 
 ## Başlarken
 
-Node 24 ve pnpm 11 ile çalışır.
+Node 24 ve pnpm 11 gerekiyor.
 
 ```bash
 pnpm install
@@ -63,7 +66,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Site `http://localhost:3000` adresinde açılır. Anahtar girmeden de çalışır. O zaman mailler gönderilmez, konsola yazılır. Görsel editör `http://localhost:3000/keystatic` adresinde: yerelde giriş istemez, dosyaları doğrudan diskte düzenler.
+Site `http://localhost:3000` adresinde açılır. Hiçbir anahtar girmesen de çalışır; o zaman mailler gönderilmez, konsola yazılır. Görsel editör `http://localhost:3000/keystatic` adresinde. Yerelde giriş istemez, dosyaları doğrudan diskte değiştirir.
 
 | Komut | Ne yapar |
 |---|---|
@@ -73,17 +76,17 @@ Site `http://localhost:3000` adresinde açılır. Anahtar girmeden de çalışı
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript kontrolü |
 | `pnpm test` | Vitest testleri |
-| `pnpm tsx scripts/check-content.ts` | Sadece içerik kontrolü |
+| `pnpm tsx scripts/check-content.ts` | Yalnız içerik kontrolü |
 | `pnpm data:rankings` | Sıralama verisini WCA'dan yeniden üretir |
 | `pnpm og` | Paylaşım görselini (`public/og.png`) logodan üretir |
-| `MSYS_NO_PATHCONV=1 powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 -Paths /,/en` | Build'i 3010 portunda açar, sayfaların HTTP kodlarını yazar, kapatır (Windows, Git Bash) |
+| `MSYS_NO_PATHCONV=1 powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 -Paths /,/en` | Build'i 3010 portunda açar, sayfaların HTTP kodlarını yazar ve kapatır (Windows, Git Bash) |
 
 ## Ayrıntılar
 
 <details>
 <summary><b>İçerik</b></summary>
 
-Sayfalar ve haberler repodaki MDX dosyalarıdır. Her sayfanın iki dili de olmak zorunda, biri eksikse build durur.
+Sayfalar ve haberler repodaki MDX dosyaları. Her sayfanın Türkçesi de İngilizcesi de olmalı; biri eksikse build durur.
 
 ```text
 content/tr/pages/<slug>.mdx     sayfa (Türkçe)
@@ -94,11 +97,11 @@ content/news/<slug>/en.mdx      haber metni (İngilizce)
 content/home/slides.json        ana sayfa slaytları, iki dil bir arada
 ```
 
-Dosya yolu adresi belirler: `content/tr/pages/yarismalar/sss.mdx`, `/yarismalar/sss` ve `/en/yarismalar/sss` olur. Adlarda yalnız küçük harf, rakam ve tire kullanılır, Türkçe karakter kullanılmaz. Cron da WCA kimliğini küçük harfe çevirir: `yarisma-newageturkey2026`.
+Adresi dosya yolu belirler: `content/tr/pages/yarismalar/sss.mdx` hem `/yarismalar/sss` hem `/en/yarismalar/sss` olur. Dosya adlarında küçük harf, rakam ve tire kullan; Türkçe karakter olmasın.
 
 #### Sayfa eklemek
 
-1. İki dosyayı da oluştur: `content/tr/pages/<slug>.mdx` ve `content/en/pages/<slug>.mdx`.
+1. İki dosyayı birlikte oluştur, `content/tr/pages/<slug>.mdx` ve `content/en/pages/<slug>.mdx`:
 
    ```mdx
    ---
@@ -110,12 +113,12 @@ Dosya yolu adresi belirler: `content/tr/pages/yarismalar/sss.mdx`, `/yarismalar/
    Metin buraya. Başlık için `##`, liste için `-`, tablo için GFM tablosu.
    ```
 
-2. Rotayı ekle: `app/[locale]/kvkk/page.tsx` dosyasını `app/[locale]/<slug>/page.tsx` olarak kopyala ve `SLUG` sabitini değiştir. Sayfa yarışmalar bölümündeyse (`/yarismalar/*`) ya da bir organizasyon sayfasıysa (kök adreste, `lib/nav.ts` içindeki `ORG_NAV` listesinde) yan menülü (`SectionNav`) bir örneği kopyala.
-3. Gerekirse `components/Footer.tsx` ve `app/sitemap.ts` dosyalarına bağlantı ekle.
+2. Sayfanın bir rotası olmalı. En kolayı `app/[locale]/kvkk/page.tsx` dosyasını `app/[locale]/<slug>/page.tsx` olarak kopyalayıp `SLUG` sabitini değiştirmek. Sayfa yan menülü bir bölümdeyse (yarışma ya da organizasyon sayfaları) o bölümden bir sayfayı örnek al.
+3. Gerekiyorsa footer'a (`components/Footer.tsx`) ve site haritasına (`app/sitemap.ts`) ekle.
 
 #### Haber eklemek
 
-En kolayı panel: `/keystatic`, sonra Haberler ([editör rehberi](docs/editor-kullanim.md)). Elle eklemek için `content/news/<slug>/` klasörünü aç ve `index.yaml` yaz:
+En kolayı panel: `/keystatic` > Haberler ([editör rehberi](docs/editor-kullanim.md)). Elle eklemek istersen `content/news/<slug>/` klasörünü aç ve bir `index.yaml` yaz:
 
 ```yaml
 title: "Başlık (TR)"
@@ -128,187 +131,186 @@ auto: false
 bulten: false
 ```
 
-`tr.mdx` ve `en.mdx` yalnız metni içerir, başlarında ön bilgi (frontmatter) olmaz.
+`tr.mdx` ve `en.mdx` dosyalarında yalnız metin olur; başlık bilgileri `index.yaml`'da durur.
 
-- `category`: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/belgeler` sayfasında da listelenir.
-- `auto: true` yalnız cron'un yazdığı duyurularda olur ve "otomatik" rozeti gösterir.
-- Rota gerekmez. Haber `/haberler/<slug>` adresinde ve RSS'te (`/haberler/rss.xml`, `/en/haberler/rss.xml`) otomatik yayımlanır.
+`category` şunlardan biri: `yarisma`, `topluluk`, `rekor` ya da `ilan`. İlanlar `/belgeler` sayfasında da çıkar. `auto: true` yalnız cron'un yazdığı duyurularda bulunur ve habere "otomatik" rozeti ekler. Rota eklemene gerek yok; haber `/haberler/<slug>` adresinde ve RSS'te kendiliğinden yayımlanır.
 
 #### Ana sayfa slaytları
 
-`content/home/slides.json` panelin yazdığı biçimde tek bir dosya: `{ "slides": [ ... ] }`. İki tür öğe var.
-
-`{ "discriminant": "static", "value": { ... } }` elle yazılan slayttır. Alanları:
-
-- `id`: küçük harf, rakam ve tire, benzersiz
-- `titleTr`, `titleEn`: en fazla 40 karakter
-- `leadTr`, `leadEn`: en fazla 160 karakter
-- `actions`: 1 ya da 2 düğme (`labelTr`, `labelEn`, `href`, `variant: "solid" | "outline"`)
-- isteğe bağlı: `image` (`/images/slides/...`), `layout` (`mark | A | D | E | G | J`, varsayılan `mark`), `focus` (`center | top | bottom | left | right`), `altTr`, `altEn`. `mark` dışındaki yerleşimler fotoğraf ister.
-
-`{ "discriminant": "next-competition" }` sıradaki yarışmayı WCA verisinden doldurur. Yaklaşan yarışma yoksa görünmez. En fazla bir tane olabilir.
-
-`href` ya öneksiz bir site yolu olur (`/en` otomatik eklenir) ya da `https://` ile başlayan tam adres. Tam adresler yeni sekmede açılır. Hatalı bir alan build'i dosya adı ve slayt numarasıyla durdurur (`lib/slides.ts`). Yerleşimlerin nasıl göründüğü [editör rehberinde](docs/editor-kullanim.md).
+Slaytlar `content/home/slides.json` dosyasında durur ve normalde panelden düzenlenir. İki tür slayt var: elle yazılanlar (başlık, kısa metin, bir ya da iki düğme, isteğe bağlı fotoğraf ve yerleşim) ve sıradaki yarışmayı WCA verisinden kendisi dolduran slayt; onun yalnız fotoğrafı ve yerleşimi elle seçilir. Alanların kuralları `lib/slides.ts`'te; hatalı bir slayt build'i dosya adı ve slayt numarasıyla durdurur. Yerleşimlerin nasıl göründüğü [editör rehberinde](docs/editor-kullanim.md).
 
 #### MDX bileşenleri
 
-Panel ham HTML tanımaz. Bu yüzden MDX'te yalnız şu bileşenler kullanılır:
+Panel ham HTML tanımadığı için MDX'te yalnız şu bileşenleri kullanabilirsin:
 
 | Bileşen | Ne işe yarar |
 |---|---|
 | `<Details summary="Soru?">…</Details>` | Açılır SSS maddesi. İçerikle etiketler arasında boş satır bırak. |
-| `<Callout title="Başlık" lang="en">…</Callout>` | Vurgulu not kutusu. `title` ve `lang` isteğe bağlı, `lang` yalnız kutu sayfanın dilinden farklıysa gerekir. |
+| `<Callout title="Başlık" lang="en">…</Callout>` | Vurgulu not kutusu. `title` ve `lang` isteğe bağlı; `lang` yalnız kutu sayfanın dilinden farklıysa gerekir. |
 | `<DataController field="name" />`, `field="email"` | Site ayarlarındaki KVKK veri sorumlusu |
 | `<MdxLink href="/kvkk" locale="tr">metin</MdxLink>` | Öbür dildeki bir sayfaya bağlantı |
 | `<Anchor id="bulten" />` | Başlığın hemen üstüne konan sayfa içi hedef (`/kvkk#bulten`) |
 | `<Lang code="en">Speedcubing</Lang>` | Büyük harfli bir başlıkta öbür dilden bir kelime (İ/I kuralı) |
 
-İç bağlantıları iki dilde de öneksiz yaz: `[SSS](/yarismalar/sss)`. `/en` otomatik eklenir, dış bağlantılar yeni sekmede açılır. Metinde `<` ya da `{` gerekiyorsa başına ters eğik çizgi koy: `\<`, `\{`. Çıplak hallerini MDX etiket ya da kod sanır.
+İç bağlantıları iki dilde de öneksiz yaz, örneğin `[SSS](/yarismalar/sss)`; `/en` kendiliğinden eklenir. Dış bağlantılar yeni sekmede açılır. Metinde `<` ya da `{` kullanman gerekirse başına ters eğik çizgi koy (`\<`, `\{`), yoksa MDX onları etiket ya da kod sanar.
 
 #### İçerik kontrolü
 
-`pnpm build` önce `scripts/check-content.ts` betiğini çalıştırır. Bir hata bulursa build durur, canlı site son sağlam haliyle kalır. Hata mesajları Türkçedir ve dosyayla alanı gösterir.
-
-Kontrol edilenler:
+`pnpm build` önce `scripts/check-content.ts` ile içeriği kontrol eder. Bir sorun bulursa build durur ve canlı site son sağlam hâliyle kalır. Hata mesajları Türkçe; hangi dosyada hangi alanın sorunlu olduğunu söyler. Kontrol edilenler:
 
 - Her sayfanın iki dili de var.
 - Sayfalar, haberler, slaytlar, arayüz metinleri, site ayarları ve galeri panelin şemasına (`keystatic.config.ts`) uyuyor.
 - Her haberde iki dilde metin ve geçerli bir tarih var.
-- MDX'te yalnız yukarıdaki bileşenler var, ham HTML ya da kaçışsız `{` yok.
-- Slaytlar `lib/slides.ts` kurallarına uyuyor.
-- `messages/tr.json` ve `messages/en.json` aynı anahtarlara ve aynı yer tutuculara sahip.
+- MDX'te yalnız yukarıdaki bileşenler var; ham HTML ya da kaçışsız `{` yok.
+- `messages/tr.json` ile `messages/en.json` aynı anahtarları ve yer tutucuları taşıyor.
 - Adı geçen her görsel ve belge gerçekten var, görseller 5 MB'ı geçmiyor.
 
 #### Panel commit'leri
 
-Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` mesajıyla commit'ler, silmede `chore(content): delete <yol>` yazar. Bu biçim `patches/@keystatic__core@0.6.9.patch` yamasından gelir. Keystatic'i yükseltirken yamayı yeni sürüm için yenile: `pnpm patch @keystatic/core@<sürüm>`.
+Canlıdaki panel her kaydı `main`'e `chore(content): update <yol>` mesajıyla, her silmeyi `chore(content): delete <yol>` ile commit'ler. Bu mesajlar `patches/@keystatic__core@0.6.9.patch` yamasından geliyor. Keystatic'i yükseltirken yamayı da yeni sürüme taşı: `pnpm patch @keystatic/core@<sürüm>`.
 
 </details>
 
 <details>
 <summary><b>Yapılandırma ve ortam değişkenleri</b></summary>
 
-`site.config.ts` site adını, adresini ve iletişim adresini tutar. Panelden düzenlenen ayarlar ise şu dosyalarda:
+Site adı, adresi ve iletişim adresleri `site.config.ts`'te. Panelden düzenlenen ayarlar ise şurada:
 
-- `content/site.json`: KVKK veri sorumlusu, sosyal kanallar (boş kanal sitede görünmez), yönetim listesi (`board`, `boardUpdatedAt`)
-- `content/documents/<adres>.yaml`: `/belgeler` sayfasındaki belgeler (panelde Belgeler). PDF'ler `public/docs/<adres>/tr.pdf` ve `en.pdf`.
+- `content/site.json`: KVKK veri sorumlusu, sosyal kanallar (boş bırakılan kanal sitede görünmez) ve yönetim listesi
+- `content/documents/<adres>.yaml`: `/belgeler` sayfasındaki belgeler; PDF'leri `public/docs/<adres>/` altında
 - `content/gallery.json`: `/medya` galerisi
 - `messages/tr.json`, `messages/en.json`: arayüz metinleri
 
-Ortam değişkenlerinin listesi `.env.example` dosyasında. Vercel'de `SAFEGUARDING_EMAIL` dışında hepsi Production'a tanımlı, `CONTACT_EMAIL` ve `MAIL_FROM` Preview'a da.
+Ortam değişkenlerinin tam listesi `.env.example`'da. Vercel'de `SAFEGUARDING_EMAIL` dışında hepsi Production'da tanımlı; `CONTACT_EMAIL` ve `MAIL_FROM` Preview'da da var.
 
 | Değişken | Ne için |
 |---|---|
-| `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | Amazon SES anahtarı. IAM kullanıcısı (`speedcubingturkiye-web-ses`) yalnız `news@` adına gönderebilir ve yalnız `bulten` listesine erişir. |
-| `NEWSLETTER_SECRET` | Onay ve çıkış bağlantılarını şifreleyen anahtar, en az 32 karakter. Değişirse eski maillerdeki çıkış bağlantıları çalışmaz. |
+| `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | Amazon SES anahtarı. IAM kullanıcısı (`speedcubingturkiye-web-ses`) yalnız sitenin adresleri adına gönderebilir ve yalnız `bulten` listesine erişir. |
+| `NEWSLETTER_SECRET` | Maillerdeki linkleri şifreleyen ve imzalayan anahtar, en az 32 karakter. Değişirse eski maillerdeki linkler çalışmaz. |
 | `BULTEN_SECRET` | `/api/bulten/gonder` rotasının anahtarı. GitHub'da yalnız `bulten` ortamında durur. |
-| `BULTEN_KAPALI` | `1` ise elle bülten gönderimi kapanır. Değişiklik yeni deploy'la geçerli olur. |
+| `BULTEN_KAPALI` | `1` olursa elle bülten gönderimi kapanır. Yeni deploy'la geçerli olur. |
 | `CONTACT_EMAIL` | Form mesajlarının gittiği adres (`info@speedcubingturkiye.org`) |
-| `SAFEGUARDING_EMAIL` | İletişim formunda "Güvenlik" konusunun gittiği adres. Boşsa `guvenlik@speedcubingturkiye.org`; yerel testte kendi adresini yaz. |
-| `MAIL_FROM` | Haber ve duyuru maillerinin gönderen adresi (`news@speedcubingturkiye.org`). Onay mailleri ve iletişim formu bildirimi `noreply@speedcubingturkiye.org` adresinden gider (`site.config.ts`). |
+| `SAFEGUARDING_EMAIL` | İletişim formunda "Güvenlik" konusunun gittiği adres. Boşsa `guvenlik@speedcubingturkiye.org`; yerelde denerken kendi adresini yaz. |
+| `MAIL_FROM` | Haber ve duyuruların gönderen adresi (`news@speedcubingturkiye.org`). Onay mailleri ve form bildirimleri `noreply@speedcubingturkiye.org` adresinden gider. |
 | `MEMBERSHIP_SCRIPT_URL` | Üyelik tablosundaki Apps Script web uygulamasının adresi (`…/exec`). Yoksa Üye ol formu "şu an kapalı" der. |
-| `MEMBERSHIP_SCRIPT_SECRET` | Betiğin Script Properties'teki `SECRET` değeriyle aynı, uzun rastgele bir değer. |
-| `WCA_CLIENT_ID`, `WCA_CLIENT_SECRET` | WCA OAuth uygulamasının anahtarları (WCA'da `/oauth/applications`). Yönlendirme adresi `https://speedcubingturkiye.org/api/wca/donus`. Kapsamlar `public email dob`; WCA'daki uygulamada da tanımlı olmalı. Yoksa Hesabım'da WCA bölümü ve "WCA ile giriş yap", Üye ol'da "WCA ile kaydol" görünmez. |
+| `MEMBERSHIP_SCRIPT_SECRET` | Betiğin Script Properties'teki `SECRET` değeriyle aynı, uzun ve rastgele bir değer |
+| `WCA_CLIENT_ID`, `WCA_CLIENT_SECRET` | WCA OAuth uygulamasının anahtarları (WCA'da `/oauth/applications`). Dönüş adresi `https://speedcubingturkiye.org/api/wca/donus`, kapsamlar `public email dob`. Tanımlı değilse sitedeki WCA düğmeleri görünmez. |
 | `CRON_SECRET` | `/api/cron/wca-check` rotasının anahtarı |
-| `GITHUB_TOKEN`, `GITHUB_REPO` | Cron'un haber commit'lemesi için yalnız bu repoya yazabilen fine-grained token ve `owner/repo` |
+| `GITHUB_TOKEN`, `GITHUB_REPO` | Cron'un haber commit'leyebilmesi için yalnız bu repoya yazabilen fine-grained token ve `owner/repo` |
 | `NEXT_PUBLIC_KEYSTATIC_REPO` | Panelin commit attığı repo (`owner/repo`) |
 | `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET`, `NEXT_PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | Panelin GitHub App bağlantısı. Değerleri Keystatic'in kurulum sihirbazı verir. |
 
-Yerelde:
+Yerelde birkaç şey farklı çalışır:
 
-- SES anahtarı yoksa mailler gönderilmez, onay bağlantısıyla birlikte konsola yazılır.
+- SES anahtarı yoksa mailler gönderilmez, linkleriyle birlikte konsola yazılır. `.env.local`'da gerçek SES anahtarları varsa form, onay ve çıkış gerçek listeye yazar; buna dikkat et.
 - `NEWSLETTER_SECRET` yoksa geliştirmeye özel sabit bir anahtar kullanılır.
-- `next dev` abonelere hiçbir zaman toplu mail atmaz. Cron hep kuru çalışır (commit, mail ve silme yok), elle bülten rotası 503 döner.
-- `.env.local` dosyasında SES anahtarları varsa form, onay ve çıkış gerçek listeye yazar.
-- `MEMBERSHIP_SCRIPT_URL` ve `MEMBERSHIP_SCRIPT_SECRET` yoksa Üye ol formu tabloya yazmaz; satır konsola yazılır ve başvuru başarılı sayılır.
-- WCA anahtarları yoksa Hesabım'daki "WCA hesabını bağla" ve "WCA ile giriş yap", Üye ol'daki "WCA ile kaydol" düğmeleri hata mesajıyla geri döner; il listesi boştur.
+- `next dev` hiçbir zaman toplu mail atmaz: cron kuru çalışır, elle bülten rotası 503 döner.
+- Üyelik betiğinin değişkenleri yoksa Üye ol formu tabloya yazmaz, satırı konsola basar ve başvuruyu başarılı sayar. Hesabım da örnek bir üyeyle açılır.
+- WCA anahtarları yoksa WCA düğmeleri hata mesajıyla döner ve il listeleri boş görünür.
 
 </details>
 
 <details>
-<summary><b>Üyelik tablosu</b></summary>
+<summary><b>Üyelik</b></summary>
 
-Üye ol formu başvuruları ortak drive'daki bir Google tablosuna yazar. Kurulumu süper admin hesabı yapar, çünkü betik yayınlayanın hesabıyla çalışır.
+Üye ol formu başvuruları ortak drive'daki bir Google tablosuna yazar. Arada `scripts/uyelik-apps-script.gs` betiği var: tablo bir Apps Script web uygulaması olarak yayınlanır ve site onunla konuşur. Başvuran kişi e-postasına gelen linke tıklayınca "Üye" olur; yedi gün içinde onaylanmayan başvurular silinir.
+
+#### Kurulum
+
+Kurulumu süper admin hesabı yapmalı, çünkü betik onu yayınlayanın hesabıyla çalışır.
 
 1. Tabloyu aç, Uzantılar > Apps Script.
-2. `scripts/uyelik-apps-script.gs` dosyasının içeriğini yapıştırıp kaydet. "Üyeler" sekmesi ve başlık satırı ilk başvuruda kendiliğinden kurulur. Dosyadaki `@OnlyCurrentDoc` satırı betiğin erişimini bu tabloyla sınırlar; silme.
-3. Proje ayarları > Script Properties: `SECRET` adıyla uzun rastgele bir değer ekle.
+2. `scripts/uyelik-apps-script.gs` dosyasını yapıştırıp kaydet. "Üyeler" sekmesi ve başlıklar ilk başvuruda kendiliğinden oluşur. Baştaki `@OnlyCurrentDoc` satırı betiğin yalnız bu tabloya erişmesini sağlar; onu silme.
+3. Proje ayarları > Script Properties'e `SECRET` adıyla uzun, rastgele bir değer ekle.
 4. Dağıt > Yeni dağıtım > Web uygulaması: "Execute as: Me", "Who has access: Anyone". Çıkan `…/exec` adresini kopyala.
-5. Tetikleyiciler > Tetikleyici ekle: işlev `cleanup`, etkinlik kaynağı "Zamana dayalı", tür "Gün zamanlayıcı". 7 gün içinde onaylanmayan başvuruları siler.
+5. Tetikleyiciler > Tetikleyici ekle: işlev `cleanup`, "Zamana dayalı", "Gün zamanlayıcı". Onaylanmamış başvuruları bu tetikleyici temizler.
 6. Vercel'e `MEMBERSHIP_SCRIPT_URL` (adres) ve `MEMBERSHIP_SCRIPT_SECRET` (aynı değer) ekle, yeniden deploy et.
-7. Canlıda bir deneme başvurusu yap: tabloda "Onay bekliyor" satırı belirmeli, e-postadaki linkten sonra "Üye" olmalı.
+7. Canlıda bir deneme başvurusu yap. Tabloda "Onay bekliyor" satırı belirmeli, maildeki linke tıklayınca "Üye" olmalı.
 
-Betik değişirse aynı dağıtımı yeni sürümle güncelle (Dağıtımları yönet > Düzenle > Yeni sürüm); adres değişmez.
+Betiği güncellerken yeni bir dağıtım açma; mevcut dağıtımı yeni sürümle güncelle (Dağıtımları yönet > Düzenle > Yeni sürüm). Böylece adres değişmez.
 
-**Hesabım.** Üyeler `/hesabim` sayfasında bilgilerini düzenler, e-posta adresini değiştirir ve üyelikten ayrılır. Sayfa, e-postaya gelen 1 saatlik bir linkle ya da WCA ile girişle açılır; çerez yok. Betiğin `link`, `get`, `update`, `emailGate`, `changeEmail` ve `delete` işlemleri bu sayfa için. Aynı adrese 10 dakikada en fazla bir link, yeni bir adrese 10 dakikada en fazla bir değiştirme linki gider. Yerelde betik değişkenleri yoksa sayfa örnek bir üyeyle açılır.
+#### Tablo
 
-**Onay sayfaları.** Maillerdeki onay linkleri (`/uye-ol/onay`, `/bulten/onay`, `/hesabim/eposta`) bir sayfa açar; onay oradaki düğmeyle olur. Posta tarayıcıları (Safe Links gibi) linki açsa da hiçbir şey onaylanmaz. Üyelik linkindeki kod imzalıdır; imzasız eski linkler 5 Kasım 2026'ya kadar çalışır.
+A'dan M'ye kadar olan sütunlarda başvurunun kendisi var: ad, e-posta, doğum tarihi, şehir, veli onayı ve onay bilgileri. N'den S'ye kadar olan sütunları betik kendisi açar ve doldurur: WCA doğrulandı, İl sıralaması, İl tarihi, Üye no, Telefon ve Sohbet grupları. Bu sütunlarda bir tarih "evet" demek. T ve sağındaki sütunlar notlar için boş.
 
-**E-posta adresleri.** Formlar adresi tek biçimde tutar: küçük harf, "+" eki yok, Gmail'de noktasız (`lib/email.ts`, betikte `canon`). `kutay.temel@gmail.com` ile `kutaytemel@gmail.com` aynı üyeliktir.
+Sütunların yerini değiştirme; betik onları sırasına göre okur. R ve S'nin başlıkları değişirse betik durur. Telefonu e-postanın yanında görmek istersen aradaki sütunları gruplayabilir ya da A'dan E'ye kadar olan sütunları dondurabilirsin.
 
-**WhatsApp.** Üye ol formu ve Hesabım telefon numarasını zorunlu sorar: başta ülke kodu listesi (Türkiye seçili), ardından numara. Numara `+905054182759` biçiminde R'ye yazılır. `lib/phone.ts`, libphonenumber-js'in (Google'ın numara kuralları) cep numarası kurallarıyla okur; son yedi hanesi aynı ya da sıralı (555 55 55, 123 45 67) uydurma numaraları reddeder. Sekreter her yeni üyeyi bu numarayla WhatsApp topluluğuna, S'de tarih olanları sohbet gruplarına da ekler; S'si boşalanı sohbet gruplarından çıkarır. Üyelikten ayrılanın satırı silinir: ayda bir topluluğun üye listesini R ile karşılaştır, tabloda olmayan numaraları topluluktan ve gruplardan çıkar (aydınlatma metni 30 gün diyor). 24 Ekim 2026'dan önceki üyelerin R'si boş; numaralarını Hesabım'da bir sonraki kayıtta girerler.
+Her üyeye, üyeliğinin başladığı yıla ve sıraya göre bir numara verilir (`2026-0001` gibi). Sayaç betiğin Script Properties'inde durur; bir numara ikinci kez kullanılmaz.
 
-**WCA ve il sıralaması.** Hesabım'dan WCA hesabını bağlayan üyenin WCA ID'si WCA girişiyle doğrulanır; WCA'dan yalnız WCA ID alınır. Bağlarken `/api/wca` yolunda 10 dakikalık bir çerez kurulur. WCA girişini başlatan rotalar yalnız sitenin kendi sayfalarından gelen formları kabul eder. Doğrulanmış üye il sıralamasına katılabilir; sıralama sayfaları `?il=` ile o ilin üyelerini, `?il=yurt-disi` ile şehri Yurt dışı olanları gösterir.
-- **WCA ile giriş:** Hesabım'daki "WCA ile giriş yap" düğmesi WCA ID'si doğrulanmış üyeyi bulur ve Hesabım'ı 1 saatlik linkle açar. Doğrulanmamış WCA hesabına mail linkini önerir.
-- **WCA ile kaydol:** Üye ol'daki düğme WCA'dan ad, e-posta, doğum tarihi ve WCA ID'yi alır (kapsam `public email dob`) ve formu doldurur. Doğum tarihi WCA'dan geldiği gibi kalır. E-posta, tek biçimiyle WCA'daki adresle aynıysa üyelik onay maili olmadan başlar ve kısa bir "Üyeliğin başladı" maili gider; bülten kutusu da onay maili olmadan aboneliği başlatır. Zaten üye olan adreste WCA ID üyeliğe bağlanır. E-posta değiştirilirse bugünkü onay maili gider.
-- **WCA ID:** artık elle girilmez; yalnız WCA girişiyle gelir. Eski elle girilmiş ID'ler tabloda doğrulanmamış kalır (I dolu, N boş).
-- **Sütunlar:** Betik N'den S'ye sütunları (WCA doğrulandı, İl sıralaması, İl tarihi, Üye no, Telefon, Sohbet grupları) kendisi kurar ve yazar; T ve sağı not için serbest. R ya da S'nin başlığında başka bir şey yazıyorsa betik her işlemde hata verir; oradaki notları T'ye ya da sağına taşı. N, O ve S'de tarih varsa "evet" demektir.
-- **Üye no:** Betik her işlemde numarası olmayan üyelere onay sırasıyla `YYYY-NNNN` verir. Sayaç Script Properties'te `uyeNo:YYYY` adıyla durur; bir numara ikinci kez verilmez.
-- **Şehir kuralı:** P, şehir kuralının başlangıcıdır. Sıralamaya katılan üyenin şehri bir yıl değişmez, sıralamadan çıksa da. Taşınan üye için P'yi silmek şehrini açar.
-- **Betik:** `linkWca`, `unlinkWca`, `byWca`, `ranking` ve `rankingMembers` işlemleri bunun için.
-- **Liste:** Sıralama sayfaları listeyi saatte bir okur; liste repoya yazılmaz. Tablo cevap vermezse bir dakika sonra yeniden sorulur.
+Bir posta kutusu tek üyelik demek. Adresler küçük harfle, "+" eki olmadan ve Gmail'de noktasız saklanır; yani `kutay.temel@gmail.com` ile `kutaytemel@gmail.com` aynı üyelik.
 
-**Bülten sekmesi.** Tablonun "Bülten" sekmesi SES'teki onaylı abonelerin kopyasıdır: E-posta, Dil, Onay tarihi, Sil.
-- **Yenileme:** "Bülten > Listeyi yenile" menüsüyle ve günde bir kez kendiliğinden yenilenir. Betik, "Sil" işaretli adresleri sitenin `/api/bulten/liste` adresine `MEMBERSHIP_SCRIPT_SECRET` ile gönderir. Site onları SES'ten siler (bir seferde en fazla 40) ve güncel listeyi döndürür; betik sekmeyi baştan yazar.
-- **Sekme bir kopya:** elle yapılan değişiklikler bir sonraki yenilemede silinir; işe yarayan yalnız "Sil" kutusu.
+#### Hesabım ve WCA
 
-Kurulum (süper admin):
+Üyeler `/hesabim` sayfasında bilgilerini düzeltir, e-posta adreslerini değiştirir, WCA hesaplarını bağlar, il sıralamasına katılır ya da üyelikten ayrılır. Sayfa e-postaya gelen bir saatlik linkle ya da WCA ile girişle açılır; çerez kullanılmaz. Aynı adrese on dakikada en fazla bir link gider.
 
-1. Betiği güncelle ve yeni sürüm yayınla.
-2. Editörde `refreshNewsletter`'ı bir kez çalıştır. Google dış bağlantı iznini sorar; izin ver. Sekme kurulur.
+Maillerdeki onay linkleri doğrudan onaylamaz, önce bir sayfa açar; onay o sayfadaki düğmeyle olur. Böylece linki önceden açan posta tarayıcıları (Outlook'un Safe Links'i gibi) yanlışlıkla onay vermiş olmaz.
+
+WCA ID artık elle yazılmıyor, yalnız WCA girişiyle geliyor; eskiden elle yazılanlar tabloda doğrulanmamış görünür. Üye ol'daki "WCA ile kaydol" düğmesi formu WCA'daki ad, e-posta, doğum tarihi ve WCA ID ile doldurur. E-posta WCA'dakiyle aynıysa onay maili beklenmeden üyelik başlar.
+
+İl sıralamasına yalnız WCA ID'si doğrulanmış üyeler katılabilir. Sıralamaya giren üyenin şehri bir yıl boyunca değiştirilemez; başlangıç tarihi P sütununda. Taşınan biri olursa P'yi silmek yeter. Sıralama sayfaları listeyi tablodan saatte bir okur.
+
+#### WhatsApp
+
+Telefon numarası Üye ol formunda ve Hesabım'da zorunlu. Numaralar ülke koduyla, `+905054182759` biçiminde R sütununa yazılır. Sabit hatlar ve 555 55 55 gibi uydurma numaralar kabul edilmez.
+
+Sekreter her yeni üyeyi bu numarayla WhatsApp topluluğuna ekler, "Sohbet grupları" sütununda tarih olanları sohbet gruplarına da. Bu kutuyu sonradan kaldıranlar gruplardan çıkarılır. Üyelikten ayrılanın satırı hemen silindiği için ayda bir topluluğun üye listesini tabloyla karşılaştırıp tabloda olmayanları çıkarmak gerekiyor. Aydınlatma metni bunun 30 gün içinde yapılacağını söylüyor.
+
+#### Bülten sekmesi
+
+Tablonun "Bülten" sekmesi, SES'teki onaylı abonelerin bir kopyası: e-posta, dil, onay tarihi ve bir "Sil" kutusu. Günde bir kez kendiliğinden ya da "Bülten > Listeyi yenile" menüsüyle yenilenir. Yenilenirken "Sil" işaretli adresler SES'ten silinir ve sekme baştan yazılır. Bu yüzden sekmede elle yapılan değişiklikler kalıcı olmaz; işe yarayan tek şey "Sil" kutusu.
+
+Kurulumu süper admin yapar:
+
+1. Betiği güncelle ve yeni sürümü yayınla.
+2. Editörde `refreshNewsletter` işlevini bir kez çalıştır. Google dış bağlantı için izin ister; ver. Sekme oluşur.
 3. Tetikleyici ekle: işlev `refreshNewsletter`, "Zamana dayalı", "Gün zamanlayıcı".
-4. Menü tablo yeniden açılınca görünür. Sekreter menüyü ilk kullandığında Google ondan da bir kez izin ister.
+4. Menü, tablo yeniden açılınca görünür. Sekreter menüyü ilk kullandığında Google ondan da bir kez izin ister.
 
 </details>
 
 <details>
 <summary><b>E-posta ve bülten</b></summary>
 
-Bütün mailler Amazon SES'ten (`us-east-1`) gider. Haber ve duyurular `news@`, onay mailleri ve iletişim formu bildirimi `noreply@` adresinden çıkar; cevaplar Reply-To ile info@'ya ya da formu dolduran kişiye gider. Maillerde takip pikseli yok, başka sunucudan görsel yüklenmez.
+Bütün mailler Amazon SES'ten (`us-east-1`) gider. Haber ve duyurular `news@`, onay mailleri ve form bildirimleri `noreply@` adresinden çıkar; yanıtlar info@'ya ya da formu dolduran kişiye gider. Maillerde takip pikseli yok, başka bir sunucudan görsel de yüklenmez.
 
-- **İletişim formu:** Mesaj `info@` adresine gider. Konu `Speedcubing Türkiye: <konu>`, gönderen adı `<ad soyad> (form)` olur. "Yanıtla" formu dolduran kişiye yazar.
-- **Bülten kaydı:** Form kişiyi SES'teki `bulten` listesine onay bekleyen olarak yazar ve formun dilinde onay maili yollar. Aynı adrese 24 saatte en fazla bir onay maili gider. Onay bağlantısı (`/bulten/onay`) 7 gün geçerlidir ve kişiyi kendi dilinin konusuna (`tr` ya da `en`) abone eder. Onaylanmayan adresleri cron 7 gün sonra siler.
-- **Çıkış:** Her mailin altındaki bağlantı `/bulten/cikis` sayfasını açar. Gmail ve Apple Mail'in "Abonelikten çık" düğmesi `/api/bulten/cikis` üzerinden tek tıkla çıkarır. Bağlantılardaki token AES-256-GCM ile şifrelidir, adres linkte görünmez.
-- **Otomatik duyuru:** Cron yeni yarışmanın haberini commit'ledikten sonra onaylı abonelere kendi dillerinde gönderir, Türkçe kopyasını da `info@` adresine yollar.
-- **Elle bülten:** Panelde bir haberin "Bültenle gönder" kutusunu işaretleyip kaydet. `.github/workflows/bulten.yml` haberin dosyalarından bir özet (SHA-256) çıkarır, sitenin o hali yayına girene kadar bekler ve sonra `bulten` ortamında onay ister. Önizleme `/bulten/onizleme/<slug>` adresinde. Onaylanınca `/api/bulten/gonder` çağrılır. Haber bu arada değiştiyse gönderim reddedilir (409 `changed`) ve yeni hali tekrar onaya düşer. Gönderilen bültenler `content/newsletter-log.json` dosyasına yazılır: aynı haber iki kez gitmez, günde en fazla bir bülten gider. `BULTEN_KAPALI=1` gönderimi durdurur.
+#### İletişim formu
 
-Onay adımı, panelden gelen bültenler için ikinci bir göz. Repoya push edebilen biri (çalınmış bir panel token'ı da) Production anahtarlarıyla her şeyi yapabilir. Bu yüzden yazma yetkisini dar tut ([yayın kontrol listesi](docs/yayin-kontrol-listesi.md), §3).
+Mesajlar info@'ya "Speedcubing Türkiye: <konu>" konusuyla ve "<ad soyad> (form)" gönderen adıyla düşer; "Yanıtla" doğrudan yazan kişiye gider. "Güvenlik" konusundaki mesajlar ayrı bir adrese gider (`SAFEGUARDING_EMAIL`).
 
-Gönderim hızı saniyede en fazla 10 mail. Bir gönderim Vercel'in 300 saniyelik sınırına sığmak zorunda. En kötü durumda bu, yaklaşık 850 mail demek. Abone sayısı 800'e yaklaşınca gönderimi bölmek gerekecek. Aynı gün açılan birkaç yarışmanın duyuruları aynı 300 saniyeyi paylaşır ve yarıda kalan gönderim yeniden denenmez.
+Spam'e karşı birkaç önlem var. Formda botların doldurduğu gizli bir alan var ve form üç saniyeden hızlı gönderilemez. Bir de görünmez bir doğrulama var: form ilk odaklandığında tarayıcı siteden imzalı küçük bir problem alır ve bir saniyeden kısa sürede çözer (`lib/pow.ts`). Sayfayı çalıştırmadan gönderen botlar bunu geçemez; bunun için dışarıya istek gitmez, çerez de kullanılmaz. Son olarak `search-speedcubingturkiye.org` gibi bize benzeyen adreslerden yazanlara "gönderildi" denir ama mail gitmez.
+
+#### Bülten
+
+Abone olmak isteyen kişi SES'teki `bulten` listesine "onay bekliyor" olarak yazılır ve formun dilinde bir onay maili alır. Aynı adrese 24 saatte en fazla bir onay maili gider. Onay linki yedi gün geçerli; onaylanmayan adresleri cron yedi gün sonra siler.
+
+Her mailin altında abonelikten çıkış linki var. Gmail ve Apple Mail'in kendi "Abonelikten çık" düğmesi de tek tıkla çıkarır. Linklerdeki bilgiler şifreli, e-posta adresi linkte görünmez.
+
+Türkiye'de yeni bir yarışma açılınca cron haberini commit'ler ve onaylı abonelere kendi dillerinde gönderir. Türkçe bir kopyası da info@'ya gelir.
+
+Elle bülten göndermek için paneldeki haberde "Bültenle gönder" kutusunu işaretleyip kaydet. Gerisini `.github/workflows/bulten.yml` yapar: sitenin o hâli yayına girene kadar bekler, sonra GitHub'daki `bulten` ortamında onay ister. Önizleme `/bulten/onizleme/<slug>` adresinde. Onay verilince bülten gider. Haber bu arada değiştiyse gönderim durur ve yeni hâli tekrar onaya düşer. Aynı haber iki kez gönderilmez ve günde en fazla bir bülten gider; gönderilenlerin kaydı `content/newsletter-log.json`'da. `BULTEN_KAPALI=1` gönderimi tamamen durdurur.
+
+Onay adımı panelden gelen bültenlere ikinci bir göz. Ama repoya push edebilen biri, çalınmış bir panel token'ı dahil, Production anahtarlarıyla her şeyi yapabilir. Bu yüzden yazma yetkisini dar tut ([yayın kontrol listesi](docs/yayin-kontrol-listesi.md), §3).
+
+SES saniyede en fazla 10 mail gönderiyor ve bir gönderim Vercel'in 300 saniyelik sınırına sığmak zorunda; bu da en kötü durumda yaklaşık 850 mail demek. Abone sayısı 800'e yaklaşınca gönderimi parçalara bölmek gerekecek. Aynı gün birkaç yarışma açılırsa duyuruları aynı 300 saniyeyi paylaşır ve yarıda kalan gönderim tekrar denenmez.
 
 </details>
 
 <details>
 <summary><b>Sıralama verisi</b></summary>
 
-`/siralamalar` sayfaları veriyi repodaki `data/rankings/` klasöründen okur:
+`/siralamalar` sayfaları veriyi repodaki `data/rankings/` klasöründen okur. `meta.json` dışa aktarımın tarihini ve format sürümünü tutar; geri kalanı etkinlik ve tür başına birer dosya, örneğin `single/333.json`. Her satır `[ulusal sıra, WCA ID, isim, sonuç]`.
 
-- `meta.json`: dışa aktarımın tarihi ve format sürümü
-- etkinlik ve tür başına bir dosya, örneğin `single/333.json`. Her satır `[ulusal sıra, WCA ID, isim, sonuç]`.
+Türkiye'yi temsil etmiş herkes listede. Sayfa 25, 50, 100 ya da 500 satır gösterir; "Sıramı bul" isimle ya da WCA ID ile arar.
 
-Türkiye'yi temsil etmiş herkes listededir. Sayfada 25, 50, 100 ya da 500 satır gösterilir, "Sıramı bul" isimle ya da WCA ID ile arar.
+Sıralama toplamı (`/siralamalar/toplam/tekli`, `/siralamalar/toplam/ortalama`) ve Kinch (`/siralamalar/kinch`) aynı dosyalardan hesaplanır (`lib/all-round.ts`). Sıralama toplamı, her etkinlikteki ulusal sıraların toplamı; sonucu olmayan etkinlikte, WCA Statistics'teki gibi, o etkinliğin son sırasının bir fazlası sayılır. Kinch'te her etkinlik için 100 × Türkiye rekoru ÷ kişinin en iyisi hesaplanır ve genel puan 17 etkinliğin ortalamasıdır.
 
-`/siralamalar/toplam/tekli`, `/siralamalar/toplam/ortalama` ve `/siralamalar/kinch` aynı dosyalardan hesaplanır (`lib/all-round.ts`):
+`pnpm data:rankings` WCA'nın resmi sonuç dışa aktarımına (Results Export v2) bakar. Yeni bir dışa aktarım varsa yaklaşık 378 MB'lık zip'i indirir, yalnız `results` ve `persons` tablolarını açar ve dosyaları yeniden yazar. Tarih değişmemişse bir şey yapmaz.
 
-- **Sıralama toplamı:** her etkinlikteki ulusal sıraların toplamı. Sonucu olmayan etkinlikte o etkinliğin son sırasının bir fazlası sayılır (WCA Statistics kuralı).
-- **Kinch:** her etkinlikte 100 × Türkiye rekoru ÷ kişinin en iyisi; genel puan 17 etkinliğin ortalaması (yöntem: kinch2002, SpeedSolving 2015).
+Sıralama kuralı WCA'nın ulusal sıralamasıyla aynı: Türkiye'yi temsil ederken alınan sonuçlar sayılır, vatandaşlığını sonradan değiştiren biri Türkiye dönemindeki sonuçlarıyla listede kalır. Herkesin her etkinlikteki en iyi tekli ve ortalaması alınır; eşit sonuçlar aynı sırayı paylaşır.
 
-`pnpm data:rankings` WCA'nın resmi sonuç dışa aktarımına (Results Export v2, TSV) bakar. Yeni bir dışa aktarım varsa zip'i (yaklaşık 378 MB) indirir, yalnız `results` ve `persons` tablolarını açar ve dosyaları yazar. Tarih aynıysa bir şey yapmaz.
+Komutun birkaç seçeneği var: `--force` tarih aynı olsa da işler, `--from-dir <klasör>` indirmeden, açılmış bir dışa aktarımı kullanır, `--out <klasör>` başka bir klasöre yazar. Bir şey ters giderse hiçbir dosyaya dokunmadan hata verir: format sürümü 2 değilse, bir tablo ya da sütun eksikse ya da 100 satırdan uzun bir sıralama %10'dan fazla kısalırsa.
 
-- Sıralama kuralı WCA'nın ulusal sıralamasıyla aynı. Türkiye'yi temsil ederken alınan sonuçlar sayılır. Vatandaşlığını sonradan değiştiren biri, Türkiye dönemindeki sonuçlarıyla listede kalır. Herkesin etkinlik başına en iyi tekli ve ortalaması alınır, eşit sonuçlar aynı sırayı paylaşır.
-- Seçenekler: `--force` (tarih aynı olsa da işle), `--from-dir <klasör>` (indirmeden, açılmış bir dışa aktarımı kullan), `--out <klasör>` (başka bir klasöre yaz).
-- Betik şu durumlarda hiçbir dosyaya dokunmadan hata verir: format sürümü 2 değilse, bir tablo ya da sütun eksikse ya da 100 ve üzeri satırlı bir sıralama %10'dan fazla küçülürse.
-- `.github/workflows/daily-data.yml` aynı komutu her gün 06:00'da (Türkiye saati) çalıştırır. Veri değiştiyse `main`'e `chore(data): update daily data - YYYY-MM-DD` commit'i atar, bu da normal bir deploy başlatır. Actions sekmesindeki "Run workflow" ile elle de çalışır.
+`.github/workflows/daily-data.yml` bu komutu her gün 06:00'da çalıştırır. Veri değiştiyse `main`'e bir commit atar ve site her zamanki gibi yeniden yayınlanır. Actions sekmesindeki "Run workflow" ile elle de çalıştırabilirsin.
 
 </details>
 
@@ -322,24 +324,24 @@ Türkiye'yi temsil etmiş herkes listededir. Sayfada 25, 50, 100 ya da 500 satı
 - `logo-long-inverted.svg`, `logo-mark-inverted.svg`: koyu zemin için
 - `logo-mail.png`: maillerdeki logo
 
-Kaynak: marka kiti (brand-identity.pdf v1.0). Renkler `app/globals.css` dosyasında tanımlı: kırmızı `#E30A17`, siyah `#1A1A1A`. Kullanım kuralları sitenin `/medya` sayfasında. Paylaşım görseli `public/og.png`, `pnpm og` ile üretilir.
+Hepsi marka kitinden (brand-identity.pdf v1.0) geliyor. Renkler `app/globals.css`'te: kırmızı `#E30A17`, siyah `#1A1A1A`. Kullanım kuralları sitenin `/medya` sayfasında. Paylaşım görseli `public/og.png` ve `pnpm og` ile üretiliyor. Site ikonları (`app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`) logonun kare işaretinden yapıldı.
 
 Diğer statik dosyalar:
 
-- `public/docs/<adres>/`: belgelerin PDF'leri (`tr.pdf`, `en.pdf`). Panelin Belgeler bölümünden yüklenir; Keystatic dosyayı belgenin adresine ve alanın adına göre adlandırır.
-- `public/galeri/`: galeri fotoğrafları. Panelin Galeri bölümünden yüklenir ve `content/gallery.json` dosyasına yazılır. Alt yazı ve açıklama isteğe bağlı. Liste boşken yer tutucu kareler görünür.
-- `public/images/news/`, `public/images/slides/`: haber ve slayt fotoğrafları, panelden yüklenir.
+- `public/docs/<adres>/`: belgelerin PDF'leri (`tr.pdf`, `en.pdf`), panelin Belgeler bölümünden yüklenir.
+- `public/galeri/`: galeri fotoğrafları, panelin Galeri bölümünden yüklenir. Liste boşken yer tutucu kareler görünür.
+- `public/images/news/`, `public/images/slides/`: haber ve slayt fotoğrafları, onlar da panelden yüklenir.
 
 </details>
 
 <details>
 <summary><b>Yayın</b></summary>
 
-- `main`'e her push Vercel'de production deploy'u, her pull request bir preview başlatır. Ayrı bir CI yok, kapı görevini build görür: içerik kontrolü ve TypeScript.
-- Alan adları Vercel'de. Asıl adres `speedcubingturkiye.org`. `www` ve `speedcubingturkiye.com` ona 308 ile yönlenir.
-- Güvenlik başlıkları `next.config.ts`'te: `X-Frame-Options: DENY` ve CSP `frame-ancestors 'none'` (başka site sayfaları çerçeveleyemez), `nosniff`, `Referrer-Policy`. `X-Powered-By` gönderilmez. HSTS'yi Vercel ekler.
-- GitHub Actions'ta iki iş var: günlük sıralama verisi ve onaylanan bültenlerin gönderimi.
-- Cron (`vercel.json`) her gün 12:00'de (Türkiye saati) `/api/cron/wca-check` rotasını çağırır. Yeni WCA yarışmalarını haber olarak commit'ler, abonelere duyurur ve 7 günü geçmiş onaysız adresleri siler. Hobby planda cron günde bir kez çalışabiliyor.
+`main`'e her push Vercel'de bir production deploy'u, her pull request de bir preview başlatır. Ayrı bir CI yok; build zaten içerik kontrolünü ve TypeScript'i çalıştırdığı için kapı görevini o görüyor.
+
+Alan adları Vercel'de. Asıl adres `speedcubingturkiye.org`; `www` ve `speedcubingturkiye.com` ona yönlenir. Güvenlik başlıkları `next.config.ts`'te: başka siteler sayfaları çerçeveleyemez (`X-Frame-Options: DENY`, CSP `frame-ancestors 'none'`), `nosniff` ve `Referrer-Policy` açık, `X-Powered-By` gönderilmez. HSTS'yi Vercel ekliyor.
+
+GitHub Actions'ta iki iş var: günlük sıralama verisi ve onaylanan bültenlerin gönderimi. Vercel Cron da her gün 12:00'de `/api/cron/wca-check` rotasını çağırır. Bu rota yeni WCA yarışmalarını haber olarak commit'ler, abonelere duyurur ve yedi günü geçmiş onaysız adresleri siler. Hobby planda cron günde yalnız bir kez çalışabiliyor.
 
 Cron'u yerelde kuru çalıştırmak için:
 
@@ -357,4 +359,4 @@ curl -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/wca
 
 ## Teşekkür
 
-- Telefon alanının bayrakları [Twemoji](https://github.com/twitter/twemoji) çizimleridir (© Twitter, Inc. ve katkıda bulunanlar, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Yazı tipi, bu çizimlerin bayrak alt kümesidir; [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT) paketinden gelir.
+Telefon alanındaki bayraklar [Twemoji](https://github.com/twitter/twemoji) çizimleri (© Twitter, Inc. ve katkıda bulunanlar, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). Yazı tipi bu çizimlerin bayrak alt kümesi ve [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT) paketinden geliyor.
