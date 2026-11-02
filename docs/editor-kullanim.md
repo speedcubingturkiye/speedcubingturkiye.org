@@ -31,7 +31,7 @@ Sayfalar, Ana sayfa (slaytlar), Arayüz metinleri ve Site ayarları önce bir ta
 
 ## 3. Ana sayfa slaytları
 
-Ana sayfa → Slaytlar. Listedeki sıra ana sayfadaki sıradır. "Sıradaki yarışma" öğesi WCA verisinden kendiliğinden dolar; en fazla bir tane olur ve alanı yoktur.
+Ana sayfa → Slaytlar. Listedeki sıra ana sayfadaki sıradır. "Sıradaki yarışma" öğesinin yazıları ve düğmeleri WCA verisinden kendiliğinden dolar; en fazla bir tane olur. Elle seçilen yalnız fotoğrafıdır: Fotoğraf, Yerleşim, Fotoğraf odağı ve Fotoğraf açıklaması, aşağıdaki kurallarla. Fotoğraf hangi yarışma sıradaysa onunla görünür; yaklaşan yarışma yoksa slayt hiç çıkmaz.
 
 Metin ve fotoğraf slaydı: Kimlik, Başlık (TR/EN, en fazla 40 karakter), Açıklama (TR/EN, en fazla 160), 1 ya da 2 düğme (adres `/yarismalar` gibi site içi yol ya da `https://` ile tam adres), Fotoğraf, Yerleşim, Fotoğraf odağı, Fotoğraf açıklaması.
 

@@ -190,6 +190,19 @@ const photoAlt = {
   altEn: fields.text({ label: 'Fotoğraf açıklaması (EN)' }),
 }
 
+// A slide's photo, on both slide types: the next competition slide has only this, its text comes from the WCA data.
+const slidePhoto = {
+  image: fields.image({
+    label: 'Fotoğraf',
+    description: `Logo yerleşimi dışında zorunlu. Slaytlara yalnızca organizasyonun kendi çektiği fotoğrafları koy; başka birinin fotoğrafını kullanmak istiyorsan önce Kutay'a sor. ${PHOTO_RULES}`,
+    directory: 'public/images/slides',
+    publicPath: SLIDE_IMAGE_PREFIX,
+  }),
+  layout: fields.select({ label: 'Yerleşim', description: 'Fotoğrafsız slayt için "Logo"; diğerleri fotoğraf ister.', options: LAYOUT_OPTIONS, defaultValue: 'mark' }),
+  focus: fields.select({ label: 'Fotoğraf odağı', description: 'Fotoğraf kırpılırken korunan kenar.', options: FOCUS_OPTIONS, defaultValue: 'center' }),
+  ...photoAlt,
+}
+
 // Field rules come from lib/content-rules.ts, as lib/slides.ts's do; the cross-field rules (photo required unless "mark",
 // unique ids) run at build time.
 const staticSlide = fields.object({
@@ -208,15 +221,7 @@ const staticSlide = fields.object({
     itemLabel: (props) => props.fields.labelTr.value || 'Düğme',
     validation: { length: { min: 1, max: ACTIONS_MAX } },
   }),
-  image: fields.image({
-    label: 'Fotoğraf',
-    description: `Logo yerleşimi dışında zorunlu. Slaytlara yalnızca organizasyonun kendi çektiği fotoğrafları koy; başka birinin fotoğrafını kullanmak istiyorsan önce Kutay'a sor. ${PHOTO_RULES}`,
-    directory: 'public/images/slides',
-    publicPath: SLIDE_IMAGE_PREFIX,
-  }),
-  layout: fields.select({ label: 'Yerleşim', description: 'Fotoğrafsız slayt için "Logo"; diğerleri fotoğraf ister.', options: LAYOUT_OPTIONS, defaultValue: 'mark' }),
-  focus: fields.select({ label: 'Fotoğraf odağı', description: 'Fotoğraf kırpılırken korunan kenar.', options: FOCUS_OPTIONS, defaultValue: 'center' }),
-  ...photoAlt,
+  ...slidePhoto,
 })
 
 const slidesSingleton = singleton({
@@ -234,7 +239,7 @@ const slidesSingleton = singleton({
           ],
           defaultValue: 'static',
         }),
-        { static: staticSlide, 'next-competition': fields.empty() },
+        { static: staticSlide, 'next-competition': fields.object(slidePhoto) },
       ),
       {
         label: 'Slaytlar',

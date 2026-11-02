@@ -24,12 +24,8 @@ import {
 export const SLIDES_FILE = 'content/home/slides.json'
 
 export type SlideAction = { label: string; href: string; variant: 'solid' | 'outline' }
-export type StaticSlide = {
-  id: string
-  type: 'static'
-  title: string
-  lead: string
-  actions: SlideAction[]
+/** The photo either slide type can have; the next competition slide's text comes from the WCA data. */
+export type SlidePhoto = {
   /** /images/slides/<file>; required unless layout is "mark" */
   image?: string
   layout: Layout
@@ -38,11 +34,20 @@ export type StaticSlide = {
   /** photo description for screen readers; absent = decorative (alt="") */
   alt?: string
 }
-export type NextCompetitionSlide = { id: 'next-competition'; type: 'next-competition' }
+export type StaticSlide = SlidePhoto & {
+  id: string
+  type: 'static'
+  title: string
+  lead: string
+  actions: SlideAction[]
+}
+export type NextCompetitionSlide = SlidePhoto & { id: 'next-competition'; type: 'next-competition' }
 export type Slide = StaticSlide | NextCompetitionSlide
 
+/** A slide's photo as stored in the file, both languages. */
+type PhotoEntry = { image?: string; layout: Layout; focus: Focus; altTr?: string; altEn?: string }
 /** One slide as stored in the file, both languages. */
-export type StaticEntry = {
+export type StaticEntry = PhotoEntry & {
   type: 'static'
   id: string
   titleTr: string
@@ -50,13 +55,8 @@ export type StaticEntry = {
   leadTr: string
   leadEn: string
   actions: { labelTr: string; labelEn: string; href: string; variant: 'solid' | 'outline' }[]
-  image?: string
-  layout: Layout
-  focus: Focus
-  altTr?: string
-  altEn?: string
 }
-export type SlideEntry = StaticEntry | { type: 'next-competition' }
+export type SlideEntry = StaticEntry | (PhotoEntry & { type: 'next-competition' })
 
 const oneOf = <T extends string>(list: readonly T[], v: unknown): v is T => typeof v === 'string' && (list as readonly string[]).includes(v)
 
@@ -85,13 +85,8 @@ function parseAction(v: unknown, file: string, index: number): StaticEntry['acti
   }
 }
 
-function parseStatic(v: unknown, file: string, index: number): StaticEntry {
-  if (!isRecord(v)) fail(file, index, 'slayt alanları eksik')
-  const id = text(v.id)
-  if (!SLUG_RE.test(id)) fail(file, index, `"id" boş olamaz ve yalnız küçük harf, rakam ve tire içerebilir ("${id}")`)
-  if (id === 'next-competition') fail(file, index, '"next-competition" kimliği sıradaki yarışma slaytına ayrılmış')
-  if (!Array.isArray(v.actions) || v.actions.length === 0) fail(file, index, 'en az bir düğme gerekli')
-  if (v.actions.length > ACTIONS_MAX) fail(file, index, `en fazla ${ACTIONS_MAX} düğme olabilir`)
+// The photo fields of either slide type. A next competition slide saved before it had them has no value at all ({}).
+function parsePhoto(v: Record<string, unknown>, file: string, index: number): PhotoEntry {
   const layout = v.layout === undefined ? 'mark' : v.layout
   if (!oneOf(LAYOUTS, layout)) fail(file, index, `yerleşim ${JSON.stringify(layout)} tanınmıyor (${LAYOUTS.join(', ')})`)
   const focus = v.focus === undefined ? 'center' : v.focus
@@ -101,6 +96,17 @@ function parseStatic(v: unknown, file: string, index: number): StaticEntry {
   if (!image && layout !== 'mark') fail(file, index, `fotoğraf seçilmeden "${layout}" yerleşimi kullanıyor`)
   const altTr = text(v.altTr)
   const altEn = text(v.altEn)
+  return { ...(image ? { image } : {}), layout, focus, ...(altTr ? { altTr } : {}), ...(altEn ? { altEn } : {}) }
+}
+
+function parseStatic(v: unknown, file: string, index: number): StaticEntry {
+  if (!isRecord(v)) fail(file, index, 'slayt alanları eksik')
+  const id = text(v.id)
+  if (!SLUG_RE.test(id)) fail(file, index, `"id" boş olamaz ve yalnız küçük harf, rakam ve tire içerebilir ("${id}")`)
+  if (id === 'next-competition') fail(file, index, '"next-competition" kimliği sıradaki yarışma slaytına ayrılmış')
+  if (!Array.isArray(v.actions) || v.actions.length === 0) fail(file, index, 'en az bir düğme gerekli')
+  if (v.actions.length > ACTIONS_MAX) fail(file, index, `en fazla ${ACTIONS_MAX} düğme olabilir`)
+  const photo = parsePhoto(v, file, index)
   return {
     type: 'static',
     id,
@@ -109,11 +115,7 @@ function parseStatic(v: unknown, file: string, index: number): StaticEntry {
     leadTr: required(v.leadTr, LEAD_MAX, 'leadTr', file, index),
     leadEn: required(v.leadEn, LEAD_MAX, 'leadEn', file, index),
     actions: v.actions.map((a) => parseAction(a, file, index)),
-    ...(image ? { image } : {}),
-    layout,
-    focus,
-    ...(altTr ? { altTr } : {}),
-    ...(altEn ? { altEn } : {}),
+    ...photo,
   }
 }
 
@@ -125,7 +127,7 @@ export function parseSlides(raw: unknown, file = SLIDES_FILE): SlideEntry[] {
   }
   const entries = list.map((item, i): SlideEntry => {
     if (!isRecord(item)) fail(file, i, 'slayt bir nesne olmalı')
-    if (item.discriminant === 'next-competition') return { type: 'next-competition' }
+    if (item.discriminant === 'next-competition') return { type: 'next-competition', ...parsePhoto(isRecord(item.value) ? item.value : {}, file, i) }
     if (item.discriminant !== 'static') fail(file, i, `tür ${JSON.stringify(item.discriminant)} tanınmıyor ("static" ya da "next-competition" bekleniyor)`)
     return parseStatic(item.value, file, i)
   })
@@ -137,7 +139,8 @@ export function parseSlides(raw: unknown, file = SLIDES_FILE): SlideEntry[] {
 }
 
 export function localizeSlide(entry: SlideEntry, locale: Locale): Slide {
-  if (entry.type === 'next-competition') return { id: 'next-competition', type: 'next-competition' }
+  const photo = { image: entry.image, layout: entry.layout, focus: entry.focus, alt: locale === 'tr' ? entry.altTr : entry.altEn }
+  if (entry.type === 'next-competition') return { id: 'next-competition', type: 'next-competition', ...photo }
   const t = (tr: string, en: string) => (locale === 'tr' ? tr : en)
   return {
     id: entry.id,
@@ -145,10 +148,7 @@ export function localizeSlide(entry: SlideEntry, locale: Locale): Slide {
     title: t(entry.titleTr, entry.titleEn),
     lead: t(entry.leadTr, entry.leadEn),
     actions: entry.actions.map((a) => ({ label: t(a.labelTr, a.labelEn), href: a.href, variant: a.variant })),
-    image: entry.image,
-    layout: entry.layout,
-    focus: entry.focus,
-    alt: locale === 'tr' ? entry.altTr : entry.altEn,
+    ...photo,
   }
 }
 

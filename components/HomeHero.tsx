@@ -12,16 +12,14 @@ export async function HomeHero({ next, locale }: { next: UpcomingCompetition | n
   const t = await getTranslations('home')
   const tc = await getTranslations('competitions')
   const slides = getSlides(locale).flatMap((s): HeroSlide[] => {
+    const photo = { image: s.image, layout: s.layout, focus: s.focus, alt: s.alt }
     if (s.type === 'static') {
       return [
         {
           id: s.id,
           title: s.title,
           lead: s.lead,
-          image: s.image,
-          layout: s.layout,
-          focus: s.focus,
-          alt: s.alt,
+          ...photo,
           // https:// buttons open in a new tab; site paths get their locale prefix from the Link (lib/slides rules)
           actions: s.actions.map((a) => ({ ...a, external: a.href.startsWith('https://') })),
         },
@@ -42,6 +40,7 @@ export async function HomeHero({ next, locale }: { next: UpcomingCompetition | n
         status: tc(`status.${status}`),
         // Both numbers from the detail, as on the cards and rows (the list and detail endpoints are cached separately)
         capacity: taken != null ? tc('spotsOf', { taken, limit: detail?.competitor_limit ?? 0 }) : undefined,
+        ...photo,
         actions: [
           status === 'open'
             ? { label: tc('registerWca'), href: `${comp.url}/register`, variant: 'solid', external: true }

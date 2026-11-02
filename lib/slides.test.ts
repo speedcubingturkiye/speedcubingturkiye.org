@@ -27,9 +27,17 @@ describe('parseSlides', () => {
   it('accepts both slide types, defaults layout/focus and ignores unknown fields', () => {
     expect(parseSlides(s({ ...brand, value: { ...brand.value, layout: undefined, focus: undefined, extra: 1 } }, next, photo), file)).toEqual([
       { type: 'static', ...brand.value },
-      { type: 'next-competition' },
+      { type: 'next-competition', layout: 'mark', focus: 'center' },
       { type: 'static', ...photo.value },
     ])
+  })
+
+  it('gives the next competition slide the photo fields and rules of the other slides', () => {
+    const value = { image: '/images/slides/salon.jpg', layout: 'J', focus: 'bottom', altTr: 'Salon', altEn: 'The hall' }
+    expect(parseSlides(s({ ...next, value }), file)).toEqual([{ type: 'next-competition', ...value }])
+    expect(parseSlides(s({ ...next, value: {} }), file)).toEqual([{ type: 'next-competition', layout: 'mark', focus: 'center' }])
+    expect(() => parseSlides(s(brand, { ...next, value: { layout: 'D' } }), file)).toThrow('slayt 2: fotoğraf seçilmeden "D" yerleşimi kullanıyor')
+    expect(() => parseSlides(s({ ...next, value: { ...value, image: 'salon.jpg' } }), file)).toThrow('"/images/slides/" ile başlamalı')
   })
 
   it('accepts every photo layout with a photo and https:// buttons', () => {
@@ -82,7 +90,8 @@ describe('localizeSlide / getSlides', () => {
       alt: 'Podium',
     })
     expect(localizeSlide(parseSlides(s(brand), file)[0], 'tr')).toMatchObject({ title: 'Speedcubing Türkiye', lead: 'Açıklama.', layout: 'mark', image: undefined, alt: undefined })
-    expect(localizeSlide({ type: 'next-competition' }, 'tr')).toEqual({ id: 'next-competition', type: 'next-competition' })
+    const next = { image: '/images/slides/salon.jpg', layout: 'J', focus: 'bottom' } as const
+    expect(localizeSlide({ type: 'next-competition', ...next, altTr: 'Salon', altEn: 'The hall' }, 'en')).toEqual({ id: 'next-competition', type: 'next-competition', ...next, alt: 'The hall' })
   })
 
   it('reads the repo file: the same ids and types in both languages', () => {

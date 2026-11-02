@@ -287,9 +287,10 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   >
                     <BrandText>{s.title}</BrandText>
                   </h2>
-                  <div className={layout === 'J' ? '' : 'lg:max-w-md'}>
-                    {/* J: the lead's top lines up with the title's, as in the approved sketch */}
-                    {s.lead && <p className={`${layout === 'J' ? 'lg:mt-0 ' : ''}mt-5 max-w-xl text-lg leading-relaxed`}>{s.lead}</p>}
+                  {/* J: the column's first line, the lead or the next competition's date, lines up with the title's top,
+                      as in the approved sketch */}
+                  <div className={layout === 'J' ? 'lg:[&>:first-child]:mt-0' : 'lg:max-w-md'}>
+                    {s.lead && <p className="mt-5 max-w-xl text-lg leading-relaxed">{s.lead}</p>}
                     {(s.meta || s.status || s.capacity) && (
                       <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
                         {s.meta && <span>{s.meta}</span>}

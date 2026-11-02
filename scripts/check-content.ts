@@ -75,7 +75,7 @@ async function main() {
 
   // 3. Slides (spec §5.3): the rules ran when lib/slides loaded; here the photo files.
   const slides = getSlides('tr')
-  for (const s of slides) if (s.type === 'static' && s.image) checkAsset(`content/home/slides.json (slayt "${s.id}")`, s.image)
+  for (const s of slides) if (s.image) checkAsset(`content/home/slides.json (slayt "${s.id}")`, s.image)
 
   // 4. UI strings (spec §5.4).
   errors.push(...checkMessages(trMessages, enMessages))
