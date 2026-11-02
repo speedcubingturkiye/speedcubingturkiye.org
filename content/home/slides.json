@@ -28,7 +28,12 @@
       }
     },
     {
-      "discriminant": "next-competition"
+      "discriminant": "next-competition",
+      "value": {
+        "image": "/images/slides/slides/1/value/image.jpg",
+        "layout": "D",
+        "focus": "center"
+      }
     },
     {
       "discriminant": "static",
