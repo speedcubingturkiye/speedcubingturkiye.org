@@ -24,7 +24,9 @@
         ],
         "image": "/images/slides/slides/0/value/image.jpg",
         "layout": "D",
-        "focus": "left"
+        "focus": "left",
+        "phoneLayout": "A",
+        "phoneFocus": "same"
       }
     },
     {
@@ -32,7 +34,9 @@
       "value": {
         "image": "/images/slides/slides/1/value/image.jpg",
         "layout": "D",
-        "focus": "center"
+        "focus": "center",
+        "phoneLayout": "A",
+        "phoneFocus": "same"
       }
     },
     {
@@ -59,7 +63,9 @@
         ],
         "image": "/images/slides/slides/2/value/image.jpg",
         "layout": "D",
-        "focus": "bottom"
+        "focus": "bottom",
+        "phoneLayout": "A",
+        "phoneFocus": "same"
       }
     }
   ]
