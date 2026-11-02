@@ -22,8 +22,9 @@
             "variant": "outline"
           }
         ],
-        "layout": "mark",
-        "focus": "center"
+        "image": "/images/slides/slides/0/value/image.jpg",
+        "layout": "D",
+        "focus": "left"
       }
     },
     {
