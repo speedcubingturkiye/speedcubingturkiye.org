@@ -22,8 +22,9 @@
             "variant": "outline"
           }
         ],
-        "layout": "mark",
-        "focus": "center"
+        "image": "/images/slides/slides/0/value/image.jpg",
+        "layout": "D",
+        "focus": "left"
       }
     },
     {
@@ -51,8 +52,9 @@
             "variant": "outline"
           }
         ],
-        "layout": "mark",
-        "focus": "center"
+        "image": "/images/slides/slides/2/value/image.jpg",
+        "layout": "D",
+        "focus": "bottom"
       }
     }
   ]
