@@ -13,6 +13,8 @@ import {
   LABEL_MAX,
   LAYOUTS,
   LEAD_MAX,
+  PHONE_FOCUSES,
+  PHONE_LAYOUTS,
   SLIDE_IMAGE_PREFIX,
   SLUG_RE,
   text,
@@ -26,11 +28,15 @@ export const SLIDES_FILE = 'content/home/slides.json'
 export type SlideAction = { label: string; href: string; variant: 'solid' | 'outline' }
 /** The photo either slide type can have; the next competition slide's text comes from the WCA data. */
 export type SlidePhoto = {
-  /** /images/slides/<file>; required unless layout is "mark" */
+  /** /images/slides/<file>; required unless both layouts are "mark" */
   image?: string
+  /** from 1024px */
   layout: Layout
-  /** object-position of the photo */
+  /** object-position of the photo from 1024px */
   focus: Focus
+  /** below 1024px (phones and tablets); the desktop layout unless the panel picked another */
+  phoneLayout: Layout
+  phoneFocus: Focus
   /** photo description for screen readers; absent = decorative (alt="") */
   alt?: string
 }
@@ -45,7 +51,7 @@ export type NextCompetitionSlide = SlidePhoto & { id: 'next-competition'; type: 
 export type Slide = StaticSlide | NextCompetitionSlide
 
 /** A slide's photo as stored in the file, both languages. */
-type PhotoEntry = { image?: string; layout: Layout; focus: Focus; altTr?: string; altEn?: string }
+type PhotoEntry = { image?: string; layout: Layout; focus: Focus; phoneLayout: Layout; phoneFocus: Focus; altTr?: string; altEn?: string }
 /** One slide as stored in the file, both languages. */
 export type StaticEntry = PhotoEntry & {
   type: 'static'
@@ -86,17 +92,32 @@ function parseAction(v: unknown, file: string, index: number): StaticEntry['acti
 }
 
 // The photo fields of either slide type. A next competition slide saved before it had them has no value at all ({}).
+// A phone value of "same", or none (slides saved before the phone fields), is resolved to the desktop one here.
 function parsePhoto(v: Record<string, unknown>, file: string, index: number): PhotoEntry {
   const layout = v.layout === undefined ? 'mark' : v.layout
   if (!oneOf(LAYOUTS, layout)) fail(file, index, `yerleşim ${JSON.stringify(layout)} tanınmıyor (${LAYOUTS.join(', ')})`)
   const focus = v.focus === undefined ? 'center' : v.focus
   if (!oneOf(FOCUSES, focus)) fail(file, index, `odak ${JSON.stringify(focus)} tanınmıyor (${FOCUSES.join(', ')})`)
+  const phone = v.phoneLayout === undefined ? 'same' : v.phoneLayout
+  if (!oneOf(PHONE_LAYOUTS, phone)) fail(file, index, `telefon yerleşimi ${JSON.stringify(phone)} tanınmıyor (${PHONE_LAYOUTS.join(', ')})`)
+  const phoneFocus = v.phoneFocus === undefined ? 'same' : v.phoneFocus
+  if (!oneOf(PHONE_FOCUSES, phoneFocus)) fail(file, index, `telefon odağı ${JSON.stringify(phoneFocus)} tanınmıyor (${PHONE_FOCUSES.join(', ')})`)
+  const phoneLayout = phone === 'same' ? layout : phone
   const image = text(v.image)
   if (image && !image.startsWith(SLIDE_IMAGE_PREFIX)) fail(file, index, `fotoğraf yolu "${SLIDE_IMAGE_PREFIX}" ile başlamalı ("${image}")`)
   if (!image && layout !== 'mark') fail(file, index, `fotoğraf seçilmeden "${layout}" yerleşimi kullanıyor`)
+  if (!image && phoneLayout !== 'mark') fail(file, index, `fotoğraf seçilmeden telefonda "${phoneLayout}" yerleşimi kullanıyor`)
   const altTr = text(v.altTr)
   const altEn = text(v.altEn)
-  return { ...(image ? { image } : {}), layout, focus, ...(altTr ? { altTr } : {}), ...(altEn ? { altEn } : {}) }
+  return {
+    ...(image ? { image } : {}),
+    layout,
+    focus,
+    phoneLayout,
+    phoneFocus: phoneFocus === 'same' ? focus : phoneFocus,
+    ...(altTr ? { altTr } : {}),
+    ...(altEn ? { altEn } : {}),
+  }
 }
 
 function parseStatic(v: unknown, file: string, index: number): StaticEntry {
@@ -139,7 +160,8 @@ export function parseSlides(raw: unknown, file = SLIDES_FILE): SlideEntry[] {
 }
 
 export function localizeSlide(entry: SlideEntry, locale: Locale): Slide {
-  const photo = { image: entry.image, layout: entry.layout, focus: entry.focus, alt: locale === 'tr' ? entry.altTr : entry.altEn }
+  const { image, layout, focus, phoneLayout, phoneFocus } = entry
+  const photo = { image, layout, focus, phoneLayout, phoneFocus, alt: locale === 'tr' ? entry.altTr : entry.altEn }
   if (entry.type === 'next-competition') return { id: 'next-competition', type: 'next-competition', ...photo }
   const t = (tr: string, en: string) => (locale === 'tr' ? tr : en)
   return {

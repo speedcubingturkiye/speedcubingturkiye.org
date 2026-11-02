@@ -31,9 +31,9 @@ Sayfalar, Ana sayfa (slaytlar), Arayüz metinleri ve Site ayarları önce bir ta
 
 ## 3. Ana sayfa slaytları
 
-Ana sayfa → Slaytlar. Listedeki sıra ana sayfadaki sıradır. "Sıradaki yarışma" öğesinin yazıları ve düğmeleri WCA verisinden kendiliğinden dolar; en fazla bir tane olur. Elle seçilen yalnız fotoğrafıdır: Fotoğraf, Yerleşim, Fotoğraf odağı ve Fotoğraf açıklaması, aşağıdaki kurallarla. Fotoğraf hangi yarışma sıradaysa onunla görünür; yaklaşan yarışma yoksa slayt hiç çıkmaz.
+Ana sayfa → Slaytlar. Listedeki sıra ana sayfadaki sıradır. "Sıradaki yarışma" öğesinin yazıları ve düğmeleri WCA verisinden kendiliğinden dolar; en fazla bir tane olur. Elle seçilen yalnız fotoğrafı ve yerleşimidir (aşağıdaki fotoğraf alanları, aynı kurallarla). Fotoğraf hangi yarışma sıradaysa onunla görünür; yaklaşan yarışma yoksa slayt hiç çıkmaz.
 
-Metin ve fotoğraf slaydı: Kimlik, Başlık (TR/EN, en fazla 40 karakter), Açıklama (TR/EN, en fazla 160), 1 ya da 2 düğme (adres `/yarismalar` gibi site içi yol ya da `https://` ile tam adres), Fotoğraf, Yerleşim, Fotoğraf odağı, Fotoğraf açıklaması.
+Metin ve fotoğraf slaydı: Kimlik, Başlık (TR/EN, en fazla 40 karakter), Açıklama (TR/EN, en fazla 160), 1 ya da 2 düğme (adres `/yarismalar` gibi site içi yol ya da `https://` ile tam adres), sonra fotoğraf alanları: Fotoğraf, Yerleşim (masaüstü), Fotoğraf odağı (masaüstü), Yerleşim (telefon), Fotoğraf odağı (telefon), Fotoğraf açıklaması.
 
 | Yerleşim | Masaüstü | Telefon |
 |---|---|---|
@@ -44,7 +44,9 @@ Metin ve fotoğraf slaydı: Kimlik, Başlık (TR/EN, en fazla 40 karakter), Aç�
 | G | Tonlu fotoğraf tüm bantta, beyaz logo sağda, yazı fotoğrafın üstünde | Tonlu tam arka plan |
 | J | Fotoğraf üstte tam genişlikte; kırmızı şeritte başlık solda, açıklama ve düğmeler sağda | Fotoğraf üstte, kırmızı alan altta |
 
-Logo dışındaki yerleşimlerde fotoğraf zorunludur; yoksa derleme durur. Başlıklar büyük harfle gösterilir; A, D, E ve J'de daha küçük puntoyla. Çok uzun tek kelimelerden kaçın. Fotoğraf açıklaması boşsa fotoğraf süs sayılır (ekran okuyucu atlar).
+Masaüstü 1024 px ve üstüdür; telefon 1024 px altı, tabletler dahil. Telefon alanları "Masaüstüyle aynı" kalırsa telefon tablodaki sütunu izler. Başka bir telefon yerleşimi seçilirse telefonda o görünür: Logo (fotoğraf telefonda gösterilmez), A / J (fotoğraf üstte; telefonda ikisi aynı), D, E ya da G. Telefon odağı da ayrıca seçilebilir; telefondaki kırpım masaüstündekinden farklı olduğu için çoğu zaman işe yarar.
+
+İki yerleşimden biri Logo değilse fotoğraf zorunludur; yoksa derleme durur. Başlıklar büyük harfle gösterilir; A, D, E ve J'de daha küçük puntoyla. Çok uzun tek kelimelerden kaçın. Fotoğraf açıklaması boşsa fotoğraf süs sayılır (ekran okuyucu atlar).
 
 Slaytlara yalnızca organizasyonun kendi çektiği fotoğrafları koy; başka birinin fotoğrafını kullanmak istiyorsan önce Kutay'a sor.
 

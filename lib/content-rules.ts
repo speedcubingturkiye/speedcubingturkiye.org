@@ -48,6 +48,19 @@ export type Layout = (typeof LAYOUT_OPTIONS)[number]['value']
 export type Focus = (typeof FOCUS_OPTIONS)[number]['value']
 export const LAYOUTS = LAYOUT_OPTIONS.map((o) => o.value)
 export const FOCUSES = FOCUS_OPTIONS.map((o) => o.value)
+/** The slide photo's layout and focus below 1024px (phones and tablets); "same" takes the desktop value. A and J look
+    the same there (the photo above the text), so J is not offered. */
+export const PHONE_LAYOUT_OPTIONS = [
+  { label: 'Masaüstüyle aynı', value: 'same' },
+  { label: 'Logo (fotoğrafsız)', value: 'mark' },
+  { label: 'A / J: fotoğraf üstte', value: 'A' },
+  { label: 'D: fotoğraf üstte, alt kenarı V', value: 'D' },
+  { label: 'E: fotoğraf üstte, kırmızı-siyah ton', value: 'E' },
+  { label: 'G: tonlu fotoğraf arka planda', value: 'G' },
+] as const
+export const PHONE_FOCUS_OPTIONS = [{ label: 'Masaüstüyle aynı', value: 'same' }, ...FOCUS_OPTIONS] as const
+export const PHONE_LAYOUTS = PHONE_LAYOUT_OPTIONS.map((o) => o.value)
+export const PHONE_FOCUSES = PHONE_FOCUS_OPTIONS.map((o) => o.value)
 
 /** News categories (spec §3.1) with their panel labels. */
 export const NEWS_CATEGORIES = [

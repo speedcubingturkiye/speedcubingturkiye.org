@@ -20,6 +20,8 @@ import {
   LAYOUT_OPTIONS,
   LEAD_MAX,
   NEWS_CATEGORIES,
+  PHONE_FOCUS_OPTIONS,
+  PHONE_LAYOUT_OPTIONS,
   SLIDE_IMAGE_PREFIX,
   SLUG_RE,
   TITLE_MAX,
@@ -198,8 +200,20 @@ const slidePhoto = {
     directory: 'public/images/slides',
     publicPath: SLIDE_IMAGE_PREFIX,
   }),
-  layout: fields.select({ label: 'Yerleşim', description: 'Fotoğrafsız slayt için "Logo"; diğerleri fotoğraf ister.', options: LAYOUT_OPTIONS, defaultValue: 'mark' }),
-  focus: fields.select({ label: 'Fotoğraf odağı', description: 'Fotoğraf kırpılırken korunan kenar.', options: FOCUS_OPTIONS, defaultValue: 'center' }),
+  layout: fields.select({
+    label: 'Yerleşim (masaüstü)',
+    description: '1024 px ve üstü. Fotoğrafsız slayt için "Logo"; diğerleri fotoğraf ister.',
+    options: LAYOUT_OPTIONS,
+    defaultValue: 'mark',
+  }),
+  focus: fields.select({ label: 'Fotoğraf odağı (masaüstü)', description: 'Fotoğraf kırpılırken korunan kenar.', options: FOCUS_OPTIONS, defaultValue: 'center' }),
+  phoneLayout: fields.select({
+    label: 'Yerleşim (telefon)',
+    description: '1024 px altı, tabletler dahil. Logo dışındakiler fotoğraf ister.',
+    options: PHONE_LAYOUT_OPTIONS,
+    defaultValue: 'same',
+  }),
+  phoneFocus: fields.select({ label: 'Fotoğraf odağı (telefon)', options: PHONE_FOCUS_OPTIONS, defaultValue: 'same' }),
   ...photoAlt,
 }
 

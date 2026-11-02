@@ -12,7 +12,7 @@ export async function HomeHero({ next, locale }: { next: UpcomingCompetition | n
   const t = await getTranslations('home')
   const tc = await getTranslations('competitions')
   const slides = getSlides(locale).flatMap((s): HeroSlide[] => {
-    const photo = { image: s.image, layout: s.layout, focus: s.focus, alt: s.alt }
+    const photo = { image: s.image, layout: s.layout, focus: s.focus, phoneLayout: s.phoneLayout, phoneFocus: s.phoneFocus, alt: s.alt }
     if (s.type === 'static') {
       return [
         {

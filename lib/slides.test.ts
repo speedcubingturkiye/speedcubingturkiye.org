@@ -26,18 +26,31 @@ const s = (...slides: unknown[]) => ({ slides })
 describe('parseSlides', () => {
   it('accepts both slide types, defaults layout/focus and ignores unknown fields', () => {
     expect(parseSlides(s({ ...brand, value: { ...brand.value, layout: undefined, focus: undefined, extra: 1 } }, next, photo), file)).toEqual([
-      { type: 'static', ...brand.value },
-      { type: 'next-competition', layout: 'mark', focus: 'center' },
-      { type: 'static', ...photo.value },
+      { type: 'static', ...brand.value, phoneLayout: 'mark', phoneFocus: 'center' },
+      { type: 'next-competition', layout: 'mark', focus: 'center', phoneLayout: 'mark', phoneFocus: 'center' },
+      { type: 'static', ...photo.value, phoneLayout: 'A', phoneFocus: 'top' },
     ])
   })
 
   it('gives the next competition slide the photo fields and rules of the other slides', () => {
     const value = { image: '/images/slides/salon.jpg', layout: 'J', focus: 'bottom', altTr: 'Salon', altEn: 'The hall' }
-    expect(parseSlides(s({ ...next, value }), file)).toEqual([{ type: 'next-competition', ...value }])
-    expect(parseSlides(s({ ...next, value: {} }), file)).toEqual([{ type: 'next-competition', layout: 'mark', focus: 'center' }])
+    expect(parseSlides(s({ ...next, value }), file)).toEqual([{ type: 'next-competition', ...value, phoneLayout: 'J', phoneFocus: 'bottom' }])
+    expect(parseSlides(s({ ...next, value: {} }), file)).toEqual([{ type: 'next-competition', layout: 'mark', focus: 'center', phoneLayout: 'mark', phoneFocus: 'center' }])
     expect(() => parseSlides(s(brand, { ...next, value: { layout: 'D' } }), file)).toThrow('slayt 2: fotoğraf seçilmeden "D" yerleşimi kullanıyor')
     expect(() => parseSlides(s({ ...next, value: { ...value, image: 'salon.jpg' } }), file)).toThrow('"/images/slides/" ile başlamalı')
+  })
+
+  it('reads a phone layout and focus of their own, "same" or none meaning the desktop ones, and checks them', () => {
+    const v = photo.value
+    const first = (value: Record<string, unknown>) => parseSlides(s({ ...photo, value: { ...v, ...value } }), file)[0]
+    expect(first({ phoneLayout: 'same', phoneFocus: 'same' })).toMatchObject({ layout: 'A', focus: 'top', phoneLayout: 'A', phoneFocus: 'top' })
+    expect(first({ layout: 'J', phoneLayout: 'G', phoneFocus: 'right' })).toMatchObject({ layout: 'J', focus: 'top', phoneLayout: 'G', phoneFocus: 'right' })
+    // the photo on one of the two screens only
+    expect(first({ layout: 'mark', phoneLayout: 'D' })).toMatchObject({ layout: 'mark', phoneLayout: 'D' })
+    expect(first({ phoneLayout: 'mark' })).toMatchObject({ layout: 'A', phoneLayout: 'mark' })
+    expect(() => parseSlides(s({ ...brand, value: { ...brand.value, phoneLayout: 'E' } }), file)).toThrow('slayt 1: fotoğraf seçilmeden telefonda "E" yerleşimi kullanıyor')
+    expect(() => first({ phoneLayout: 'J' })).toThrow('telefon yerleşimi "J" tanınmıyor')
+    expect(() => first({ phoneFocus: 'middle' })).toThrow('telefon odağı "middle" tanınmıyor')
   })
 
   it('accepts every photo layout with a photo and https:// buttons', () => {
@@ -87,10 +100,12 @@ describe('localizeSlide / getSlides', () => {
       image: '/images/slides/podyum.jpg',
       layout: 'A',
       focus: 'top',
+      phoneLayout: 'A',
+      phoneFocus: 'top',
       alt: 'Podium',
     })
     expect(localizeSlide(parseSlides(s(brand), file)[0], 'tr')).toMatchObject({ title: 'Speedcubing Türkiye', lead: 'Açıklama.', layout: 'mark', image: undefined, alt: undefined })
-    const next = { image: '/images/slides/salon.jpg', layout: 'J', focus: 'bottom' } as const
+    const next = { image: '/images/slides/salon.jpg', layout: 'J', focus: 'bottom', phoneLayout: 'G', phoneFocus: 'center' } as const
     expect(localizeSlide({ type: 'next-competition', ...next, altTr: 'Salon', altEn: 'The hall' }, 'en')).toEqual({ id: 'next-competition', type: 'next-competition', ...next, alt: 'The hall' })
   })
 
