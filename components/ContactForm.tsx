@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation'
 import { sendContact } from '@/app/actions/contact'
 import { Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
+import { useProofOfWork } from '@/components/useProofOfWork'
 import { CONTACT_SUBJECTS, type ActionState, type ContactSubject } from '@/app/actions/types'
 import type { Locale } from '@/i18n/routing'
 
@@ -17,13 +18,23 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
   const t = useTranslations('forms')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(sendContact, initial, failed, (s) => s.ok)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
+  const { pow, start } = useProofOfWork()
   const [subject, setSubject] = useState<ContactSubject>(presetSubject)
 
   return (
     <div className="grid max-w-xl gap-4">
       {state.ok ? null : (
-        <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-4">
+        <form
+          action={formAction}
+          onSubmit={onSubmit}
+          onFocusCapture={() => {
+            onFocusCapture()
+            start()
+          }}
+          className="grid gap-4"
+        >
           <input type="hidden" name="ts" value={ts} />
+          <input type="hidden" name="pow" value={pow} />
           <input type="hidden" name="locale" value={locale} />
           {/* honeypot */}
           <div className="hidden" aria-hidden="true">

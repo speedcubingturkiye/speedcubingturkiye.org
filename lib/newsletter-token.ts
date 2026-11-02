@@ -80,18 +80,19 @@ export function readToken(purpose: TokenPurpose, token: string, now = Date.now()
 }
 
 /** The membership confirm link's code (2026-10-22): the sheet keeps a random code, the link carries it with the site's
- *  signature, so a made-up code is turned away before it reaches the sheet (whose script takes one lock per call). */
-export function signCode(code: string): string {
-  return `${code}.${codeSignature(code)}`
+ *  signature, so a made-up code is turned away before it reaches the sheet (whose script takes one lock per call).
+ *  `purpose` keeps one use's signatures from passing as another's (the contact form's proof of work: 'pow'). */
+export function signCode(code: string, purpose = 'uye-onay'): string {
+  return `${code}.${codeSignature(code, purpose)}`
 }
 
 /** The code of a signed confirm link, or null when the signature does not match. */
-export function codeOf(signed: string): string | null {
+export function codeOf(signed: string, purpose = 'uye-onay'): string | null {
   const [code, signature, extra] = signed.split('.')
   if (!code || !signature || extra !== undefined) return null
-  const expected = Buffer.from(codeSignature(code))
+  const expected = Buffer.from(codeSignature(code, purpose))
   const given = Buffer.from(signature)
   return given.length === expected.length && timingSafeEqual(given, expected) ? code : null
 }
 
-const codeSignature = (code: string) => createHmac('sha256', key()).update(`uye-onay:${code}`).digest('base64url').slice(0, 22)
+const codeSignature = (code: string, purpose: string) => createHmac('sha256', key()).update(`${purpose}:${code}`).digest('base64url').slice(0, 22)

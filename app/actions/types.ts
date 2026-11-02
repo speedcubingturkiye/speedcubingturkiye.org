@@ -1,5 +1,6 @@
 export type ContactSubject = 'genel' | 'yarisma' | 'gonullu' | 'medya' | 'guvenlik' | 'kvkk' | 'diger'
-export type ActionState = { ok: boolean; error?: 'invalid' | 'too_fast' | 'consent' | 'send_failed' }
+/** 'pow': the contact form came without its proof of work (lib/pow.ts, 2026-10-27) */
+export type ActionState = { ok: boolean; error?: 'invalid' | 'too_fast' | 'pow' | 'consent' | 'send_failed' }
 /** Üye ol's forms. WCA ile kaydol (spec 2026-10-21) adds `kind` (how a WCA sign-up ended: 'started' at once, 'linked' to
  *  the member the address already is, or 'member' with nothing to link) with `ranking` (the il ranking box), and two
  *  errors: the WCA details expired, another member verified this WCA ID. */

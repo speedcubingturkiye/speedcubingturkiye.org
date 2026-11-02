@@ -227,6 +227,7 @@
     "error": {
       "invalid": "Lütfen tüm alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
+      "pow": "Form doğrulanamadı; sayfayı yenileyip tekrar dene ya da bize e-posta yaz.",
       "consent": "Devam etmek için onay kutusunu işaretle.",
       "send_failed": "Gönderim başarısız oldu. Lütfen daha sonra tekrar dene ya da bize e-posta yaz."
     },

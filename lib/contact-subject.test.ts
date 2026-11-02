@@ -3,12 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sendContact } from '@/app/actions/contact'
 import { CONTACT_SUBJECTS } from '@/app/actions/types'
 import { contactRecipient, contactSubjectLine, TITLE_MAX } from '@/lib/contact-subject'
+import { powSolved } from '@/lib/pow'
 import { sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 import tr from '@/messages/tr.json'
 import en from '@/messages/en.json'
 
 vi.mock('@/lib/ses', () => ({ sendMail: vi.fn() }))
+// lib/pow.test.ts tests the proof of work itself
+vi.mock('@/lib/pow', () => ({ powSolved: vi.fn(() => true) }))
 
 describe('contactSubjectLine', () => {
   it('reads "Speedcubing Türkiye: <label>", the label the select shows in the form language', () => {
@@ -130,5 +133,18 @@ describe('sendContact', () => {
   it('reports send_failed when the mail is refused', async () => {
     vi.mocked(sendMail).mockResolvedValue(false)
     expect(await sendContact({ ok: false }, form())).toEqual({ ok: false, error: 'send_failed' })
+  })
+
+  it('turns away a form without its proof of work (posted without running the page), and sends nothing', async () => {
+    vi.mocked(powSolved).mockReturnValueOnce(false)
+    expect(await sendContact({ ok: false }, form())).toEqual({ ok: false, error: 'pow' })
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('tells a look-alike of our address that it went, and sends nothing (2026-10-27)', async () => {
+    expect(await sendContact({ ok: false }, form({ email: 'domains@search-speedcubingturkiye.org' }))).toEqual({ ok: true })
+    expect(sendMail).not.toHaveBeenCalled()
+    expect(await sendContact({ ok: false }, form({ email: 'kutay@speedcubingturkiye.org' }))).toEqual({ ok: true })
+    expect(sendMail).toHaveBeenCalledOnce()
   })
 })

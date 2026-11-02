@@ -2,6 +2,7 @@
 
 import { contactRecipient, contactSubjectLine } from '@/lib/contact-subject'
 import { botCheck } from '@/lib/form-guard'
+import { powSolved } from '@/lib/pow'
 import { sendMail } from '@/lib/ses'
 import { CONTACT_SUBJECTS, EMAIL_RE, type ActionState, type ContactSubject } from '@/app/actions/types'
 
@@ -9,6 +10,8 @@ export async function sendContact(_prev: ActionState, formData: FormData): Promi
   const guard = botCheck(formData)
   if (guard === 'bot') return { ok: true } // pretend success to the bot
   if (guard === 'too_fast') return { ok: false, error: 'too_fast' }
+  // A form posted without running the page has no proof of work (lib/pow.ts): the spam that reached info@ (2026-10-27)
+  if (!powSolved(String(formData.get('pow') ?? ''))) return { ok: false, error: 'pow' }
 
   const name = String(formData.get('name') ?? '').trim()
   const email = String(formData.get('email') ?? '').trim()
@@ -23,6 +26,10 @@ export async function sendContact(_prev: ActionState, formData: FormData): Promi
     CONTACT_SUBJECTS.includes(subject) &&
     message.length >= 10 && message.length <= 5000
   if (!valid) return { ok: false, error: 'invalid' }
+  // The "search engine registration" scam writes from a look-alike of our address (search-speedcubingturkiye.org): it is
+  // told the message went, and no mail goes
+  const domain = email.slice(email.lastIndexOf('@') + 1).toLowerCase()
+  if (domain.includes('speedcubingturkiye') && !/^speedcubingturkiye\.(org|com)$/.test(domain)) return { ok: true }
 
   const heading = contactSubjectLine(subject, title, locale)
   if (!heading) return { ok: false, error: 'invalid' } // a title with a line break
