@@ -35,7 +35,6 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
         >
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
-          <Turnstile action="contact" fallback={t('noJs', { email: site.contactEmail })} />
           {/* honeypot */}
           <div className="hidden" aria-hidden="true">
             <label>
@@ -91,6 +90,7 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
             </Link>
           </p>
 
+          <Turnstile action="contact" fallback={t('noJs', { email: site.contactEmail })} />
           {/* aria-disabled, not disabled: a disabled button drops keyboard focus to <body> while the action runs */}
           <button type="submit" aria-disabled={pending} className="btn btn-brand w-fit">
             {pending ? t('sending') : t('send')}

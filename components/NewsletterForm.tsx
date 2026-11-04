@@ -44,7 +44,6 @@ export function NewsletterForm({ locale, tone = 'default' }: { locale: Locale; t
         >
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
-          <Turnstile action="newsletter" fallback={t('noJs', { email: site.contactEmail })} />
           {/* honeypot */}
           <div className="hidden" aria-hidden="true">
             <label>
@@ -69,6 +68,7 @@ export function NewsletterForm({ locale, tone = 'default' }: { locale: Locale; t
             </span>
           </label>
 
+          <Turnstile action="newsletter" fallback={t('noJs', { email: site.contactEmail })} />
           <button type="submit" aria-disabled={pending} className={`btn w-fit ${onBrand ? 'btn-white' : 'btn-brand'}`}>
             {pending ? t('subscribing') : t('subscribe')}
           </button>

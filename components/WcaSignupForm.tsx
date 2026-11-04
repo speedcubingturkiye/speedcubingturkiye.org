@@ -90,7 +90,6 @@ export function WcaSignupForm({
         <input type="hidden" name="ts" value={ts} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="w" value={token} />
-        <Turnstile action="wca-signup" fallback={forms('noJs', { email: site.contactEmail })} />
         {/* honeypot */}
         <div className="hidden" aria-hidden="true">
           <label>
@@ -156,6 +155,7 @@ export function WcaSignupForm({
             {forms('privacyLink')}
           </Link>
         </p>
+        <Turnstile action="wca-signup" fallback={forms('noJs', { email: site.contactEmail })} />
         {/* aria-disabled, not disabled: a disabled button drops keyboard focus to <body> while the action runs */}
         <button type="submit" aria-disabled={pending} className="btn btn-brand w-fit">
           {pending ? t('sending') : t('signUp')}
