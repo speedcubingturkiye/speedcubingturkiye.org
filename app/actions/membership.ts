@@ -1,12 +1,12 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { canonicalEmail } from '@/lib/email'
 import { botCheck } from '@/lib/form-guard'
+import { requestIp } from '@/lib/ip'
 import { requestMembership, requestWcaMembership } from '@/lib/membership'
 import { ageOn, parseApplication } from '@/lib/membership-rules'
 import { sheetReady } from '@/lib/membership-sheet'
-import { clientIp } from '@/lib/newsletter'
+import { turnstileOk } from '@/lib/turnstile'
 import { readToken } from '@/lib/newsletter-token'
 import { todayIstanbul } from '@/lib/wca/status'
 import type { MembershipState } from '@/app/actions/types'
@@ -15,6 +15,9 @@ export async function applyForMembership(_prev: MembershipState, formData: FormD
   const guard = botCheck(formData)
   if (guard === 'bot') return { ok: true } // pretend success to the bot
   if (guard === 'too_fast') return { ok: false, error: 'too_fast' }
+  // A posted application without the page behind it: the same robot check as the contact form (2026-11-04), before
+  // the sheet's script is asked for a row
+  if (!(await turnstileOk(formData, await requestIp(), 'membership'))) return { ok: false, error: 'captcha' }
   if (!sheetReady()) return { ok: false, error: 'closed' }
 
   const parsed = parseApplication(formData, todayIstanbul())
@@ -30,6 +33,8 @@ export async function signUpWithWca(_prev: MembershipState, formData: FormData):
   const guard = botCheck(formData)
   if (guard === 'bot') return { ok: true }
   if (guard === 'too_fast') return { ok: false, error: 'too_fast' }
+  // The WCA form's page carries the same robot check (2026-11-04)
+  if (!(await turnstileOk(formData, await requestIp(), 'wca-signup'))) return { ok: false, error: 'captcha' }
   if (!sheetReady()) return { ok: false, error: 'closed' }
 
   const wca = readToken('kaydol', String(formData.get('w') ?? ''))
@@ -46,7 +51,7 @@ export async function signUpWithWca(_prev: MembershipState, formData: FormData):
   // kutaytemel@gmail.com). One with a "+tag" still takes the link: on a rare server "a+b" is a mailbox of its own.
   const confirmed = wca.email !== '' && !wca.email.includes('+') && canonicalEmail(wca.email) === parsed.data.email
   const locale = formData.get('locale') === 'en' ? 'en' : 'tr'
-  const result = await requestWcaMembership(parsed.data, { wcaId: wca.wcaId ?? null, ranking, confirmed, ip: clientIp(await headers()) }, locale)
+  const result = await requestWcaMembership(parsed.data, { wcaId: wca.wcaId ?? null, ranking, confirmed, ip: await requestIp() }, locale)
   if (result === 'error') return { ok: false, error: 'send_failed' }
   if (result === 'taken') return { ok: false, error: 'wca_taken' }
   return result === 'sent' ? { ok: true } : { ok: true, kind: result, ranking }

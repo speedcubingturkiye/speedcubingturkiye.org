@@ -81,7 +81,7 @@ export function readToken(purpose: TokenPurpose, token: string, now = Date.now()
 
 /** The membership confirm link's code (2026-10-22): the sheet keeps a random code, the link carries it with the site's
  *  signature, so a made-up code is turned away before it reaches the sheet (whose script takes one lock per call).
- *  `purpose` keeps one use's signatures from passing as another's (the contact form's proof of work: 'pow'). */
+ *  `purpose` keeps one use's signatures from passing as another's. */
 export function signCode(code: string, purpose = 'uye-onay'): string {
   return `${code}.${codeSignature(code, purpose)}`
 }

@@ -7,7 +7,9 @@ import { applyForMembership } from '@/app/actions/membership'
 import { Done } from '@/components/Done'
 import { check, field, MemberFields, Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
+import { resetTurnstile, Turnstile } from '@/components/Turnstile'
 import type { MembershipState } from '@/app/actions/types'
+import { site } from '@/site.config'
 import type { Locale } from '@/i18n/routing'
 import type { PhoneCountry } from '@/lib/phone'
 
@@ -45,9 +47,18 @@ export function MembershipForm({
     <>
       {intro}
       <div className={waitsForChoice ? 'hidden max-w-xl gap-4 group-has-[#yol-form:checked]:grid' : 'grid max-w-xl gap-4'}>
-        <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-4">
+        <form
+          action={formAction}
+          onSubmit={(e) => {
+            onSubmit(e)
+            resetTurnstile() // the token just sent answers once (components/Turnstile.tsx)
+          }}
+          onFocusCapture={onFocusCapture}
+          className="grid gap-4"
+        >
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
+          <Turnstile action="membership" fallback={forms('noJs', { email: site.contactEmail })} />
           {/* honeypot */}
           <div className="hidden" aria-hidden="true">
             <label>

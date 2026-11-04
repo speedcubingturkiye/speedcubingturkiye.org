@@ -224,10 +224,11 @@
       "kvkk": "KVKK talebi",
       "diger": "Diğer"
     },
+    "noJs": "Formu göndermek için tarayıcında JavaScript gerekiyor. Bize {email} adresinden yazabilirsin.",
     "error": {
       "invalid": "Lütfen tüm alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
-      "pow": "Form doğrulanamadı; sayfayı yenileyip tekrar dene ya da bize e-posta yaz.",
+      "captcha": "Robot doğrulaması tamamlanmadı; sayfayı yenileyip tekrar dene ya da bize e-posta yaz.",
       "consent": "Devam etmek için onay kutusunu işaretle.",
       "send_failed": "Gönderim başarısız oldu. Lütfen daha sonra tekrar dene ya da bize e-posta yaz."
     },
@@ -324,6 +325,7 @@
     "error": {
       "invalid": "Lütfen alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
+      "captcha": "Robot doğrulaması tamamlanmadı; sayfayı yenileyip tekrar dene ya da bize e-posta yaz.",
       "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
       "phone": "Geçerli bir cep telefonu numarası yaz.",
       "expired": "Linkin süresi doldu.",
@@ -378,6 +380,7 @@
     "error": {
       "invalid": "Lütfen tüm alanları doğru doldur.",
       "too_fast": "Lütfen birkaç saniye bekleyip tekrar dene.",
+      "captcha": "Robot doğrulaması tamamlanmadı; sayfayı yenileyip tekrar dene ya da bize e-posta yaz.",
       "guardian": "18 yaşından küçüksen veli onayı kutusunu işaretle.",
       "phone": "Geçerli bir cep telefonu numarası yaz.",
       "closed": "Üyelik formu şu an kapalı.",

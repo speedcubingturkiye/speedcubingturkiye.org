@@ -80,7 +80,10 @@ SES kurulumu (ABD, Kuzey Virginia `us-east-1`; domain doğrulaması, DKIM) 2026-
     - `CRON_SECRET`
     - `GITHUB_TOKEN`
     - `GITHUB_REPO=<owner>/<repo>`
+    - `TURNSTILE_SECRET`
+    - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
   - Değişkenleri ekledikten sonra **redeploy** et.
+- [ ] Cloudflare → **Turnstile → Add site**: domain `speedcubingturkiye.org`, widget mode **Managed**. Site key (public) `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, secret key `TURNSTILE_SECRET` olarak Production'a gir. Widget **yalnız Production'da** çizilir; Preview'da anahtar yoksa formlar `captcha` hatası döner (tıpkı mail yollarının `send_failed` dönmesi gibi, beklenen davranış).
 - [ ] `BULTEN_KAPALI` gibi bir ortam değişkeni yalnız yeni deploy'larda geçerli olur: değiştirdikten sonra **Deployments → Redeploy**.
 - [ ] **Settings → Analytics** → Web Analytics'i etkinleştir.
 - [ ] **Settings → Domains**:
@@ -128,7 +131,8 @@ node -e "for (const f of ['lh-home.json','lh-yarismalar.json']) { const c = requ
 
 ## 7. Canlı form testi
 
-- [ ] `https://speedcubingturkiye.org/iletisim` sayfasından konu "Genel" ile gerçek bir mesaj gönder.
+- [ ] `https://speedcubingturkiye.org/iletisim` sayfasından konu "Genel" ile gerçek bir mesaj gönder. Turnstile "managed" modda çoğu ziyaretçiye kutu göstermez; gönderim yine de geçmeli.
+- [ ] Tarayıcıda JavaScript'i kapatıp sayfayı yenile: formun altında `info@` adresi görünmeli, form gönderilememeli (Turnstile JS ister).
 - [ ] Ekranda yeşil başarı metni görünmeli.
 - [ ] Bir dakika içinde `info@` kutusuna (Google Workspace), gönderen `<isim> (form) <news@speedcubingturkiye.org>` (isim, formda yazdığın ad), konu `Speedcubing Türkiye: Genel` olan bir mail düşmeli; mail'e "yanıtla" formda yazılan adrese gitmeli ve yanıtın konusu `Re: Speedcubing Türkiye: Genel` olmalı.
 - [ ] Konu olarak "Diğer" seç: "Başlık (isteğe bağlı)" alanı açılmalı. Başlığa `Deneme başlığı` yazıp gönder: mailin konusu `Speedcubing Türkiye: Deneme başlığı` olmalı, gövdesinde `Konu: Diğer` ve `Başlık: Deneme başlığı` satırları görünmeli. Başlık boşsa konu `Speedcubing Türkiye: Diğer` olmalı.

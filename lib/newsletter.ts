@@ -92,8 +92,8 @@ export async function subscribeVerified(email: string, locale: Locale, ip: strin
   await confirmSubscriber(email, locale, { sentAt: at, confirmedAt: at, ip, via: 'wca' })
 }
 
-/** The visitor's address for the double opt-in record: the first X-Forwarded-For hop, else X-Real-IP. */
-export const clientIp = (headers: Headers) => headers.get('x-forwarded-for')?.split(',')[0]?.trim() || headers.get('x-real-ip') || null
+/** The visitor's address for the double opt-in record: the first X-Forwarded-For hop, else X-Real-IP (lib/ip.ts). */
+export { clientIp } from '@/lib/ip'
 
 /** The confirm link (spec §6.3): true when the address is now a confirmed subscriber. */
 export async function confirmSubscription(token: string, ip: string | null, now = Date.now()): Promise<boolean> {

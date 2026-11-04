@@ -4,10 +4,12 @@ import type { AccountState } from '@/app/actions/types'
 import { joinRanking, leaveMembership, readAccountToken, requestAccountLink, requestEmailChange } from '@/lib/account'
 import { canonicalEmail, readEmail } from '@/lib/email'
 import { botCheck } from '@/lib/form-guard'
+import { requestIp } from '@/lib/ip'
 import { istanbulStamp } from '@/lib/membership'
 import { parseApplication } from '@/lib/membership-rules'
 import { setMemberRanking, sheetReady, unlinkMemberWca, updateMember } from '@/lib/membership-sheet'
 import { requestSubscription } from '@/lib/newsletter'
+import { turnstileOk } from '@/lib/turnstile'
 import { removeSubscriber } from '@/lib/ses'
 import { todayIstanbul } from '@/lib/wca/status'
 
@@ -22,6 +24,8 @@ export async function requestLink(_prev: AccountState, formData: FormData): Prom
   const guard = botCheck(formData)
   if (guard === 'bot') return { ok: true } // pretend success to the bot
   if (guard === 'too_fast') return { ok: false, error: 'too_fast' }
+  // A link asked for without the page behind it: the same robot check as the contact form (2026-11-04)
+  if (!(await turnstileOk(formData, await requestIp(), 'account-link'))) return { ok: false, error: 'captcha' }
   if (!sheetReady()) return { ok: false, error: 'closed' }
   const email = addressOf(formData, 'email')
   if (!email) return { ok: false, error: 'invalid' }

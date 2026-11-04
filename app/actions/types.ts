@@ -1,23 +1,25 @@
 export type ContactSubject = 'genel' | 'yarisma' | 'gonullu' | 'medya' | 'guvenlik' | 'kvkk' | 'diger'
-/** 'pow': the contact form came without its proof of work (lib/pow.ts, 2026-10-27) */
-export type ActionState = { ok: boolean; error?: 'invalid' | 'too_fast' | 'pow' | 'consent' | 'send_failed' }
+/** 'captcha': the form came without a robot check (lib/turnstile.ts, 2026-11-04) */
+export type ActionState = { ok: boolean; error?: 'invalid' | 'too_fast' | 'captcha' | 'consent' | 'send_failed' }
 /** Üye ol's forms. WCA ile kaydol (spec 2026-10-21) adds `kind` (how a WCA sign-up ended: 'started' at once, 'linked' to
  *  the member the address already is, or 'member' with nothing to link) with `ranking` (the il ranking box), and two
- *  errors: the WCA details expired, another member verified this WCA ID. */
+ *  errors: the WCA details expired, another member verified this WCA ID. 'captcha': the form came without its robot
+ *  check (lib/turnstile.ts, 2026-11-04), as on the contact form. */
 export type MembershipState = {
   ok: boolean
   kind?: 'started' | 'linked' | 'member'
   ranking?: boolean
-  error?: 'invalid' | 'too_fast' | 'guardian' | 'phone' | 'closed' | 'send_failed' | 'wca_expired' | 'wca_taken'
+  error?: 'invalid' | 'too_fast' | 'captcha' | 'guardian' | 'phone' | 'closed' | 'send_failed' | 'wca_expired' | 'wca_taken'
 }
 /** Hesabım's forms (spec 2026-10-21); 'expired': the page's one-hour link ran out, or the membership is gone;
  *  'city_locked': the il ranking holds the city; 'not_allowed': the il ranking needs a verified WCA ID; 'phone': the
- *  phone number did not read (lib/phone.ts, 2026-10-24) */
+ *  phone number did not read (lib/phone.ts, 2026-10-24); 'captcha': the link request came without its robot check */
 export type AccountState = {
   ok: boolean
   error?:
     | 'invalid'
     | 'too_fast'
+    | 'captcha'
     | 'guardian'
     | 'phone'
     | 'expired'

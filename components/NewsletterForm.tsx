@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { subscribe } from '@/app/actions/newsletter'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
+import { resetTurnstile, Turnstile } from '@/components/Turnstile'
 import type { ActionState } from '@/app/actions/types'
+import { site } from '@/site.config'
 import type { Locale } from '@/i18n/routing'
 
 const initial: ActionState = { ok: false }
@@ -31,9 +33,18 @@ export function NewsletterForm({ locale, tone = 'default' }: { locale: Locale; t
   return (
     <div className="grid gap-3">
       {state.ok ? null : (
-        <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} className="grid gap-3">
+        <form
+          action={formAction}
+          onSubmit={(e) => {
+            onSubmit(e)
+            resetTurnstile() // the token just sent answers once (components/Turnstile.tsx)
+          }}
+          onFocusCapture={onFocusCapture}
+          className="grid gap-3"
+        >
           <input type="hidden" name="ts" value={ts} />
           <input type="hidden" name="locale" value={locale} />
+          <Turnstile action="newsletter" fallback={t('noJs', { email: site.contactEmail })} />
           {/* honeypot */}
           <div className="hidden" aria-hidden="true">
             <label>

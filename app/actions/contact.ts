@@ -2,16 +2,18 @@
 
 import { contactRecipient, contactSubjectLine } from '@/lib/contact-subject'
 import { botCheck } from '@/lib/form-guard'
-import { powSolved } from '@/lib/pow'
+import { requestIp } from '@/lib/ip'
 import { sendMail } from '@/lib/ses'
+import { turnstileOk } from '@/lib/turnstile'
 import { CONTACT_SUBJECTS, EMAIL_RE, type ActionState, type ContactSubject } from '@/app/actions/types'
 
 export async function sendContact(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const guard = botCheck(formData)
   if (guard === 'bot') return { ok: true } // pretend success to the bot
   if (guard === 'too_fast') return { ok: false, error: 'too_fast' }
-  // A form posted without running the page has no proof of work (lib/pow.ts): the spam that reached info@ (2026-10-27)
-  if (!powSolved(String(formData.get('pow') ?? ''))) return { ok: false, error: 'pow' }
+  // A form posted without running the page answers no robot check (lib/turnstile.ts): the spam that reached info@
+  // (2026-10-27). A no-JS visitor finds the address in the form instead (components/Turnstile.tsx, 2026-11-04)
+  if (!(await turnstileOk(formData, await requestIp(), 'contact'))) return { ok: false, error: 'captcha' }
 
   const name = String(formData.get('name') ?? '').trim()
   const email = String(formData.get('email') ?? '').trim()

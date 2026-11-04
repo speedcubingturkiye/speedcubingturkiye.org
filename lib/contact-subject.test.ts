@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sendContact } from '@/app/actions/contact'
 import { CONTACT_SUBJECTS } from '@/app/actions/types'
 import { contactRecipient, contactSubjectLine, TITLE_MAX } from '@/lib/contact-subject'
-import { powSolved } from '@/lib/pow'
+import { turnstileOk } from '@/lib/turnstile'
 import { sendMail } from '@/lib/ses'
 import { site } from '@/site.config'
 import tr from '@/messages/tr.json'
 import en from '@/messages/en.json'
 
 vi.mock('@/lib/ses', () => ({ sendMail: vi.fn() }))
-// lib/pow.test.ts tests the proof of work itself
-vi.mock('@/lib/pow', () => ({ powSolved: vi.fn(() => true) }))
+// lib/turnstile.test.ts tests the robot check itself
+vi.mock('@/lib/turnstile', () => ({ turnstileOk: vi.fn(() => true) }))
 
 describe('contactSubjectLine', () => {
   it('reads "Speedcubing Türkiye: <label>", the label the select shows in the form language', () => {
@@ -135,9 +135,9 @@ describe('sendContact', () => {
     expect(await sendContact({ ok: false }, form())).toEqual({ ok: false, error: 'send_failed' })
   })
 
-  it('turns away a form without its proof of work (posted without running the page), and sends nothing', async () => {
-    vi.mocked(powSolved).mockReturnValueOnce(false)
-    expect(await sendContact({ ok: false }, form())).toEqual({ ok: false, error: 'pow' })
+  it('turns away a form without its robot check, and sends nothing', async () => {
+    vi.mocked(turnstileOk).mockResolvedValueOnce(false)
+    expect(await sendContact({ ok: false }, form())).toEqual({ ok: false, error: 'captcha' })
     expect(sendMail).not.toHaveBeenCalled()
   })
 

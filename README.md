@@ -277,7 +277,7 @@ Bütün mailler Amazon SES'ten (`us-east-1`) gider. Haber ve duyurular `news@`, 
 
 Mesajlar info@'ya "Speedcubing Türkiye: <konu>" konusuyla ve "<ad soyad> (form)" gönderen adıyla düşer; "Yanıtla" doğrudan yazan kişiye gider. "Güvenlik" konusundaki mesajlar ayrı bir adrese gider (`SAFEGUARDING_EMAIL`).
 
-Spam'e karşı birkaç önlem var. Formda botların doldurduğu gizli bir alan var ve form üç saniyeden hızlı gönderilemez. Bir de görünmez bir doğrulama var: form ilk odaklandığında tarayıcı siteden imzalı küçük bir problem alır ve bir saniyeden kısa sürede çözer (`lib/pow.ts`). Sayfayı çalıştırmadan gönderen botlar bunu geçemez; bunun için dışarıya istek gitmez, çerez de kullanılmaz. Son olarak `search-speedcubingturkiye.org` gibi bize benzeyen adreslerden yazanlara "gönderildi" denir ama mail gitmez.
+Spam'e karşı üç katman var. Formda botların doldurduğu gizli bir alan var ve form üç saniyeden hızlı gönderilemez. İkincisi görünmez bir doğrulama: Cloudflare Turnstile formla birlikte tek kullanımlık bir token üretir, sunucu bunu `siteverify` ile sorar (`lib/turnstile.ts`, `components/Turnstile.tsx`; anahtarlar `TURNSTILE_SECRET` ve `NEXT_PUBLIC_TURNSTILE_SITE_KEY`). Sayfayı çalıştırmadan gönderen botlar bunu geçemez. Son olarak `search-speedcubingturkiye.org` gibi bize benzeyen adreslerden yazanlara "gönderildi" denir ama mail gitmez. JavaScript'siz gelen ziyaretçiye formun altında bir e-posta adresi gösterilir: form kendini kanıtlayacak bir şey çalıştıramaz.
 
 #### Bülten
 

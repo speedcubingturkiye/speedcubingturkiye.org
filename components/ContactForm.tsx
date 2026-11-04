@@ -6,8 +6,9 @@ import { Link } from '@/i18n/navigation'
 import { sendContact } from '@/app/actions/contact'
 import { Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
-import { useProofOfWork } from '@/components/useProofOfWork'
+import { resetTurnstile, Turnstile } from '@/components/Turnstile'
 import { CONTACT_SUBJECTS, type ActionState, type ContactSubject } from '@/app/actions/types'
+import { site } from '@/site.config'
 import type { Locale } from '@/i18n/routing'
 
 const initial: ActionState = { ok: false }
@@ -18,7 +19,6 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
   const t = useTranslations('forms')
   const { state, formAction, pending, onSubmit, statusRef } = useFormSubmit(sendContact, initial, failed, (s) => s.ok)
   const { ts, onFocusCapture } = useFormStartTime(state.ok)
-  const { pow, start } = useProofOfWork()
   const [subject, setSubject] = useState<ContactSubject>(presetSubject)
 
   return (
@@ -26,16 +26,16 @@ export function ContactForm({ locale, presetSubject = 'genel' }: { locale: Local
       {state.ok ? null : (
         <form
           action={formAction}
-          onSubmit={onSubmit}
-          onFocusCapture={() => {
-            onFocusCapture()
-            start()
+          onSubmit={(e) => {
+            onSubmit(e)
+            resetTurnstile() // the token just sent answers once (components/Turnstile.tsx)
           }}
+          onFocusCapture={onFocusCapture}
           className="grid gap-4"
         >
           <input type="hidden" name="ts" value={ts} />
-          <input type="hidden" name="pow" value={pow} />
           <input type="hidden" name="locale" value={locale} />
+          <Turnstile action="contact" fallback={t('noJs', { email: site.contactEmail })} />
           {/* honeypot */}
           <div className="hidden" aria-hidden="true">
             <label>

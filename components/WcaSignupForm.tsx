@@ -8,8 +8,10 @@ import { signUpWithWca } from '@/app/actions/membership'
 import { Done, MemberNextSteps } from '@/components/Done'
 import { check, field, MemberFields, Required } from '@/components/MemberFields'
 import { useFormStartTime, useFormSubmit } from '@/components/useFormStartTime'
+import { resetTurnstile, Turnstile } from '@/components/Turnstile'
 import { WcaLogo, wcaIdLink } from '@/components/WcaLogo'
 import type { MembershipState } from '@/app/actions/types'
+import { site } from '@/site.config'
 import { ageOn } from '@/lib/membership-rules'
 import type { PhoneCountry } from '@/lib/phone'
 
@@ -75,10 +77,20 @@ export function WcaSignupForm({
 
   return (
     <div className="grid max-w-xl gap-4">
-      <form action={formAction} onSubmit={onSubmit} onFocusCapture={onFocusCapture} onChange={onChange} className="grid gap-4">
+      <form
+        action={formAction}
+        onSubmit={(e) => {
+          onSubmit(e)
+          resetTurnstile() // the token just sent answers once (components/Turnstile.tsx)
+        }}
+        onFocusCapture={onFocusCapture}
+        onChange={onChange}
+        className="grid gap-4"
+      >
         <input type="hidden" name="ts" value={ts} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="w" value={token} />
+        <Turnstile action="wca-signup" fallback={forms('noJs', { email: site.contactEmail })} />
         {/* honeypot */}
         <div className="hidden" aria-hidden="true">
           <label>

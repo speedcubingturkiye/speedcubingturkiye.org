@@ -224,10 +224,11 @@
       "kvkk": "Data protection request",
       "diger": "Other"
     },
+    "noJs": "This form needs JavaScript. Write to us at {email} instead.",
     "error": {
       "invalid": "Please fill in all fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
-      "pow": "The form could not be verified; reload the page and try again, or email us.",
+      "captcha": "The robot check did not complete; reload the page and try again, or email us.",
       "consent": "Tick the consent box to continue.",
       "send_failed": "Sending failed. Please try again later or email us."
     },
@@ -324,6 +325,7 @@
     "error": {
       "invalid": "Please fill in the fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
+      "captcha": "The robot check did not complete; reload the page and try again, or email us.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
       "phone": "Enter a valid mobile number.",
       "expired": "Your link has expired.",
@@ -378,6 +380,7 @@
     "error": {
       "invalid": "Please fill in all fields correctly.",
       "too_fast": "Please wait a few seconds and try again.",
+      "captcha": "The robot check did not complete; reload the page and try again, or email us.",
       "guardian": "If you are under 18, tick the parent or guardian consent box.",
       "phone": "Enter a valid mobile number.",
       "closed": "The membership form is closed right now.",
