@@ -1,7 +1,7 @@
 ---
 title: "Kişisel verilerin korunması hakkında aydınlatma metni"
 description: "Speedcubing Türkiye web sitesinde kişisel verilerinizin nasıl işlendiği"
-updated: "2026-10-24"
+updated: "2026-11-04"
 ---
 
 Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi ile Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ (Resmî Gazete 10.03.2018, sayı 30356) uyarınca hazırlanmıştır.
@@ -85,6 +85,7 @@ Bülten için ayrı aydınlatma aşağıda, [6. bölümde](#bulten) yer alır.
 
 - Bu site yalnız WCA ile kaydolurken, Hesabım'da WCA hesabı bağlanırken ya da WCA ile giriş yapılırken 10 dakikalık, **zorunlu bir çerez** kullanır; başka çerez yoktur. Ziyaret istatistikleri için kullandığımız Vercel Web Analytics çerez yerleştirmez, IP adresinizi saklamaz ve sizi kişi olarak tanımlamaz; yalnızca toplu sayfa görüntüleme verisi üretir (sayfa adresi, yönlendiren site, ülke/şehir, tarayıcı ve cihaz türü). Bkz. [Çerez Politikası](/cerez-politikasi).
 - Barındırma sağlayıcımız Vercel, hizmetin güvenliği ve hata ayıklama için isteklere ait teknik kayıtları (IP adresi dâhil) kısa süreli tutabilir. **Hukuki sebep:** KVKK md. 5/2-f.
+- Formlarımızı otomatik gönderimlere karşı korumak için Cloudflare Turnstile kullanırız. Doğrulama aracı, her sayfanın altındaki bülten formu nedeniyle sitenin tüm sayfalarında yüklenir. Bu sırada IP adresiniz, TLS parmak iziniz, tarayıcı bilginiz (User-Agent) ve ziyaret ettiğiniz site Cloudflare'e iletilir. Cloudflare bu verileri bizim adımıza robotları ayırt etmek için, kendi sorumluluğunda ise robot tespitini geliştirmek için işler. **Hukuki sebep:** KVKK md. 5/2-f (meşru menfaat).
 
 <Anchor id="aktarim" />
 
@@ -92,11 +93,12 @@ Bülten için ayrı aydınlatma aşağıda, [6. bölümde](#bulten) yer alır.
 
 - **Amazon Web Services (Amazon SES):** iletişim formu mesajlarının bize e-posta olarak iletilmesi, üyelik onay e-postalarının gönderilmesi, bülten abone listesinin tutulması ve bülten gönderimi. Veriler AWS'nin ABD'deki (Kuzey Virginia) veri merkezinde işlenir.
 - **Vercel Inc. (ABD):** sitenin barındırılması ve ziyaret istatistikleri.
+- **Cloudflare, Inc. (ABD):** formların robot doğrulaması (Turnstile).
 - **Google (Google Workspace):** kurumsal e-posta hizmetimiz; form mesajları ve e-postayla yapılan başvurular e-posta kutularımızda, üyelik başvuruları, üye listesi ve bülten abonelerinin listesi Google E-Tablolar'da, Google'ın ABD dâhil yurt dışındaki veri merkezlerinde saklanır.
 - **WhatsApp (Meta Platforms):** üyelerin WhatsApp topluluğu ve sohbet grupları ([yukarıda](#whatsapp)); telefon numaranız ve gruplarda paylaşılanlar WhatsApp'ın yurt dışındaki sunucularında işlenir.
 - **Yetkili kamu kurum ve kuruluşları:** yalnızca kanuni bir yükümlülük doğduğunda.
 
-Bu sağlayıcılar yurt dışında bulunduğundan verileriniz KVKK md. 9 kapsamında yurt dışına aktarılır. Amazon, Vercel ve Google'a aktarım bu sağlayıcıların veri işleme sözleşmelerindeki güvencelere dayanır; WhatsApp'ta WhatsApp'ın kendi koşulları ve gizlilik ilkesi geçerlidir. Aktarım yalnızca yukarıdaki amaçlarla sınırlıdır.
+Bu sağlayıcılar yurt dışında bulunduğundan verileriniz KVKK md. 9 kapsamında yurt dışına aktarılır. Amazon, Vercel, Cloudflare ve Google'a aktarım bu sağlayıcıların veri işleme sözleşmelerindeki güvencelere dayanır; WhatsApp'ta WhatsApp'ın kendi koşulları ve gizlilik ilkesi geçerlidir. Aktarım yalnızca yukarıdaki amaçlarla sınırlıdır.
 
 ## 4. Toplama yöntemi
 
