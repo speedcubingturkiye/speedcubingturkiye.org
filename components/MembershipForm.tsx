@@ -51,7 +51,7 @@ export function MembershipForm({
           action={formAction}
           onSubmit={(e) => {
             onSubmit(e)
-            resetTurnstile() // the token just sent answers once (components/Turnstile.tsx)
+            resetTurnstile(e.currentTarget) // the token just sent answers once (components/Turnstile.tsx)
           }}
           onFocusCapture={onFocusCapture}
           className="grid gap-4"

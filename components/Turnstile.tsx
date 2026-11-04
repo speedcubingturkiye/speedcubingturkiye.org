@@ -17,9 +17,11 @@ declare global {
   }
 }
 
-/** A fresh token for the next submit: the one just sent is spent. */
-export function resetTurnstile(): void {
-  window.turnstile?.reset()
+/** A fresh token for this form's next submit: the one just sent is spent. Named by id: `reset()` alone only reaches the
+ *  page's last widget, and the footer's newsletter strip draws one on every page. */
+export function resetTurnstile(form: HTMLFormElement): void {
+  const id = form.querySelector<HTMLElement>('[data-turnstile-id]')?.dataset.turnstileId
+  if (id) window.turnstile?.reset(id)
 }
 
 export function Turnstile({ action, fallback }: { action: string; fallback: string }) {
@@ -32,6 +34,7 @@ export function Turnstile({ action, fallback }: { action: string; fallback: stri
   useEffect(() => {
     if (!ready || !sitekey || !box.current || widget.current || !window.turnstile) return
     widget.current = window.turnstile.render(box.current, { sitekey, action, theme: 'auto' })
+    box.current.dataset.turnstileId = widget.current
   }, [ready, sitekey, action])
 
   return (
