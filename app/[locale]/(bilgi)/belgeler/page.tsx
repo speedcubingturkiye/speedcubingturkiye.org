@@ -12,7 +12,7 @@ import { OpenDetailsFromHash } from '@/components/OpenDetailsFromHash'
 
 // Section anchors, linked from other pages (for example /guvenli-ortam links #politikalar). The boxes start closed, as on
 // the WCA's documents page; OpenDetailsFromHash opens the one a link names.
-const ANCHOR: Record<DocSection, string> = { tuzuk: 'tuzuk', yonetmelik: 'yonetmelikler', politika: 'politikalar', mali: 'mali-raporlar' }
+const ANCHOR: Record<DocSection, string> = { tuzuk: 'tuzuk', yonetmelik: 'yonetmelikler', politika: 'politikalar', mali: 'mali-raporlar', tutanak: 'tutanaklar' }
 const ROW = 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3'
 const LINK = 'font-semibold text-brand-ink underline-offset-2 hover:underline'
 // Inline, in the text's line: the bylaws box's title and the boxes' names start with an icon

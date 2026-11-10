@@ -408,7 +408,7 @@
     "filmingTitle": "Notice of Filming and Photography",
     "safeguardingTitle": "Safeguarding",
     "documentsTitle": "Documents",
-    "documentsDescription": "Bylaws, motions, policies, financial reports and official notices",
+    "documentsDescription": "Bylaws, motions, policies, financial reports, minutes and official notices",
     "documentsEmpty": "No documents yet.",
     "documentsLanguageNote": "If the Turkish and English texts differ, the Turkish text prevails.",
     "documentsSections": {
@@ -416,6 +416,7 @@
       "yonetmelik": "Motions",
       "politika": "Policies",
       "mali": "Financial reports",
+      "tutanak": "Minutes",
       "ilan": "Official notices"
     },
     "documentsOtherPdf": "Turkish PDF",

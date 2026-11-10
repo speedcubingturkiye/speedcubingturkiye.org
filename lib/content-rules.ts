@@ -74,6 +74,7 @@ export const NEWS_CATEGORIES = [
 export const DOC_SECTIONS = [
   { label: 'Tüzük', value: 'tuzuk' },
   { label: 'Yönetmelik', value: 'yonetmelik' },
+  { label: 'Tutanak', value: 'tutanak' },
   { label: 'Politika', value: 'politika' },
   { label: 'Mali rapor', value: 'mali' },
 ] as const

@@ -31,7 +31,7 @@ const numbers = new Intl.Collator('en', { numeric: true })
 
 /**
  * The page's sections in DOC_SECTIONS order, empty ones left out. Motions sort by number, numerically (unnumbered ones
- * last, by title); policies by title in the page's language; the bylaws and financial reports newest first.
+ * last, by title); policies by title in the page's language; the bylaws, financial reports and minutes newest first.
  */
 export function documentSections(docs: SiteDocument[], locale: Locale): { section: DocSection; docs: SiteDocument[] }[] {
   const titles = new Intl.Collator(locale)
@@ -42,6 +42,7 @@ export function documentSections(docs: SiteDocument[], locale: Locale): { sectio
     yonetmelik: (a, b) => Number(!a.code) - Number(!b.code) || numbers.compare(a.code, b.code) || byTitle(a, b),
     politika: byTitle,
     mali: newestFirst,
+    tutanak: newestFirst,
   }
   return DOC_SECTIONS.map(({ value }) => ({ section: value, docs: docs.filter((d) => d.section === value).sort(order[value]) })).filter(
     (s) => s.docs.length > 0,

@@ -408,7 +408,7 @@
     "filmingTitle": "Görüntü ve Ses Kaydı Bildirimi",
     "safeguardingTitle": "Güvenli Ortam",
     "documentsTitle": "Belgeler",
-    "documentsDescription": "Tüzük, yönetmelikler, politikalar, mali raporlar ve resmi ilanlar",
+    "documentsDescription": "Tüzük, yönetmelikler, politikalar, mali raporlar, tutanaklar ve resmi ilanlar",
     "documentsEmpty": "Henüz belge yok.",
     "documentsLanguageNote": "Türkçe ve İngilizce metinler farklıysa Türkçe metin esas alınır.",
     "documentsSections": {
@@ -416,6 +416,7 @@
       "yonetmelik": "Yönetmelikler",
       "politika": "Politikalar",
       "mali": "Mali raporlar",
+      "tutanak": "Tutanaklar",
       "ilan": "İlanlar"
     },
     "documentsOtherPdf": "İngilizce PDF",

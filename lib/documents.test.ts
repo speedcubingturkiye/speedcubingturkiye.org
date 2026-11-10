@@ -44,13 +44,15 @@ describe('documentSections', () => {
     expect(slugs(docs, 'en')).toEqual([['t', 's2', 's1']])
   })
 
-  it('lists the bylaws and financial reports newest first', () => {
+  it('lists the bylaws, financial reports and minutes newest first', () => {
     const docs = [
+      doc({ slug: 'm1', section: 'tutanak', date: '2026-10-10' }),
+      doc({ slug: 'm2', section: 'tutanak', date: '2026-11-01' }),
       doc({ slug: 'old', section: 'mali', date: '2026-01-31' }),
       doc({ slug: 'new', section: 'mali', date: '2026-12-01' }),
       doc({ slug: 't1', section: 'tuzuk', date: '2026-10-10' }),
       doc({ slug: 't2', section: 'tuzuk', date: '2027-03-01' }),
     ]
-    expect(slugs(docs)).toEqual([['t2', 't1'], ['new', 'old']])
+    expect(slugs(docs)).toEqual([['t2', 't1'], ['m2', 'm1'], ['new', 'old']])
   })
 })
