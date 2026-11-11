@@ -61,7 +61,8 @@ function DocumentRow({ doc, locale, otherPdf, turkishOnly, box = false }: { doc:
       <span>
         <a href={own ?? doc.file.tr} hrefLang={own ? locale : 'tr'} type="application/pdf" className={box ? 'font-semibold text-fg after:absolute after:inset-0' : LINK}>
           {box && <DocumentIcon />}
-          {doc.code ? `${doc.code} - ${doc.title[locale]}` : doc.title[locale]}
+          {/* minutes lead with their date, as on the WCA's documents page: "2026-10-10 Yönetim Kurulu Toplantısı" */}
+          {doc.section === 'tutanak' ? `${doc.date} ${doc.title[locale]}` : doc.code ? `${doc.code} - ${doc.title[locale]}` : doc.title[locale]}
           <span className="sr-only">, PDF</span>
         </a>
         {!own && (
